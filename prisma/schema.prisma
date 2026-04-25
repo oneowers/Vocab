@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  name          String?
+  avatarUrl     String?
+  role          Role      @default(USER)
+  createdAt     DateTime  @default(now())
+  lastActiveAt  DateTime?
+  cards         Card[]
+  reviewLogs    ReviewLog[]
+  streak        Int       @default(0)
+  lastReviewDate String?
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model Card {
+  id              String    @id @default(uuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  original        String
+  translation     String
+  direction       String    // "en-ru" or "ru-en"
+  example         String?
+  phonetic        String?
+  tags            String[]
+  dateAdded       DateTime  @default(now())
+  nextReviewDate  String    // YYYY-MM-DD
+  reviewCount     Int       @default(0)
+  correctCount    Int       @default(0)
+  wrongCount      Int       @default(0)
+}
+
+model ReviewLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  cardId    String
+  result    String   // "known" or "unknown"
+  createdAt DateTime @default(now())
+}
+
+model AppAnalytics {
+  id              String   @id @default(uuid())
+  date            String   @unique // YYYY-MM-DD
+  totalSessions   Int      @default(0)
+  totalReviews    Int      @default(0)
+  newUsers        Int      @default(0)
+  newCards        Int      @default(0)
+}
