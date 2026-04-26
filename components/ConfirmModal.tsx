@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
+import { createPortal } from "react-dom"
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 
 interface ConfirmModalProps {
@@ -25,6 +26,12 @@ export function ConfirmModal({
   loading = false
 }: ConfirmModalProps) {
   const prefersReducedMotion = useReducedMotion()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    return () => setMounted(false)
+  }, [])
 
   useEffect(() => {
     if (!open) {
@@ -41,7 +48,11 @@ export function ConfirmModal({
     return () => window.removeEventListener("keydown", handleKeyDown)
   }, [onCancel, open])
 
-  return (
+  if (!mounted) {
+    return null
+  }
+
+  return createPortal(
     <AnimatePresence>
       {open ? (
         <motion.div
@@ -85,5 +96,7 @@ export function ConfirmModal({
         </motion.div>
       ) : null}
     </AnimatePresence>
+    ,
+    document.body
   )
 }
