@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
 import { GuestBanner } from "@/components/GuestBanner"
+import { PageTransition } from "@/components/PageTransition"
 import { useToast } from "@/components/Toast"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
 import type { AppUserRecord } from "@/lib/types"
@@ -30,6 +31,10 @@ export function AppShell({ user, children }: AppShellProps) {
   useEffect(() => {
     setGuestActive(isGuestSessionActive())
   }, [pathname])
+
+  useEffect(() => {
+    router.prefetch("/login")
+  }, [router])
 
   async function handleExit() {
     if (guestActive) {
@@ -57,7 +62,7 @@ export function AppShell({ user, children }: AppShellProps) {
       <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
         <header className="panel sticky top-4 z-30 flex flex-col gap-4 rounded-[2rem] px-5 py-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <Link href="/dashboard" className="flex items-center gap-3">
+            <Link href="/dashboard" prefetch className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-[1.1rem] bg-ink text-lg font-semibold text-white">
                 W
               </div>
@@ -73,6 +78,7 @@ export function AppShell({ user, children }: AppShellProps) {
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch
                 className={`rounded-full px-4 py-2 text-sm font-medium transition ${
                   pathname === item.href
                     ? "bg-ink text-white"
@@ -85,6 +91,7 @@ export function AppShell({ user, children }: AppShellProps) {
             {user?.role === "ADMIN" ? (
               <Link
                 href="/admin"
+                prefetch
                 className={`rounded-full px-4 py-2 text-sm font-medium transition ${
                   pathname.startsWith("/admin")
                     ? "bg-ink text-white"
@@ -122,9 +129,10 @@ export function AppShell({ user, children }: AppShellProps) {
           <GuestBanner />
         </div>
 
-        <main className="mt-5 flex-1">{children}</main>
+        <main className="mt-5 flex-1">
+          <PageTransition>{children}</PageTransition>
+        </main>
       </div>
     </div>
   )
 }
-

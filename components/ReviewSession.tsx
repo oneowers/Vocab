@@ -1,7 +1,7 @@
 "use client"
 
+import Link from "next/link"
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 
 import { FlipCard } from "@/components/FlipCard"
 import { QuizCard } from "@/components/QuizCard"
@@ -71,7 +71,6 @@ export function ReviewSession() {
   const [correct, setCorrect] = useState(0)
   const [wrong, setWrong] = useState(0)
   const [streak, setStreak] = useState(0)
-  const router = useRouter()
   const { showToast } = useToast()
 
   useEffect(() => {
@@ -209,13 +208,13 @@ export function ReviewSession() {
               Choose a mode, filter by tag if you want, and work through every due card.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => router.push("/dashboard")}
-            className="button-secondary px-4 py-2 text-sm font-medium"
+          <Link
+            href="/dashboard"
+            prefetch
+            className="button-secondary inline-flex px-4 py-2 text-sm font-medium"
           >
             Exit
-          </button>
+          </Link>
         </div>
 
         <div className="mt-6 grid gap-3 md:grid-cols-3">
@@ -309,13 +308,13 @@ export function ReviewSession() {
           Correct: {correct} | Wrong: {wrong} | Accuracy: {accuracy}%
         </p>
         <p className="mt-2 text-sm text-muted">🔥 Streak: {streak} days!</p>
-        <button
-          type="button"
-          onClick={() => router.push("/dashboard")}
-          className="button-primary mt-8 min-h-[48px] px-5 py-3 text-sm font-medium"
+        <Link
+          href="/dashboard"
+          prefetch
+          className="button-primary mt-8 inline-flex min-h-[48px] px-5 py-3 text-sm font-medium"
         >
           Back to deck
-        </button>
+        </Link>
       </section>
     )
   }
@@ -334,13 +333,13 @@ export function ReviewSession() {
               Mode: {mode.charAt(0).toUpperCase() + mode.slice(1)}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => router.push("/dashboard")}
-            className="button-secondary px-4 py-2 text-sm font-medium"
+          <Link
+            href="/dashboard"
+            prefetch
+            className="button-secondary inline-flex px-4 py-2 text-sm font-medium"
           >
             Exit
-          </button>
+          </Link>
         </div>
         <div className="mt-4 h-3 rounded-full bg-[#F4F5F7]">
           <div

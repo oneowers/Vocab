@@ -1,5 +1,6 @@
 import Link from "next/link"
 
+import { PageTransition } from "@/components/PageTransition"
 import type { AppUserRecord } from "@/lib/types"
 
 interface AdminShellProps {
@@ -20,7 +21,7 @@ export function AdminShell({ user, children }: AdminShellProps) {
       <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
         <header className="panel-admin flex flex-col gap-4 rounded-[2rem] px-5 py-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <Link href="/admin" className="flex items-center gap-3">
+            <Link href="/admin" prefetch className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-[1.1rem] bg-ink text-lg font-semibold text-white">
                 W
               </div>
@@ -41,6 +42,7 @@ export function AdminShell({ user, children }: AdminShellProps) {
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch
                 className="rounded-full px-4 py-2 text-sm font-medium text-muted transition hover:bg-white hover:text-ink"
               >
                 {item.label}
@@ -48,6 +50,7 @@ export function AdminShell({ user, children }: AdminShellProps) {
             ))}
             <Link
               href="/dashboard"
+              prefetch
               className="rounded-full bg-ink px-4 py-2 text-sm font-medium text-white"
             >
               Back to app
@@ -65,9 +68,10 @@ export function AdminShell({ user, children }: AdminShellProps) {
           </div>
         </header>
 
-        <main className="mt-5 flex-1">{children}</main>
+        <main className="mt-5 flex-1">
+          <PageTransition>{children}</PageTransition>
+        </main>
       </div>
     </div>
   )
 }
-

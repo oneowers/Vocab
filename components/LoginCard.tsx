@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 
 import { useToast } from "@/components/Toast"
@@ -15,6 +15,10 @@ export function LoginCard({ guestModeEnabled }: LoginCardProps) {
   const [loading, setLoading] = useState<"google" | "guest" | null>(null)
   const router = useRouter()
   const { showToast } = useToast()
+
+  useEffect(() => {
+    router.prefetch("/dashboard")
+  }, [router])
 
   async function handleGoogleSignIn() {
     const supabase = createSupabaseBrowserClient()

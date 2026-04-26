@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import NextTopLoader from "nextjs-toploader"
 
 import { ToastProvider } from "@/components/Toast"
 import "./globals.css"
@@ -24,6 +25,13 @@ export default function RootLayout({
         />
       </head>
       <body className="text-ink antialiased">
+        <NextTopLoader
+          color="#111827"
+          crawlSpeed={160}
+          height={3}
+          easing="ease"
+          showSpinner={false}
+        />
         <ToastProvider>{children}</ToastProvider>
       </body>
     </html>
