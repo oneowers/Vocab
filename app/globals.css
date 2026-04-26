@@ -222,9 +222,6 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 14px;
-  background: var(--accent);
-  color: var(--accent-foreground);
 }
 
 .chip-button[data-active="false"] {
@@ -238,6 +235,29 @@ textarea {
   letter-spacing: 0.08em;
   color: var(--text-tertiary);
   text-transform: uppercase;
+}
+
+.activity-cell {
+  height: 12px;
+  width: 12px;
+  border-radius: 3px;
+  background: var(--activity-level-0);
+}
+
+.activity-cell[data-level="1"] {
+  background: var(--activity-level-1);
+}
+
+.activity-cell[data-level="2"] {
+  background: var(--activity-level-2);
+}
+
+.activity-cell[data-level="3"] {
+  background: var(--activity-level-3);
+}
+
+.activity-cell[data-level="4"] {
+  background: var(--activity-level-4);
 }
 
 .stats-strip {

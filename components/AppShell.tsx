@@ -6,9 +6,11 @@ import { useEffect, useState } from "react"
 import { ArrowRight, LogOut } from "lucide-react"
 
 import { BottomTabBar } from "@/components/BottomTabBar"
+import { BrandLogo } from "@/components/BrandLogo"
 import { PageTransition } from "@/components/PageTransition"
 import { useToast } from "@/components/Toast"
-import { appMobileNavItems, appSidebarNavItems } from "@/lib/navigation"
+import { getAppMobileNavItems, getAppSidebarNavItems } from "@/lib/navigation"
+import { getRoleLabel } from "@/lib/roles"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
 import type { AppUserRecord } from "@/lib/types"
 import { clearGuestSession, isGuestSessionActive } from "@/lib/guest"
@@ -59,14 +61,11 @@ export function AppShell({ user, children }: AppShellProps) {
   const initials = (user?.name || user?.email || "G").slice(0, 1).toUpperCase()
   const accountLabel = guestActive
     ? "Guest explorer"
-    : user?.name || user?.email || "WordFlow user"
-  const accountRole = user?.role === "ADMIN"
-    ? "Administrator"
-    : guestActive
-      ? "Guest mode"
-      : user
-        ? "Learner"
-        : "Not signed in"
+    : user?.name || user?.email || "Wlingo user"
+  const accountRole = guestActive ? "Guest mode" : getRoleLabel(user?.role ?? null)
+  const navRole = guestActive ? null : user?.role ?? null
+  const sidebarNavItems = getAppSidebarNavItems(navRole)
+  const mobileNavItems = getAppMobileNavItems(navRole)
 
   return (
     <div className="min-h-screen bg-shell">
@@ -75,16 +74,16 @@ export function AppShell({ user, children }: AppShellProps) {
           <div className="space-y-8">
             <Link href="/" prefetch className="flex items-center gap-3">
               <div className="brand-mark h-12 w-12 text-lg font-semibold">
-                W
+                <BrandLogo />
               </div>
               <div>
-                <p className="section-label">WordFlow</p>
-                <p className="mt-1 text-[15px] text-muted">Apple-inspired vocabulary studio</p>
+                <p className="section-label">Wlingo</p>
+                <p className="mt-1 text-[15px] text-muted">Vocabulary practice studio</p>
               </div>
             </Link>
 
             <nav className="space-y-2">
-              {appSidebarNavItems.map((item) => {
+              {sidebarNavItems.map((item) => {
                 const active = item.match ? item.match(pathname) : pathname === item.href
                 const Icon = item.icon
 
@@ -149,7 +148,7 @@ export function AppShell({ user, children }: AppShellProps) {
             </div>
           </div>
 
-          <BottomTabBar items={appMobileNavItems} variant="app" />
+          <BottomTabBar items={mobileNavItems} variant="app" />
         </div>
       </div>
     </div>

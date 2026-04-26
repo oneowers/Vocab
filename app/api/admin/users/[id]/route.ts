@@ -22,10 +22,10 @@ export async function PATCH(
   }
 
   const body = (await request.json()) as {
-    role?: "USER" | "ADMIN"
+    role?: "USER" | "PRO" | "ADMIN"
   }
 
-  if (body.role !== "USER" && body.role !== "ADMIN") {
+  if (body.role !== "USER" && body.role !== "PRO" && body.role !== "ADMIN") {
     return NextResponse.json({ error: "Invalid role" }, { status: 400 })
   }
 
@@ -68,4 +68,3 @@ export async function DELETE(
 
   return NextResponse.json({ success: true })
 }
-

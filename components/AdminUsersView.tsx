@@ -6,7 +6,7 @@ import { AdminTable } from "@/components/AdminTable"
 import { ConfirmModal } from "@/components/ConfirmModal"
 import { useToast } from "@/components/Toast"
 import { formatTimestamp } from "@/lib/date"
-import type { AdminUserRow, AdminUsersPayload } from "@/lib/types"
+import type { AdminUserRow, AdminUsersPayload, Role } from "@/lib/types"
 
 export function AdminUsersView() {
   const [payload, setPayload] = useState<AdminUsersPayload | null>(null)
@@ -44,11 +44,14 @@ export function AdminUsersView() {
     void loadUsers()
   }, [page, search, showToast])
 
-  async function handleRoleToggle(user: AdminUserRow) {
+  async function handleRoleChange(user: AdminUserRow, nextRole: Role) {
+    if (user.role === nextRole) {
+      return
+    }
+
     setSubmitting(true)
 
     try {
-      const nextRole = user.role === "ADMIN" ? "USER" : "ADMIN"
       const response = await fetch(`/api/admin/users/${user.id}`, {
         method: "PATCH",
         headers: {
@@ -113,7 +116,7 @@ export function AdminUsersView() {
       const url = URL.createObjectURL(blob)
       const anchor = document.createElement("a")
       anchor.href = url
-      anchor.download = "wordflow-users.csv"
+      anchor.download = "wlingo-users.csv"
       anchor.click()
       URL.revokeObjectURL(url)
     } catch {
@@ -206,14 +209,18 @@ export function AdminUsersView() {
                     <div>Last active: {user.lastActiveAt ? formatTimestamp(user.lastActiveAt) : "—"}</div>
                   </div>
                   <div className="mt-4 flex flex-col gap-2">
-                    <button
-                      type="button"
-                      onClick={() => void handleRoleToggle(user)}
+                    <select
+                      value={user.role}
                       disabled={submitting}
-                      className="button-secondary"
+                      onChange={(event) =>
+                        void handleRoleChange(user, event.target.value as Role)
+                      }
+                      className="input-field"
                     >
-                      {user.role === "ADMIN" ? "Demote to User" : "Promote to Admin"}
-                    </button>
+                      <option value="USER">USER</option>
+                      <option value="PRO">PRO</option>
+                      <option value="ADMIN">ADMIN</option>
+                    </select>
                     <button
                       type="button"
                       onClick={() => setSelectedUser(user)}
@@ -269,14 +276,18 @@ export function AdminUsersView() {
                     </td>
                     <td className="px-3 py-4">
                       <div className="flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          onClick={() => void handleRoleToggle(user)}
+                        <select
+                          value={user.role}
                           disabled={submitting}
-                          className="button-secondary px-3 py-2 text-xs font-medium"
+                          onChange={(event) =>
+                            void handleRoleChange(user, event.target.value as Role)
+                          }
+                          className="input-field w-auto min-w-[112px] px-3 text-xs font-medium"
                         >
-                          {user.role === "ADMIN" ? "Demote to User" : "Promote to Admin"}
-                        </button>
+                          <option value="USER">USER</option>
+                          <option value="PRO">PRO</option>
+                          <option value="ADMIN">ADMIN</option>
+                        </select>
                         <button
                           type="button"
                           onClick={() => setSelectedUser(user)}

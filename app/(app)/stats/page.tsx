@@ -1,5 +1,15 @@
-import { StatsView } from "@/components/StatsView"
+import { redirect } from "next/navigation"
 
-export default function StatsPage() {
+import { StatsView } from "@/components/StatsView"
+import { requireSignedInAppUser } from "@/lib/auth"
+import { canViewStats } from "@/lib/roles"
+
+export default async function StatsPage() {
+  const user = await requireSignedInAppUser()
+
+  if (!user || !canViewStats(user.role)) {
+    redirect("/profile")
+  }
+
   return <StatsView />
 }

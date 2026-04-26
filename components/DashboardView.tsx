@@ -136,7 +136,7 @@ export function DashboardView() {
     const url = URL.createObjectURL(blob)
     const anchor = document.createElement("a")
     anchor.href = url
-    anchor.download = "wordflow-cards.json"
+    anchor.download = "wlingo-cards.json"
     anchor.click()
     URL.revokeObjectURL(url)
   }

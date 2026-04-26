@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 
+import { BrandLogo } from "@/components/BrandLogo"
 import { useToast } from "@/components/Toast"
 import { hasSupabaseEnv } from "@/lib/config"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
@@ -55,13 +56,13 @@ export function LoginCard({ guestModeEnabled }: LoginCardProps) {
   return (
     <div className="panel mx-auto w-full max-w-lg p-8 text-center">
       <div className="brand-mark mx-auto h-16 w-16 text-2xl font-semibold">
-        W
+        <BrandLogo />
       </div>
       <p className="mt-5 text-xs font-semibold uppercase tracking-[0.32em] text-quiet">
-        WordFlow
+        Wlingo
       </p>
       <h1 className="mt-3 text-[34px] font-bold tracking-[-0.5px] text-text-primary">
-        Learn words with rhythm.
+        Learn English with rhythm.
       </h1>
       <p className="mt-4 text-[15px] leading-6 text-text-secondary">
         Translate vocabulary, build your deck, and return every day for spaced repetition.

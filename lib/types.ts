@@ -1,6 +1,6 @@
 import type { LucideIcon } from "lucide-react"
 
-export type Role = "USER" | "ADMIN"
+export type Role = "USER" | "PRO" | "ADMIN"
 export type Direction = "en-ru" | "ru-en"
 export type ReviewResult = "known" | "unknown"
 export type CardStatusFilter = "All" | "known" | "unknown"
@@ -39,6 +39,24 @@ export interface AppUserRecord {
   createdAt: string
   lastActiveAt: string | null
   lastReviewDate: string | null
+}
+
+export interface ProfileActivityDay {
+  date: string
+  count: number
+  level: 0 | 1 | 2 | 3 | 4
+}
+
+export interface ProfileActivityMonthLabel {
+  label: string
+  weekIndex: number
+}
+
+export interface ProfileActivityPayload {
+  activeDaysLastYear: number
+  totalReviewsLastYear: number
+  days: ProfileActivityDay[]
+  months: ProfileActivityMonthLabel[]
 }
 
 export interface DashboardSummary {

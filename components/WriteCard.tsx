@@ -14,6 +14,9 @@ interface WriteCardProps {
 export function WriteCard({ card, onResolved }: WriteCardProps) {
   const [answer, setAnswer] = useState("")
   const [result, setResult] = useState<ReviewResult | null>(null)
+  const promptText = card.direction === "en-ru" ? card.translation : card.original
+  const expectedAnswer = card.direction === "en-ru" ? card.original : card.translation
+  const promptLanguage = card.direction === "en-ru" ? "ru-RU" : "ru-RU"
 
   useEffect(() => {
     setAnswer("")
@@ -26,7 +29,7 @@ export function WriteCard({ card, onResolved }: WriteCardProps) {
     }
 
     const normalizedAnswer = answer.trim().toLowerCase()
-    const normalizedTranslation = card.translation.trim().toLowerCase()
+    const normalizedTranslation = expectedAnswer.trim().toLowerCase()
     const isCorrect =
       normalizedAnswer === normalizedTranslation ||
       levenshtein(normalizedAnswer, normalizedTranslation) <= 2
@@ -45,15 +48,13 @@ export function WriteCard({ card, onResolved }: WriteCardProps) {
     <div className="panel p-6">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-[15px] text-text-secondary">Type the translation</p>
-          <p className="mt-3 text-[28px] font-bold tracking-[-0.5px] text-text-primary">{card.original}</p>
+          <p className="text-[15px] text-text-secondary">Translate into English</p>
+          <p className="mt-3 text-[28px] font-bold tracking-[-0.5px] text-text-primary">{promptText}</p>
         </div>
         {canSpeak() ? (
           <button
             type="button"
-            onClick={() =>
-              speakText(card.original, card.direction === "en-ru" ? "en-US" : "ru-RU")
-            }
+            onClick={() => speakText(promptText, promptLanguage)}
             className="button-secondary px-3 py-2 text-sm"
           >
             🔊
@@ -72,7 +73,7 @@ export function WriteCard({ card, onResolved }: WriteCardProps) {
         autoCapitalize="none"
         autoCorrect="off"
         autoComplete="off"
-        placeholder="Type the translation..."
+        placeholder="Type the English word..."
         className="input-field mt-6"
       />
       <button
@@ -92,7 +93,7 @@ export function WriteCard({ card, onResolved }: WriteCardProps) {
           }`}
         >
           {result === "known" ? "Correct." : "Not quite."} Right answer:{" "}
-          <span className="font-semibold">{card.translation}</span>
+          <span className="font-semibold">{expectedAnswer}</span>
         </div>
       ) : null}
     </div>

@@ -9,67 +9,72 @@ import {
   Users
 } from "lucide-react"
 
-import type { NavItem } from "@/lib/types"
+import { canViewStats } from "@/lib/roles"
+import type { NavItem, Role } from "@/lib/types"
 
-export const appSidebarNavItems: NavItem[] = [
-  {
-    href: "/",
-    label: "Home",
-    icon: House
-  },
-  {
-    href: "/dashboard",
-    label: "Cards",
-    icon: Library
-  },
-  {
-    href: "/practice",
-    label: "Practice",
-    icon: Sparkles
-  },
-  {
-    href: "/stats",
-    label: "Stats",
-    icon: BarChart3
-  },
-  {
-    href: "/profile",
-    label: "Profile",
-    icon: UserRound
-  }
-]
+const statsNavItem: NavItem = {
+  href: "/stats",
+  label: "Stats",
+  icon: BarChart3,
+  match: (pathname) => pathname === "/stats"
+}
 
-export const appMobileNavItems: NavItem[] = [
-  {
-    href: "/",
-    label: "Home",
-    icon: House,
-    match: (pathname) => pathname === "/"
-  },
-  {
-    href: "/dashboard",
-    label: "Cards",
-    icon: Library,
-    match: (pathname) => pathname === "/dashboard"
-  },
-  {
-    href: "/practice",
-    label: "Practice",
-    icon: Sparkles,
-    match: (pathname) => pathname === "/practice" || pathname === "/review"
-  },
-  {
-    href: "/stats",
-    label: "Stats",
-    icon: BarChart3,
-    match: (pathname) => pathname === "/stats"
-  },
-  {
-    href: "/profile",
-    label: "Profile",
-    icon: UserRound
-  }
-]
+export function getAppSidebarNavItems(role: Role | null): NavItem[] {
+  return [
+    {
+      href: "/",
+      label: "Home",
+      icon: House
+    },
+    {
+      href: "/dashboard",
+      label: "Cards",
+      icon: Library
+    },
+    {
+      href: "/practice",
+      label: "Practice",
+      icon: Sparkles
+    },
+    ...(canViewStats(role) ? [statsNavItem] : []),
+    {
+      href: "/profile",
+      label: "Profile",
+      icon: UserRound
+    }
+  ]
+}
+
+export function getAppMobileNavItems(role: Role | null): NavItem[] {
+  return [
+    {
+      href: "/",
+      label: "Home",
+      icon: House,
+      match: (pathname) => pathname === "/"
+    },
+    {
+      href: "/dashboard",
+      label: "Cards",
+      icon: Library,
+      match: (pathname) => pathname === "/dashboard"
+    },
+    {
+      href: "/practice",
+      label: "Practice",
+      icon: Sparkles,
+      match: (pathname) => pathname === "/practice" || pathname === "/review"
+    },
+    ...(canViewStats(role)
+      ? [statsNavItem]
+      : []),
+    {
+      href: "/profile",
+      label: "Profile",
+      icon: UserRound
+    }
+  ]
+}
 
 export const adminNavItems: NavItem[] = [
   {

@@ -1,14 +1,117 @@
 import { getPrisma } from "@/lib/prisma"
 import {
+  addDaysToDateKey,
   formatDateLabel,
   getTodayDateKey,
   isDueDate,
   listRecentDateKeys,
-  listUpcomingDateKeys
+  listUpcomingDateKeys,
+  parseDateKey
 } from "@/lib/date"
 import { isMastered } from "@/lib/spaced-repetition"
 import { serializeCard } from "@/lib/serializers"
-import type { AdminAnalyticsPayload, CardRecord, StatsPayload } from "@/lib/types"
+import type {
+  AdminAnalyticsPayload,
+  CardRecord,
+  ProfileActivityDay,
+  ProfileActivityMonthLabel,
+  ProfileActivityPayload,
+  StatsPayload
+} from "@/lib/types"
+
+const HEATMAP_WEEKS = 53
+const HEATMAP_DAYS = HEATMAP_WEEKS * 7
+
+function startOfWeekSunday(date: Date) {
+  const next = new Date(date)
+  next.setUTCHours(0, 0, 0, 0)
+  next.setUTCDate(next.getUTCDate() - next.getUTCDay())
+  return next
+}
+
+function addDays(date: Date, days: number) {
+  const next = new Date(date)
+  next.setUTCDate(next.getUTCDate() + days)
+  return next
+}
+
+function toDateKey(date: Date) {
+  return date.toISOString().slice(0, 10)
+}
+
+function getActivityLevel(count: number): ProfileActivityDay["level"] {
+  if (count >= 10) {
+    return 4
+  }
+
+  if (count >= 5) {
+    return 3
+  }
+
+  if (count >= 2) {
+    return 2
+  }
+
+  if (count >= 1) {
+    return 1
+  }
+
+  return 0
+}
+
+function buildActivitySkeleton(endDateKey = getTodayDateKey()) {
+  const today = parseDateKey(endDateKey)
+  const currentWeekStart = startOfWeekSunday(today)
+  const gridStart = addDays(currentWeekStart, -(HEATMAP_DAYS - 7))
+  const lastYearStartKey = addDaysToDateKey(endDateKey, -364)
+
+  const days = Array.from({ length: HEATMAP_DAYS }, (_, index) => {
+    const date = addDays(gridStart, index)
+    return {
+      date: toDateKey(date),
+      weekIndex: Math.floor(index / 7),
+      inLastYear: toDateKey(date) >= lastYearStartKey && toDateKey(date) <= endDateKey
+    }
+  })
+
+  const months = days.reduce<ProfileActivityMonthLabel[]>((accumulator, day, index) => {
+    const date = parseDateKey(day.date)
+    const label = date.toLocaleDateString("en-US", { month: "short" })
+    const previous = index > 0 ? days[index - 1] : null
+    const previousMonth = previous
+      ? parseDateKey(previous.date).getUTCMonth()
+      : null
+
+    if (index === 0 || date.getUTCMonth() !== previousMonth) {
+      accumulator.push({
+        label,
+        weekIndex: day.weekIndex
+      })
+    }
+
+    return accumulator
+  }, [])
+
+  return {
+    days,
+    months
+  }
+}
+
+export function buildEmptyProfileActivity(endDateKey = getTodayDateKey()): ProfileActivityPayload {
+  const skeleton = buildActivitySkeleton(endDateKey)
+
+  return {
+    activeDaysLastYear: 0,
+    totalReviewsLastYear: 0,
+    days: skeleton.days.map((day) => ({
+      date: day.date,
+      count: 0,
+      level: 0
+    })),
+    months: skeleton.months
+  }
+}
 
 function getLongestStreak(dateKeys: string[]) {
   if (!dateKeys.length) {
@@ -95,6 +198,49 @@ export async function buildUserStats(userId: string): Promise<StatsPayload> {
       label: formatDateLabel(date),
       value: serializedCards.filter((card) => card.nextReviewDate === date).length
     }))
+  }
+}
+
+export async function buildProfileActivity(userId: string): Promise<ProfileActivityPayload> {
+  const prisma = getPrisma()
+  const today = getTodayDateKey()
+  const skeleton = buildActivitySkeleton(today)
+  const startDate = parseDateKey(addDaysToDateKey(today, -364))
+  const endDate = new Date(`${today}T23:59:59.999Z`)
+  const reviewLogs = await prisma.reviewLog.findMany({
+    where: {
+      userId,
+      createdAt: {
+        gte: startDate,
+        lte: endDate
+      }
+    },
+    select: {
+      createdAt: true
+    }
+  })
+
+  const countsByDate = reviewLogs.reduce<Record<string, number>>((accumulator, log) => {
+    const date = log.createdAt.toISOString().slice(0, 10)
+    accumulator[date] = (accumulator[date] ?? 0) + 1
+    return accumulator
+  }, {})
+
+  const days = skeleton.days.map((day) => {
+    const count = countsByDate[day.date] ?? 0
+
+    return {
+      date: day.date,
+      count,
+      level: day.inLastYear ? getActivityLevel(count) : 0
+    }
+  })
+
+  return {
+    activeDaysLastYear: Object.values(countsByDate).filter((count) => count > 0).length,
+    totalReviewsLastYear: reviewLogs.length,
+    days,
+    months: skeleton.months
   }
 }
 

@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
 
+import { BrandLogo } from "@/components/BrandLogo"
 import { BottomTabBar } from "@/components/BottomTabBar"
 import { PageTransition } from "@/components/PageTransition"
 import { adminNavItems } from "@/lib/navigation"
@@ -24,10 +25,10 @@ export function AdminShell({ user, children }: AdminShellProps) {
           <div className="space-y-8">
             <Link href="/admin" prefetch className="flex items-center gap-3">
               <div className="brand-mark h-12 w-12 text-lg font-semibold">
-                W
+                <BrandLogo />
               </div>
               <div>
-                <p className="section-label">WordFlow</p>
+                <p className="section-label">Wlingo</p>
                 <div className="mt-1 flex items-center gap-2">
                   <p className="text-[15px] text-muted">Administration</p>
                   <span className="rounded-full bg-background-secondary px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">
