@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
 
 type ToastTone = "info" | "success" | "error"
 
@@ -23,10 +23,12 @@ export function ToastProvider({
 }) {
   const [toasts, setToasts] = useState<ToastItem[]>([])
 
-  function showToast(message: string, tone: ToastTone = "info") {
+  const showToast = useCallback((message: string, tone: ToastTone = "info") => {
     const id = Date.now() + Math.floor(Math.random() * 1000)
     setToasts((current) => [...current, { id, message, tone }])
-  }
+  }, [])
+
+  const contextValue = useMemo(() => ({ showToast }), [showToast])
 
   useEffect(() => {
     if (!toasts.length) {
@@ -41,7 +43,7 @@ export function ToastProvider({
   }, [toasts])
 
   return (
-    <ToastContext.Provider value={{ showToast }}>
+    <ToastContext.Provider value={contextValue}>
       {children}
       <div className="pointer-events-none fixed bottom-[calc(var(--tab-bar-height)+16px)] right-4 z-50 flex w-[min(92vw,24rem)] flex-col gap-3 md:bottom-6">
         {toasts.map((toast) => (
