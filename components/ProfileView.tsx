@@ -54,21 +54,24 @@ export function ProfileView({ user, activity }: ProfileViewProps) {
     ? "Guest mode"
     : getRoleLabel(user?.role ?? null)
   const heatmapDays = useMemo(() => activity.days, [activity.days])
-  const heatmapCellSize = 12
-  const heatmapGap = 4
-  const heatmapWidth = 53 * heatmapCellSize + 52 * heatmapGap
+  const heatmapWeekCount = 53
+  const heatmapWeeks = useMemo(
+    () =>
+      Array.from({ length: heatmapWeekCount }, (_, weekIndex) =>
+        heatmapDays.slice(weekIndex * 7, weekIndex * 7 + 7)
+      ),
+    [heatmapDays]
+  )
   const visibleMonths = useMemo(() => {
-    const minLabelSpacing = 28
-    let lastLeft = -Infinity
+    const minLabelSpacingWeeks = 6
+    let lastWeekIndex = -Infinity
 
     return activity.months.filter((month) => {
-      const left = month.weekIndex * (heatmapCellSize + heatmapGap)
-
-      if (left - lastLeft < minLabelSpacing) {
+      if (month.weekIndex - lastWeekIndex < minLabelSpacingWeeks) {
         return false
       }
 
-      lastLeft = left
+      lastWeekIndex = month.weekIndex
       return true
     })
   }, [activity.months])
@@ -125,18 +128,17 @@ export function ProfileView({ user, activity }: ProfileViewProps) {
           </div>
         </div>
 
-        <div className="mt-5 overflow-x-auto pb-1 hide-scrollbar native-scroll">
-          <div className="min-w-[760px]">
+        <div className="mt-5 overflow-hidden">
+          <div className="w-full">
             <div
               className="relative ml-12 h-6 text-[12px] leading-none text-text-tertiary"
-              style={{ width: `${heatmapWidth}px` }}
             >
               {visibleMonths.map((month) => (
                 <span
                   key={`${month.label}-${month.weekIndex}`}
                   className="absolute top-0"
                   style={{
-                    left: `${month.weekIndex * (heatmapCellSize + heatmapGap)}px`
+                    left: `${(month.weekIndex / heatmapWeekCount) * 100}%`
                   }}
                 >
                   {month.label}
@@ -153,18 +155,19 @@ export function ProfileView({ user, activity }: ProfileViewProps) {
                 ))}
               </div>
 
-              <div
-                className="grid grid-flow-col grid-rows-7 gap-1"
-                style={{ width: `${heatmapWidth}px` }}
-              >
-                {heatmapDays.map((day) => (
-                  <div
-                    key={day.date}
-                    className="activity-cell"
-                    data-level={day.level}
-                    title={`${day.count} reviews on ${day.date}`}
-                    aria-label={`${day.count} reviews on ${day.date}`}
-                  />
+              <div className="grid flex-1 grid-cols-[repeat(53,minmax(0,1fr))] gap-1">
+                {heatmapWeeks.map((week, weekIndex) => (
+                  <div key={`week-${weekIndex}`} className="grid grid-rows-7 gap-1">
+                    {week.map((day) => (
+                      <div
+                        key={day.date}
+                        className="activity-cell aspect-square h-auto w-full"
+                        data-level={day.level}
+                        title={`${day.count} reviews on ${day.date}`}
+                        aria-label={`${day.count} reviews on ${day.date}`}
+                      />
+                    ))}
+                  </div>
                 ))}
               </div>
             </div>
