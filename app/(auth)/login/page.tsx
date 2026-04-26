@@ -8,7 +8,7 @@ export default async function LoginPage() {
   const user = await getOptionalAuthUser()
 
   if (user) {
-    redirect("/dashboard")
+    redirect("/")
   }
 
   return (
@@ -17,4 +17,3 @@ export default async function LoginPage() {
     </main>
   )
 }
-

@@ -1,30 +1,61 @@
 import {
   BarChart3,
-  BookCopy,
   ChartColumnBig,
   House,
+  Library,
   Shield,
   Sparkles,
+  UserRound,
   Users
 } from "lucide-react"
 
 import type { NavItem } from "@/lib/types"
 
-export const appNavItems: NavItem[] = [
+export const appSidebarNavItems: NavItem[] = [
   {
-    href: "/dashboard",
-    label: "Dashboard",
+    href: "/",
+    label: "Home",
     icon: House
   },
   {
-    href: "/review",
-    label: "Review",
+    href: "/dashboard",
+    label: "Cards",
+    icon: Library
+  },
+  {
+    href: "/practice",
+    label: "Practice",
     icon: Sparkles
   },
   {
     href: "/stats",
     label: "Stats",
     icon: BarChart3
+  },
+  {
+    href: "/profile",
+    label: "Profile",
+    icon: UserRound
+  }
+]
+
+export const appMobileNavItems: NavItem[] = [
+  {
+    href: "/",
+    label: "Home",
+    icon: House,
+    match: (pathname) => pathname === "/"
+  },
+  {
+    href: "/practice",
+    label: "Practice",
+    icon: Sparkles,
+    match: (pathname) => pathname === "/practice" || pathname === "/review"
+  },
+  {
+    href: "/profile",
+    label: "Profile",
+    icon: UserRound
   }
 ]
 
@@ -44,7 +75,7 @@ export const adminNavItems: NavItem[] = [
   {
     href: "/admin/cards",
     label: "Cards",
-    icon: BookCopy,
+    icon: Library,
     match: (pathname) => pathname.startsWith("/admin/cards")
   },
   {

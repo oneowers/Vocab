@@ -30,16 +30,11 @@ export function QuizCard({ card, options, onResolved }: QuizCardProps) {
   }
 
   return (
-    <div className="panel rounded-[2rem] p-6">
+    <div className="panel p-6">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-sm text-muted">Choose the right translation</p>
-          <p
-            className="mt-3 text-4xl text-ink"
-            style={{ fontFamily: "\"DM Serif Display\", Georgia, serif" }}
-          >
-            {card.original}
-          </p>
+          <p className="text-[15px] text-text-secondary">Choose the right translation</p>
+          <p className="mt-3 text-[28px] font-bold tracking-[-0.5px] text-text-primary">{card.original}</p>
         </div>
         {canSpeak() ? (
           <button
@@ -59,12 +54,12 @@ export function QuizCard({ card, options, onResolved }: QuizCardProps) {
           const isCorrect = option === card.translation
           const isSelected = selected === option
           const className = !selected
-            ? "border-line bg-white text-ink hover:border-ink"
+            ? "border-separator bg-bg-primary text-text-primary hover:border-accent"
             : isCorrect
-              ? "border-green-200 bg-successBg text-successText"
+              ? "border-separator bg-successBg text-successText"
               : isSelected
-                ? "border-red-200 bg-dangerBg text-dangerText"
-                : "border-line bg-[#F4F5F7] text-quiet"
+                ? "border-separator bg-dangerBg text-dangerText"
+                : "border-separator bg-bg-secondary text-text-tertiary"
 
           return (
             <button

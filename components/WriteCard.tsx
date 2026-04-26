@@ -42,16 +42,11 @@ export function WriteCard({ card, onResolved }: WriteCardProps) {
   }
 
   return (
-    <div className="panel rounded-[2rem] p-6">
+    <div className="panel p-6">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-sm text-muted">Type the translation</p>
-          <p
-            className="mt-3 text-4xl text-ink"
-            style={{ fontFamily: "\"DM Serif Display\", Georgia, serif" }}
-          >
-            {card.original}
-          </p>
+          <p className="text-[15px] text-text-secondary">Type the translation</p>
+          <p className="mt-3 text-[28px] font-bold tracking-[-0.5px] text-text-primary">{card.original}</p>
         </div>
         {canSpeak() ? (
           <button
@@ -74,8 +69,11 @@ export function WriteCard({ card, onResolved }: WriteCardProps) {
             handleSubmit()
           }
         }}
+        autoCapitalize="none"
+        autoCorrect="off"
+        autoComplete="off"
         placeholder="Type the translation..."
-        className="mt-6 min-h-[52px] w-full rounded-2xl border border-line px-4 py-3 outline-none transition focus:border-ink"
+        className="input-field mt-6"
       />
       <button
         type="button"
@@ -87,7 +85,7 @@ export function WriteCard({ card, onResolved }: WriteCardProps) {
 
       {result ? (
         <div
-          className={`mt-5 rounded-[1.5rem] px-4 py-4 text-sm ${
+          className={`mt-5 rounded-[16px] px-4 py-4 text-[15px] ${
             result === "known"
               ? "bg-successBg text-successText"
               : "bg-dangerBg text-dangerText"

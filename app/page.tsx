@@ -1,18 +1,15 @@
-import { redirect } from "next/navigation"
+import { AppShell } from "@/components/AppShell"
+import { DashboardView } from "@/components/DashboardView"
 
-import { isGuestModeEnabled } from "@/lib/config"
-import { getOptionalAuthUser } from "@/lib/auth"
+import { requireSignedInAppUser } from "@/lib/auth"
+import { serializeUser } from "@/lib/serializers"
 
 export default async function HomePage() {
-  const user = await getOptionalAuthUser()
+  const user = await requireSignedInAppUser()
 
-  if (user) {
-    redirect("/dashboard")
-  }
-
-  if (isGuestModeEnabled()) {
-    redirect("/login")
-  }
-
-  redirect("/login")
+  return (
+    <AppShell user={user ? serializeUser(user) : null}>
+      <DashboardView />
+    </AppShell>
+  )
 }

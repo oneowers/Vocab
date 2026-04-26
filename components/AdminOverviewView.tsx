@@ -81,10 +81,7 @@ export function AdminOverviewView() {
         <h2 className="text-lg font-semibold text-ink">Recent activity</h2>
         <div className="mt-5 space-y-3">
           {data.recentActivity.map((item) => (
-            <div
-              key={item.id}
-              className="rounded-[1.5rem] border border-line bg-white px-4 py-4"
-            >
+            <div key={item.id} className="rounded-[1.5rem] border border-separator bg-bg-primary px-4 py-4">
               <p className="font-medium text-ink">
                 {item.email} reviewed <span className="font-semibold">{item.word}</span>
               </p>
@@ -98,4 +95,3 @@ export function AdminOverviewView() {
     </div>
   )
 }
-

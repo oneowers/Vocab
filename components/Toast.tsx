@@ -52,7 +52,7 @@ export function ToastProvider({
                 ? "border-line bg-successBg text-successText"
                 : toast.tone === "error"
                   ? "border-line bg-dangerBg text-dangerText"
-                  : "border-line bg-background-primary/90 text-ink"
+                  : "border-line bg-bg-primary/90 text-ink"
             }`}
           >
             {toast.message}

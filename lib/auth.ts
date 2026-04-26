@@ -55,7 +55,7 @@ export async function requireAdminAppUser() {
   }
 
   if (user.role !== "ADMIN") {
-    redirect("/dashboard")
+    redirect("/")
   }
 
   return user
@@ -75,4 +75,3 @@ export function getDisplayName(sessionUser: SupabaseUser | null) {
 
   return metadataName || sessionUser.email || null
 }
-

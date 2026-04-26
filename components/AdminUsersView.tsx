@@ -167,13 +167,16 @@ export function AdminUsersView() {
                 setSearch(event.target.value)
                 setPage(1)
               }}
+              autoCapitalize="none"
+              autoCorrect="off"
+              autoComplete="off"
               placeholder="Search name or email"
-              className="min-h-[44px] rounded-2xl border border-line bg-white px-4 py-3 outline-none transition focus:border-ink"
+              className="input-field"
             />
             <button
               type="button"
               onClick={() => void handleExportCsv()}
-              className="button-secondary min-h-[44px] px-4 py-2 text-sm font-medium"
+              className="button-secondary"
             >
               Export CSV
             </button>
@@ -184,7 +187,46 @@ export function AdminUsersView() {
           <div className="skeleton h-80 rounded-[1.75rem]" />
         ) : (
           <>
-            <table className="min-w-full text-left text-sm">
+            <div className="space-y-3 md:hidden">
+              {payload.items.map((user) => (
+                <article key={user.id} className="rounded-card border border-separator bg-bg-primary p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[17px] font-semibold text-text-primary">{user.name || "—"}</p>
+                      <p className="mt-1 text-[15px] text-text-secondary">{user.email}</p>
+                    </div>
+                    <span className="rounded-full bg-bg-secondary px-3 py-1 text-xs font-semibold text-text-primary">
+                      {user.role}
+                    </span>
+                  </div>
+                  <div className="mt-4 grid grid-cols-2 gap-3 text-[13px] text-text-tertiary">
+                    <div>Cards: {user.cardCount}</div>
+                    <div>Reviews: {user.reviewCount}</div>
+                    <div>Streak: {user.streak}</div>
+                    <div>Last active: {user.lastActiveAt ? formatTimestamp(user.lastActiveAt) : "—"}</div>
+                  </div>
+                  <div className="mt-4 flex flex-col gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void handleRoleToggle(user)}
+                      disabled={submitting}
+                      className="button-secondary"
+                    >
+                      {user.role === "ADMIN" ? "Demote to User" : "Promote to Admin"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedUser(user)}
+                      className="button-secondary border-separator text-dangerText"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            <table className="hidden min-w-full text-left text-sm md:table">
               <thead className="text-quiet">
                 <tr>
                   {[
@@ -208,14 +250,14 @@ export function AdminUsersView() {
                 {payload.items.map((user) => (
                   <tr key={user.id} className="border-t border-line">
                     <td className="px-3 py-4">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-sm font-semibold text-ink">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-bg-secondary text-sm font-semibold text-text-primary">
                         {(user.name || user.email).slice(0, 1).toUpperCase()}
                       </div>
                     </td>
                     <td className="px-3 py-4 font-medium text-ink">{user.name || "—"}</td>
                     <td className="px-3 py-4 text-muted">{user.email}</td>
                     <td className="px-3 py-4">
-                      <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-ink">
+                      <span className="rounded-full bg-bg-secondary px-3 py-1 text-xs font-semibold text-text-primary">
                         {user.role}
                       </span>
                     </td>
@@ -238,7 +280,7 @@ export function AdminUsersView() {
                         <button
                           type="button"
                           onClick={() => setSelectedUser(user)}
-                          className="rounded-full border border-red-200 px-3 py-2 text-xs font-medium text-dangerText transition hover:bg-dangerBg"
+                          className="button-secondary border-separator px-3 py-2 text-xs font-medium text-dangerText"
                         >
                           Delete
                         </button>
@@ -249,7 +291,7 @@ export function AdminUsersView() {
               </tbody>
             </table>
 
-            <div className="mt-4 flex items-center justify-between">
+            <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <p className="text-sm text-muted">
                 Page {payload.page} of {payload.totalPages}
               </p>
@@ -258,7 +300,7 @@ export function AdminUsersView() {
                   type="button"
                   onClick={() => setPage((current) => Math.max(current - 1, 1))}
                   disabled={page === 1}
-                  className="button-secondary px-4 py-2 text-sm font-medium"
+                  className="button-secondary"
                 >
                   Previous
                 </button>
@@ -270,7 +312,7 @@ export function AdminUsersView() {
                     )
                   }
                   disabled={page >= payload.totalPages}
-                  className="button-secondary px-4 py-2 text-sm font-medium"
+                  className="button-secondary"
                 >
                   Next
                 </button>
@@ -295,4 +337,3 @@ export function AdminUsersView() {
     </>
   )
 }
-

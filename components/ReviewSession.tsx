@@ -197,19 +197,21 @@ export function ReviewSession() {
 
   if (!started) {
     return (
-      <section className="panel mx-auto max-w-3xl rounded-[2rem] p-6">
+      <section className="panel mx-auto max-w-3xl p-6">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-quiet">
               Review
             </p>
-            <h1 className="mt-2 text-3xl font-semibold text-ink">Start today&apos;s session</h1>
-            <p className="mt-3 text-sm leading-6 text-muted">
+            <h1 className="mt-2 text-[28px] font-bold tracking-[-0.5px] text-text-primary">
+              Start today&apos;s session
+            </h1>
+            <p className="mt-3 text-[15px] leading-6 text-text-secondary">
               Choose a mode, filter by tag if you want, and work through every due card.
             </p>
           </div>
           <Link
-            href="/dashboard"
+            href="/"
             prefetch
             className="button-secondary inline-flex px-4 py-2 text-sm font-medium"
           >
@@ -229,11 +231,11 @@ export function ReviewSession() {
               onClick={() => setMode(item.value as ReviewMode)}
               className={`rounded-[1.75rem] border px-5 py-5 text-left ${
                 mode === item.value
-                  ? "border-ink bg-ink text-white"
-                  : "border-line bg-white text-ink"
+                  ? "border-accent bg-accent text-accentForeground"
+                  : "border-separator bg-bg-primary text-text-primary"
               }`}
             >
-              <p className="text-sm font-medium">{item.label}</p>
+              <p className="text-[15px] font-semibold">{item.label}</p>
             </button>
           ))}
         </div>
@@ -242,9 +244,8 @@ export function ReviewSession() {
           <button
             type="button"
             onClick={() => setSelectedTag("All")}
-            className={`rounded-full px-4 py-2 text-sm font-medium ${
-              selectedTag === "All" ? "bg-ink text-white" : "bg-[#F4F5F7] text-muted"
-            }`}
+            className="chip-button"
+            data-active={selectedTag === "All"}
           >
             All
           </button>
@@ -253,9 +254,8 @@ export function ReviewSession() {
               key={tag}
               type="button"
               onClick={() => setSelectedTag(tag)}
-              className={`rounded-full px-4 py-2 text-sm font-medium ${
-                selectedTag === tag ? "bg-ink text-white" : "bg-[#F4F5F7] text-muted"
-              }`}
+              className="chip-button"
+              data-active={selectedTag === tag}
             >
               {tag}
             </button>
@@ -268,9 +268,9 @@ export function ReviewSession() {
           </div>
         ) : null}
 
-        <div className="mt-6 rounded-[1.75rem] border border-line bg-[#FCFCFD] px-5 py-5">
-          <p className="text-sm text-muted">
-            Cards due now: <span className="font-semibold text-ink">{sessionCards.length}</span>
+        <div className="mt-6 rounded-[1.75rem] border border-separator bg-bg-secondary px-5 py-5">
+          <p className="text-[15px] text-text-secondary">
+            Cards due now: <span className="font-semibold text-text-primary">{sessionCards.length}</span>
           </p>
         </div>
 
@@ -299,17 +299,17 @@ export function ReviewSession() {
     const accuracy = total ? Math.round((correct / total) * 100) : 0
 
     return (
-      <section className="panel mx-auto max-w-3xl rounded-[2rem] p-6 text-center">
+      <section className="panel mx-auto max-w-3xl p-6 text-center">
         <p className="text-xs font-semibold uppercase tracking-[0.28em] text-quiet">
           Session complete
         </p>
-        <h1 className="mt-3 text-4xl font-semibold text-ink">Session complete! 🎉</h1>
-        <p className="mt-4 text-sm text-muted">
+        <h1 className="mt-3 text-[28px] font-bold tracking-[-0.5px] text-text-primary">Session complete!</h1>
+        <p className="mt-4 text-[15px] text-text-secondary">
           Correct: {correct} | Wrong: {wrong} | Accuracy: {accuracy}%
         </p>
-        <p className="mt-2 text-sm text-muted">🔥 Streak: {streak} days!</p>
+        <p className="mt-2 text-[15px] text-text-secondary">Streak: {streak} days</p>
         <Link
-          href="/dashboard"
+          href="/"
           prefetch
           className="button-primary mt-8 inline-flex min-h-[48px] px-5 py-3 text-sm font-medium"
         >
@@ -323,7 +323,7 @@ export function ReviewSession() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
-      <div className="panel rounded-[2rem] p-5">
+      <div className="panel p-5">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-sm font-medium text-ink">
@@ -334,16 +334,16 @@ export function ReviewSession() {
             </p>
           </div>
           <Link
-            href="/dashboard"
+            href="/"
             prefetch
             className="button-secondary inline-flex px-4 py-2 text-sm font-medium"
           >
             Exit
           </Link>
         </div>
-        <div className="mt-4 h-3 rounded-full bg-[#F4F5F7]">
+        <div className="mt-4 h-3 rounded-full bg-bg-secondary">
           <div
-            className="h-3 rounded-full bg-ink transition-all"
+            className="h-3 rounded-full bg-accent transition-all"
             style={{ width: `${progress}%` }}
           />
         </div>

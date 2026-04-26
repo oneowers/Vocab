@@ -89,8 +89,11 @@ export function AdminCardsView() {
               setSearch(event.target.value)
               setPage(1)
             }}
+            autoCapitalize="none"
+            autoCorrect="off"
+            autoComplete="off"
             placeholder="Search word or user email"
-            className="min-h-[44px] rounded-2xl border border-line bg-white px-4 py-3 outline-none transition focus:border-ink"
+            className="input-field"
           />
         }
       >
@@ -98,7 +101,31 @@ export function AdminCardsView() {
           <div className="skeleton h-80 rounded-[1.75rem]" />
         ) : (
           <>
-            <table className="min-w-full text-left text-sm">
+            <div className="space-y-3 md:hidden">
+              {payload.items.map((card) => (
+                <article key={card.id} className="rounded-card border border-separator bg-bg-primary p-4">
+                  <div className="space-y-1">
+                    <p className="text-[17px] font-semibold text-text-primary">{card.original}</p>
+                    <p className="text-[15px] text-text-secondary">{card.translation}</p>
+                  </div>
+                  <div className="mt-4 grid grid-cols-2 gap-3 text-[13px] text-text-tertiary">
+                    <div>Direction: {card.direction}</div>
+                    <div>Reviews: {card.reviewCount}</div>
+                    <div>User: {card.userEmail || "—"}</div>
+                    <div>Added: {formatTimestamp(card.dateAdded)}</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCard(card)}
+                    className="button-secondary mt-4 w-full border-separator text-dangerText"
+                  >
+                    Delete
+                  </button>
+                </article>
+              ))}
+            </div>
+
+            <table className="hidden min-w-full text-left text-sm md:table">
               <thead className="text-quiet">
                 <tr>
                   {[
@@ -129,7 +156,7 @@ export function AdminCardsView() {
                       <button
                         type="button"
                         onClick={() => setSelectedCard(card)}
-                        className="rounded-full border border-red-200 px-3 py-2 text-xs font-medium text-dangerText transition hover:bg-dangerBg"
+                        className="button-secondary border-separator px-3 py-2 text-xs font-medium text-dangerText"
                       >
                         Delete
                       </button>
@@ -139,7 +166,7 @@ export function AdminCardsView() {
               </tbody>
             </table>
 
-            <div className="mt-4 flex items-center justify-between">
+            <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <p className="text-sm text-muted">
                 Page {payload.page} of {payload.totalPages}
               </p>
@@ -148,7 +175,7 @@ export function AdminCardsView() {
                   type="button"
                   onClick={() => setPage((current) => Math.max(current - 1, 1))}
                   disabled={page === 1}
-                  className="button-secondary px-4 py-2 text-sm font-medium"
+                  className="button-secondary"
                 >
                   Previous
                 </button>
@@ -160,7 +187,7 @@ export function AdminCardsView() {
                     )
                   }
                   disabled={page >= payload.totalPages}
-                  className="button-secondary px-4 py-2 text-sm font-medium"
+                  className="button-secondary"
                 >
                   Next
                 </button>
@@ -185,4 +212,3 @@ export function AdminCardsView() {
     </>
   )
 }
-

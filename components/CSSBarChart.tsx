@@ -9,11 +9,11 @@ interface CSSBarChartProps {
 }
 
 const toneMap = {
-  ink: "from-[#1A1A2E] to-[#40406A]",
-  gold: "from-[#F59E0B] to-[#FBBF24]",
-  green: "from-[#137333] to-[#5AA469]",
-  rose: "from-[#C5221F] to-[#EA6B66]"
-}
+  ink: "linear-gradient(180deg, var(--accent) 0%, var(--text-primary) 100%)",
+  gold: "linear-gradient(180deg, var(--warning) 0%, var(--accent) 100%)",
+  green: "linear-gradient(180deg, var(--success) 0%, var(--accent) 100%)",
+  rose: "linear-gradient(180deg, var(--destructive) 0%, var(--accent) 100%)"
+} satisfies Record<NonNullable<CSSBarChartProps["tone"]>, string>
 
 export function CSSBarChart({
   title,
@@ -25,7 +25,7 @@ export function CSSBarChart({
   const gridClassName = points.length > 7 ? "grid-cols-10" : "grid-cols-7"
 
   return (
-    <section className="panel rounded-[2rem] p-5">
+    <section className="panel p-5">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-ink">{title}</h2>
         <span className="text-xs uppercase tracking-[0.24em] text-quiet">
@@ -35,10 +35,11 @@ export function CSSBarChart({
       <div className={`mt-6 grid ${gridClassName} gap-2 ${heightClassName}`}>
         {points.map((point) => (
           <div key={point.date} className="flex min-w-0 flex-col justify-end">
-            <div className="flex-1 rounded-2xl bg-[#F4F5F7] p-1">
+            <div className="flex-1 rounded-2xl bg-bg-secondary p-1">
               <div
-                className={`w-full rounded-[1rem] bg-gradient-to-t ${toneMap[tone]} transition-all`}
+                className="w-full rounded-[1rem] transition-all"
                 style={{
+                  background: toneMap[tone],
                   height: `${Math.max((point.value / peak) * 100, point.value > 0 ? 8 : 0)}%`
                 }}
               />

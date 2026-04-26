@@ -9,7 +9,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server"
 export async function GET(request: NextRequest) {
   const redirectTo = new URL("/login", request.url)
   const code = request.nextUrl.searchParams.get("code")
-  const nextPath = request.nextUrl.searchParams.get("next") || "/dashboard"
+  const nextPath = request.nextUrl.searchParams.get("next") || "/"
   const supabase = createSupabaseServerClient()
 
   if (!supabase || !code) {
@@ -81,4 +81,3 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.redirect(new URL(nextPath, request.url))
 }
-

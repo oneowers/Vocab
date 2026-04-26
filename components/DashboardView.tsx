@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ChangeEvent } from "react"
 
 import { CardList } from "@/components/CardList"
 import { ConfirmModal } from "@/components/ConfirmModal"
+import { GuestBanner } from "@/components/GuestBanner"
 import { TranslatorPanel } from "@/components/TranslatorPanel"
 import { useToast } from "@/components/Toast"
 import { getTodayDateKey } from "@/lib/date"
@@ -187,14 +188,10 @@ export function DashboardView() {
 
   if (loading) {
     return (
-      <div className="space-y-5">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {Array.from({ length: 4 }, (_, index) => (
-            <div key={index} className="skeleton h-28 rounded-[2rem]" />
-          ))}
-        </div>
-        <div className="skeleton h-80 rounded-[2rem]" />
-        <div className="skeleton h-96 rounded-[2rem]" />
+      <div className="space-y-4">
+        <div className="skeleton h-11 rounded-card" />
+        <div className="skeleton min-h-[28rem] rounded-[20px]" />
+        <div className="skeleton h-96 rounded-card" />
       </div>
     )
   }
@@ -209,22 +206,20 @@ export function DashboardView() {
         onChange={(event) => void handleImportFile(event)}
       />
 
-      <div className="space-y-5">
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {[
-            { label: "Streak", value: `${summary.streak}`, suffix: "days" },
-            { label: "Total cards", value: `${summary.totalCards}`, suffix: "saved" },
-            { label: "Due today", value: `${summary.dueToday}`, suffix: "ready" },
-            { label: "Mastered", value: `${summary.mastered}`, suffix: "stable" }
-          ].map((item) => (
-            <article key={item.label} className="panel rounded-[2rem] p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-quiet">
-                {item.label}
-              </p>
-              <p className="mt-4 text-4xl font-semibold text-ink">{item.value}</p>
-              <p className="mt-2 text-sm text-muted">{item.suffix}</p>
-            </article>
-          ))}
+      <div className="space-y-4">
+        <section className="stats-strip">
+          <div className="stats-strip-item">
+            <span className="stats-strip-value">{summary.streak}</span>
+            <span className="stats-strip-label">Streak</span>
+          </div>
+          <div className="stats-strip-item">
+            <span className="stats-strip-value">{summary.dueToday}</span>
+            <span className="stats-strip-label">Due</span>
+          </div>
+          <div className="stats-strip-item">
+            <span className="stats-strip-value">{summary.mastered}</span>
+            <span className="stats-strip-label">Mastered</span>
+          </div>
         </section>
 
         <TranslatorPanel
@@ -234,6 +229,8 @@ export function DashboardView() {
             updateCards(nextCards)
           }}
         />
+
+        <GuestBanner />
 
         <CardList
           cards={visibleCards}

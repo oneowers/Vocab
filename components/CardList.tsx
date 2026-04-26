@@ -31,20 +31,14 @@ export function CardList({
   guestMode
 }: CardListProps) {
   return (
-    <section className="panel rounded-[2rem] p-5">
+    <section className="panel p-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-quiet">
-            Deck
-          </p>
-          <h2 className="mt-2 text-2xl font-semibold text-ink">Your saved cards</h2>
+          <p className="section-label">Deck</p>
+          <h2 className="mt-2 text-[22px] font-bold tracking-[-0.5px] text-text-primary">Your saved cards</h2>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={onExport}
-            className="button-secondary min-h-[44px] px-4 py-2 text-sm font-medium"
-          >
+          <button type="button" onClick={onExport} className="button-secondary">
             Export JSON
           </button>
           <button
@@ -52,7 +46,7 @@ export function CardList({
             onClick={onImport}
             disabled={guestMode}
             title={guestMode ? getTooltipMessage() : undefined}
-            className="button-secondary min-h-[44px] px-4 py-2 text-sm font-medium"
+            className="button-secondary"
           >
             Import JSON
           </button>
@@ -64,9 +58,8 @@ export function CardList({
           <button
             type="button"
             onClick={() => onSelectTag("All")}
-            className={`rounded-full px-4 py-2 text-sm font-medium ${
-              selectedTag === "All" ? "bg-ink text-white" : "bg-[#F4F5F7] text-muted"
-            }`}
+            className="chip-button"
+            data-active={selectedTag === "All"}
           >
             All
           </button>
@@ -75,9 +68,8 @@ export function CardList({
               key={tag}
               type="button"
               onClick={() => onSelectTag(tag)}
-              className={`rounded-full px-4 py-2 text-sm font-medium ${
-                selectedTag === tag ? "bg-ink text-white" : "bg-[#F4F5F7] text-muted"
-              }`}
+              className="chip-button"
+              data-active={selectedTag === tag}
             >
               {tag}
             </button>
@@ -86,8 +78,11 @@ export function CardList({
         <input
           value={search}
           onChange={(event) => onSearchChange(event.target.value)}
+          autoCapitalize="none"
+          autoCorrect="off"
+          autoComplete="off"
           placeholder="Search word or translation"
-          className="min-h-[44px] w-full max-w-sm rounded-2xl border border-line px-4 py-3 outline-none transition focus:border-ink"
+          className="input-field w-full max-w-sm"
         />
       </div>
 
@@ -96,12 +91,12 @@ export function CardList({
           cards.map((card) => (
             <article
               key={card.id}
-              className="rounded-[1.75rem] border border-line bg-white p-4 transition hover:-translate-y-0.5 hover:shadow-panel"
+              className="rounded-card border border-separator bg-bg-primary p-4 transition hover:-translate-y-0.5 hover:shadow-panel"
             >
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <div className="flex items-center gap-3">
-                    <h3 className="text-xl font-semibold text-ink">{card.original}</h3>
+                    <h3 className="text-[22px] font-bold tracking-[-0.5px] text-text-primary">{card.original}</h3>
                     {canSpeak() ? (
                       <button
                         type="button"
@@ -117,12 +112,12 @@ export function CardList({
                       </button>
                     ) : null}
                   </div>
-                  <p className="mt-2 text-sm text-muted">{card.translation}</p>
+                  <p className="mt-2 text-[15px] text-text-secondary">{card.translation}</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {card.tags.map((tag) => (
                       <span
                         key={`${card.id}-${tag}`}
-                        className="rounded-full bg-[#F4F5F7] px-3 py-1 text-xs font-medium text-muted"
+                        className="rounded-full bg-bg-secondary px-3 py-1 text-xs font-medium text-text-secondary"
                       >
                         {tag}
                       </span>
@@ -130,7 +125,7 @@ export function CardList({
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-3 text-sm text-muted lg:items-end">
+                <div className="flex flex-col gap-3 text-[15px] text-text-secondary lg:items-end">
                   <p>Next review: {formatDateLabel(card.nextReviewDate)}</p>
                   <div className="flex gap-2">
                     <button
@@ -138,7 +133,7 @@ export function CardList({
                       onClick={() => onDeleteRequest(card)}
                       disabled={guestMode}
                       title={guestMode ? getTooltipMessage() : undefined}
-                      className="rounded-full border border-red-200 px-4 py-2 text-sm font-medium text-dangerText transition hover:bg-dangerBg disabled:cursor-not-allowed disabled:border-line disabled:text-quiet"
+                      className="button-secondary border-separator text-dangerText disabled:text-text-tertiary"
                     >
                       Delete
                     </button>
@@ -148,7 +143,7 @@ export function CardList({
             </article>
           ))
         ) : (
-          <div className="rounded-[1.75rem] border border-dashed border-line bg-white px-5 py-10 text-center text-sm text-muted">
+          <div className="rounded-card border border-dashed border-separator bg-bg-primary px-5 py-10 text-center text-[15px] text-text-secondary">
             No cards match this filter yet.
           </div>
         )}
@@ -156,4 +151,3 @@ export function CardList({
     </section>
   )
 }
-

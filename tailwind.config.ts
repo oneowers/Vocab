@@ -9,16 +9,29 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        bg: {
+          primary: "var(--bg-primary)",
+          secondary: "var(--bg-secondary)",
+          tertiary: "var(--bg-tertiary)"
+        },
+        text: {
+          primary: "var(--text-primary)",
+          secondary: "var(--text-secondary)",
+          tertiary: "var(--text-tertiary)"
+        },
         ink: "var(--text-primary)",
         shell: "var(--bg-secondary)",
         line: "var(--separator)",
         muted: "var(--text-secondary)",
         quiet: "var(--text-tertiary)",
         accent: "var(--accent)",
+        separator: "var(--separator)",
+        destructive: "var(--destructive)",
+        accentForeground: "var(--accent-foreground)",
         successBg: "var(--success-soft)",
         successText: "var(--success)",
-        dangerBg: "var(--danger-soft)",
-        dangerText: "var(--danger)",
+        dangerBg: "var(--destructive-soft)",
+        dangerText: "var(--destructive)",
         guestBg: "var(--warning-soft)",
         guestText: "var(--text-secondary)",
         background: {

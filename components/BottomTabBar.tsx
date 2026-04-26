@@ -40,10 +40,14 @@ export function BottomTabBar({
               prefetch
               aria-current={active ? "page" : undefined}
               className={`flex min-w-0 flex-1 scale-100 flex-col items-center justify-center gap-0.5 px-2 text-[10px] font-semibold leading-none transition-transform duration-300 ease-[var(--ease-standard)] active:scale-[0.88] motion-reduce:transition-none ${
-                active ? "text-accent" : "text-quiet"
+                active ? "text-accent" : "text-text-tertiary"
               }`}
             >
-              <Icon size={24} strokeWidth={active ? 2.4 : 1.9} />
+              <Icon
+                size={24}
+                strokeWidth={active ? 2.25 : 1.9}
+                fill={active ? "currentColor" : "none"}
+              />
               <span className="truncate">{item.label}</span>
             </Link>
           )

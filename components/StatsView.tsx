@@ -170,10 +170,7 @@ export function StatsView() {
           <div className="mt-5 space-y-3">
             {stats.hardestCards.length ? (
               stats.hardestCards.map((card) => (
-                <div
-                  key={card.id}
-                  className="rounded-[1.5rem] border border-line bg-white px-4 py-4"
-                >
+                <div key={card.id} className="rounded-[1.5rem] border border-separator bg-bg-primary px-4 py-4">
                   <p className="font-semibold text-ink">
                     {card.original} <span className="font-normal text-muted">→ {card.translation}</span>
                   </p>
@@ -192,10 +189,7 @@ export function StatsView() {
         <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {stats.tagBreakdown.length ? (
             stats.tagBreakdown.map((item) => (
-              <div
-                key={item.tag}
-                className="rounded-[1.5rem] border border-line bg-white px-4 py-4"
-              >
+              <div key={item.tag} className="rounded-[1.5rem] border border-separator bg-bg-primary px-4 py-4">
                 <p className="font-semibold text-ink">{item.tag}</p>
                 <p className="mt-1 text-sm text-muted">{item.count} cards</p>
               </div>

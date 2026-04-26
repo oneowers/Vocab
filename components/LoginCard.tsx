@@ -17,7 +17,7 @@ export function LoginCard({ guestModeEnabled }: LoginCardProps) {
   const { showToast } = useToast()
 
   useEffect(() => {
-    router.prefetch("/dashboard")
+    router.prefetch("/")
   }, [router])
 
   async function handleGoogleSignIn() {
@@ -47,19 +47,21 @@ export function LoginCard({ guestModeEnabled }: LoginCardProps) {
     setLoading("guest")
     setGuestSessionActive(true)
     getGuestCards()
-    router.push("/dashboard")
+    router.push("/")
   }
 
   return (
-    <div className="panel mx-auto w-full max-w-lg rounded-[2rem] p-8 text-center">
-      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[1.5rem] bg-ink text-2xl font-semibold text-white">
+    <div className="panel mx-auto w-full max-w-lg p-8 text-center">
+      <div className="brand-mark mx-auto h-16 w-16 text-2xl font-semibold">
         W
       </div>
       <p className="mt-5 text-xs font-semibold uppercase tracking-[0.32em] text-quiet">
         WordFlow
       </p>
-      <h1 className="mt-3 text-4xl font-semibold text-ink">Learn words with rhythm.</h1>
-      <p className="mt-4 text-sm leading-6 text-muted">
+      <h1 className="mt-3 text-[34px] font-bold tracking-[-0.5px] text-text-primary">
+        Learn words with rhythm.
+      </h1>
+      <p className="mt-4 text-[15px] leading-6 text-text-secondary">
         Translate vocabulary, build your deck, and return every day for spaced repetition.
       </p>
 
@@ -85,7 +87,7 @@ export function LoginCard({ guestModeEnabled }: LoginCardProps) {
       </div>
 
       {guestModeEnabled ? (
-        <p className="mt-4 text-sm text-quiet">
+        <p className="mt-4 text-[15px] text-text-tertiary">
           Guest mode — your progress will not be saved.
         </p>
       ) : null}

@@ -18,14 +18,9 @@ export function FlipCard({ card, onAnswer }: FlipCardProps) {
   }, [card.id])
 
   return (
-    <div className="panel rounded-[2rem] p-6 text-center">
+    <div className="panel p-6 text-center">
       <div className="flex justify-center">
-        <p
-          className="text-5xl text-ink"
-          style={{ fontFamily: "\"DM Serif Display\", Georgia, serif" }}
-        >
-          {card.original}
-        </p>
+        <p className="text-[28px] font-bold tracking-[-0.5px] text-text-primary">{card.original}</p>
       </div>
       {canSpeak() ? (
         <button
@@ -49,10 +44,10 @@ export function FlipCard({ card, onAnswer }: FlipCardProps) {
         </button>
       ) : (
         <div className="mt-8">
-          <p className="text-2xl font-semibold text-ink">{card.translation}</p>
-          {card.phonetic ? <p className="mt-2 text-sm text-quiet">{card.phonetic}</p> : null}
+          <p className="text-[22px] font-bold tracking-[-0.5px] text-text-primary">{card.translation}</p>
+          {card.phonetic ? <p className="mt-2 text-[13px] text-text-tertiary">{card.phonetic}</p> : null}
           {card.example ? (
-            <p className="mt-4 rounded-[1.5rem] bg-[#F4F5F7] px-4 py-3 text-sm leading-6 text-muted">
+            <p className="mt-4 rounded-[16px] bg-bg-secondary px-4 py-3 text-[15px] leading-6 text-text-secondary">
               {card.example}
             </p>
           ) : null}
@@ -60,14 +55,14 @@ export function FlipCard({ card, onAnswer }: FlipCardProps) {
             <button
               type="button"
               onClick={() => onAnswer("unknown")}
-              className="min-h-[48px] rounded-full bg-dangerBg px-5 py-3 text-sm font-medium text-dangerText"
+              className="button-secondary border-separator bg-dangerBg text-dangerText"
             >
               ✗ Don&apos;t know
             </button>
             <button
               type="button"
               onClick={() => onAnswer("known")}
-              className="min-h-[48px] rounded-full bg-successBg px-5 py-3 text-sm font-medium text-successText"
+              className="button-secondary border-separator bg-successBg text-successText"
             >
               ✓ I know it
             </button>

@@ -25,7 +25,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className="bg-shell text-ink antialiased">
         <NextTopLoader
-          color="#007aff"
+          color="var(--accent)"
           crawlSpeed={160}
           height={2}
           easing="ease"
