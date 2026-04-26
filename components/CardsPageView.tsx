@@ -96,14 +96,20 @@ export function CardsPageView() {
       })
 
       if (!response.ok) {
-        throw new Error("Delete failed.")
+        const payload = (await response.json().catch(() => null)) as
+          | { error?: string }
+          | null
+        throw new Error(payload?.error || "Delete failed.")
       }
 
       setCards((current) => current.filter((card) => card.id !== cardToDelete.id))
       showToast("Card deleted.", "success")
       setCardToDelete(null)
-    } catch {
-      showToast("Could not delete the card.", "error")
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : "Could not delete the card.",
+        "error"
+      )
     } finally {
       setDeleting(false)
     }

@@ -142,10 +142,13 @@ export function CardList({
 
               <button
                 type="button"
-                onClick={() => onDeleteRequest(card)}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onDeleteRequest(card)
+                }}
                 disabled={guestMode}
                 title={guestMode ? getTooltipMessage() : undefined}
-                className="absolute right-2.5 top-2.5 inline-flex h-9 w-9 items-center justify-center rounded-full border border-separator bg-bg-secondary text-dangerText transition hover:border-transparent hover:bg-dangerBg disabled:border-separator disabled:bg-bg-secondary disabled:text-text-tertiary"
+                className="absolute right-2.5 top-2.5 z-10 inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-separator bg-bg-secondary text-dangerText transition hover:border-transparent hover:bg-dangerBg disabled:cursor-not-allowed disabled:border-separator disabled:bg-bg-secondary disabled:text-text-tertiary"
                 aria-label={`Delete ${card.original}`}
               >
                 <Trash2 size={16} />
