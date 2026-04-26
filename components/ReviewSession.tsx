@@ -113,6 +113,7 @@ export function ReviewSession() {
   }, [showToast])
 
   const availableCards = dueCards.filter((card) => matchesCardStatus(card, selectedStatus))
+  const allAvailableCards = allCards.filter((card) => matchesCardStatus(card, selectedStatus))
   const currentCard = roundCards[index]
 
   async function handleAnswer(result: ReviewResult) {
@@ -268,25 +269,47 @@ export function ReviewSession() {
           </div>
         ) : null}
 
-        <div className="mt-6 rounded-[1.75rem] border border-separator bg-bg-secondary px-5 py-5">
-          <p className="text-[15px] text-text-secondary">
-            Cards due now: <span className="font-semibold text-text-primary">{availableCards.length}</span>
-          </p>
+        <div className="mt-6 grid gap-3 md:grid-cols-2">
+          <div className="rounded-[1.75rem] border border-separator bg-bg-secondary px-5 py-5">
+            <p className="text-[15px] text-text-secondary">
+              Cards due now: <span className="font-semibold text-text-primary">{availableCards.length}</span>
+            </p>
+          </div>
+          <div className="rounded-[1.75rem] border border-separator bg-bg-secondary px-5 py-5">
+            <p className="text-[15px] text-text-secondary">
+              All matching cards: <span className="font-semibold text-text-primary">{allAvailableCards.length}</span>
+            </p>
+          </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => {
-            if (mode === "quiz" && allCards.length < 4) {
-              return
-            }
-            startRound(availableCards)
-          }}
-          disabled={!availableCards.length || (mode === "quiz" && allCards.length < 4)}
-          className="button-primary mt-6 min-h-[48px] px-5 py-3 text-sm font-medium"
-        >
-          Start session
-        </button>
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+          <button
+            type="button"
+            onClick={() => {
+              if (mode === "quiz" && availableCards.length < 4) {
+                return
+              }
+              startRound(availableCards)
+            }}
+            disabled={!availableCards.length || (mode === "quiz" && availableCards.length < 4)}
+            className="button-primary min-h-[48px] flex-1 px-5 py-3 text-sm font-medium"
+          >
+            Start due words
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (mode === "quiz" && allAvailableCards.length < 4) {
+                return
+              }
+              startRound(allAvailableCards)
+            }}
+            disabled={!allAvailableCards.length || (mode === "quiz" && allAvailableCards.length < 4)}
+            className="button-secondary min-h-[48px] flex-1 px-5 py-3 text-sm font-medium"
+          >
+            Repeat all words
+          </button>
+        </div>
       </section>
     )
   }
