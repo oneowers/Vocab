@@ -41,19 +41,34 @@ export function AdminOverviewView() {
   return (
     <div className="space-y-5">
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {[
-          { label: "Total users", value: data.totals.totalUsers },
-          { label: "Total cards", value: data.totals.totalCards },
-          { label: "Reviews today", value: data.totals.reviewsToday },
-          { label: "Active users (7 days)", value: data.totals.activeUsersLast7Days }
-        ].map((item) => (
-          <article key={item.label} className="panel-admin rounded-[2rem] p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-quiet">
-              {item.label}
-            </p>
-            <p className="mt-4 text-4xl font-semibold text-ink">{item.value}</p>
-          </article>
-        ))}
+        <CSSBarChart
+          title="Total users"
+          points={[{ date: "users", label: "Users", value: data.totals.totalUsers }]}
+          tone="gold"
+          heightClassName="h-28"
+          summaryLabel="users"
+        />
+        <CSSBarChart
+          title="Total cards"
+          points={[{ date: "cards", label: "Cards", value: data.totals.totalCards }]}
+          tone="green"
+          heightClassName="h-28"
+          summaryLabel="cards"
+        />
+        <CSSBarChart
+          title="Reviews today"
+          points={[{ date: "today", label: "Today", value: data.totals.reviewsToday }]}
+          tone="rose"
+          heightClassName="h-28"
+          summaryLabel="reviews"
+        />
+        <CSSBarChart
+          title="Active users (7 days)"
+          points={[{ date: "active", label: "Active", value: data.totals.activeUsersLast7Days }]}
+          tone="ink"
+          heightClassName="h-28"
+          summaryLabel="users"
+        />
       </section>
 
       <div className="grid gap-5 xl:grid-cols-2">
@@ -65,6 +80,7 @@ export function AdminOverviewView() {
             value: day.newUsers
           }))}
           tone="gold"
+          periodLabel="Last 30 days"
         />
         <CSSBarChart
           title="Review sessions per day"
@@ -74,6 +90,7 @@ export function AdminOverviewView() {
             value: day.totalSessions
           }))}
           tone="ink"
+          periodLabel="Last 30 days"
         />
       </div>
 

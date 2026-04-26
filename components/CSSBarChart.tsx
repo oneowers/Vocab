@@ -6,6 +6,9 @@ interface CSSBarChartProps {
   points: ChartPoint[]
   tone?: "ink" | "gold" | "green" | "rose"
   heightClassName?: string
+  summaryLabel?: string
+  periodLabel?: string
+  valueSuffix?: string
 }
 
 const toneMap = {
@@ -19,17 +22,22 @@ export function CSSBarChart({
   title,
   points,
   tone = "ink",
-  heightClassName = "h-40"
+  heightClassName = "h-40",
+  summaryLabel,
+  periodLabel,
+  valueSuffix = ""
 }: CSSBarChartProps) {
   const peak = Math.max(...points.map((point) => point.value), 1)
   const gridClassName = points.length > 7 ? "grid-cols-10" : "grid-cols-7"
+  const total = points.reduce((sum, point) => sum + point.value, 0)
+  const summary = summaryLabel ? `${total}${valueSuffix} ${summaryLabel}` : `Last ${points.length} days`
 
   return (
     <section className="panel p-5">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-ink">{title}</h2>
         <span className="text-xs uppercase tracking-[0.24em] text-quiet">
-          Last {points.length} days
+          {periodLabel || summary}
         </span>
       </div>
       <div className={`mt-6 grid ${gridClassName} gap-2 ${heightClassName}`}>
@@ -49,6 +57,7 @@ export function CSSBarChart({
             </span>
             <span className="text-center text-[11px] font-medium text-ink">
               {point.value}
+              {valueSuffix}
             </span>
           </div>
         ))}
