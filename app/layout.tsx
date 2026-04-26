@@ -1,12 +1,19 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import NextTopLoader from "nextjs-toploader"
 
 import { ToastProvider } from "@/components/Toast"
+import "@/styles/apple-theme.css"
 import "./globals.css"
 
 export const metadata: Metadata = {
   title: "WordFlow",
   description: "Spaced repetition vocabulary learning for English and Russian learners."
+}
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover"
 }
 
 export default function RootLayout({
@@ -15,20 +22,12 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body className="text-ink antialiased">
+    <html lang="en" suppressHydrationWarning>
+      <body className="bg-shell text-ink antialiased">
         <NextTopLoader
-          color="#111827"
+          color="#007aff"
           crawlSpeed={160}
-          height={3}
+          height={2}
           easing="ease"
           showSpinner={false}
         />

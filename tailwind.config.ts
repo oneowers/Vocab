@@ -9,20 +9,34 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: "#1A1A2E",
-        shell: "#F8F9FA",
-        line: "#E5E7EB",
-        muted: "#555555",
-        quiet: "#888888",
-        successBg: "#E6F4EA",
-        successText: "#137333",
-        dangerBg: "#FCE8E6",
-        dangerText: "#C5221F",
-        guestBg: "#FEF9C3",
-        guestText: "#854D0E"
+        ink: "var(--text-primary)",
+        shell: "var(--bg-secondary)",
+        line: "var(--separator)",
+        muted: "var(--text-secondary)",
+        quiet: "var(--text-tertiary)",
+        accent: "var(--accent)",
+        successBg: "var(--success-soft)",
+        successText: "var(--success)",
+        dangerBg: "var(--danger-soft)",
+        dangerText: "var(--danger)",
+        guestBg: "var(--warning-soft)",
+        guestText: "var(--text-secondary)",
+        background: {
+          primary: "var(--bg-primary)",
+          secondary: "var(--bg-secondary)",
+          tertiary: "var(--bg-tertiary)"
+        }
       },
       boxShadow: {
-        panel: "0 18px 40px rgba(26, 26, 46, 0.08)"
+        panel: "var(--shadow-card)",
+        subtle: "var(--shadow-subtle)",
+        modal: "var(--shadow-modal)"
+      },
+      borderRadius: {
+        card: "var(--radius-card)",
+        button: "var(--radius-button)",
+        input: "var(--radius-input)",
+        sheet: "var(--radius-sheet)"
       },
       keyframes: {
         "fade-in": {
@@ -39,8 +53,8 @@ const config: Config = {
         }
       },
       animation: {
-        "fade-in": "fade-in 180ms ease-out",
-        "slide-in": "slide-in 180ms ease-out",
+        "fade-in": "fade-in 320ms var(--ease-standard)",
+        "slide-in": "slide-in 320ms var(--ease-standard)",
         "pulse-soft": "pulseSoft 1.2s ease-in-out infinite"
       }
     }
@@ -49,4 +63,3 @@ const config: Config = {
 }
 
 export default config
-

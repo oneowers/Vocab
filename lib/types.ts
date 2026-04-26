@@ -1,6 +1,15 @@
+import type { LucideIcon } from "lucide-react"
+
 export type Role = "USER" | "ADMIN"
 export type Direction = "en-ru" | "ru-en"
 export type ReviewResult = "known" | "unknown"
+
+export interface NavItem {
+  href: string
+  label: string
+  icon: LucideIcon
+  match?: (pathname: string) => boolean
+}
 
 export interface CardRecord {
   id: string
@@ -131,4 +140,3 @@ export interface GuestReviewLog {
   result: ReviewResult
   createdAt: string
 }
-

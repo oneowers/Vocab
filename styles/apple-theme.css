@@ -1,0 +1,53 @@
+:root {
+  color-scheme: light;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f2f2f7;
+  --bg-tertiary: #ffffff;
+  --text-primary: #000000;
+  --text-secondary: #3c3c43;
+  --text-tertiary: #8e8e93;
+  --accent: #007aff;
+  --separator: rgba(60, 60, 67, 0.12);
+  --danger: #ff3b30;
+  --danger-soft: rgba(255, 59, 48, 0.12);
+  --success: #34c759;
+  --success-soft: rgba(52, 199, 89, 0.14);
+  --warning: #ffcc00;
+  --warning-soft: rgba(255, 204, 0, 0.18);
+  --radius-card: 12px;
+  --radius-button: 12px;
+  --radius-input: 10px;
+  --radius-sheet: 20px;
+  --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-modal: 0 16px 48px rgba(0, 0, 0, 0.12);
+  --duration-standard: 320ms;
+  --duration-slow: 350ms;
+  --ease-standard: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --tab-bar-height: calc(49px + var(--safe-area-bottom));
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg-primary: #000000;
+    --bg-secondary: #1c1c1e;
+    --bg-tertiary: #2c2c2e;
+    --text-primary: #ffffff;
+    --text-secondary: #ebebf5;
+    --text-tertiary: #8e8e93;
+    --accent: #0a84ff;
+    --separator: rgba(84, 84, 88, 0.6);
+    --danger: #ff453a;
+    --danger-soft: rgba(255, 69, 58, 0.18);
+    --success: #30d158;
+    --success-soft: rgba(48, 209, 88, 0.18);
+    --warning: #ffd60a;
+    --warning-soft: rgba(255, 214, 10, 0.16);
+    --shadow-subtle: none;
+    --shadow-card: none;
+    --shadow-modal: none;
+  }
+}

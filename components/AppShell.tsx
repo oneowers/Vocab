@@ -3,19 +3,16 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import { ArrowRight, LogOut } from "lucide-react"
 
+import { BottomTabBar } from "@/components/BottomTabBar"
 import { GuestBanner } from "@/components/GuestBanner"
 import { PageTransition } from "@/components/PageTransition"
 import { useToast } from "@/components/Toast"
+import { appNavItems } from "@/lib/navigation"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
 import type { AppUserRecord } from "@/lib/types"
 import { clearGuestSession, isGuestSessionActive } from "@/lib/guest"
-
-const navItems = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/review", label: "Review" },
-  { href: "/stats", label: "Stats" }
-]
 
 interface AppShellProps {
   user: AppUserRecord | null
@@ -56,82 +53,112 @@ export function AppShell({ user, children }: AppShellProps) {
   }
 
   const initials = (user?.name || user?.email || "G").slice(0, 1).toUpperCase()
+  const accountLabel = guestActive ? "Guest explorer" : user?.name || user?.email || "WordFlow user"
+  const accountRole = user?.role === "ADMIN" ? "Administrator" : guestActive ? "Guest mode" : "Learner"
 
   return (
-    <div className="min-h-screen">
-      <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-6 sm:px-6 lg:px-8">
-        <header className="panel sticky top-4 z-30 flex flex-col gap-4 rounded-[2rem] px-5 py-4 md:flex-row md:items-center md:justify-between">
-          <div>
+    <div className="min-h-screen bg-shell">
+      <div className="mx-auto flex min-h-screen w-full max-w-[1600px]">
+        <aside className="hidden min-h-screen w-[288px] flex-col justify-between border-r border-line bg-background-primary/80 px-6 py-8 backdrop-blur-xl md:flex">
+          <div className="space-y-8">
             <Link href="/dashboard" prefetch className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-[1.1rem] bg-ink text-lg font-semibold text-white">
+              <div className="flex h-12 w-12 items-center justify-center rounded-[14px] bg-accent text-lg font-semibold text-white">
                 W
               </div>
               <div>
-                <p className="text-xs uppercase tracking-[0.28em] text-quiet">WordFlow</p>
-                <p className="text-sm text-muted">Spaced repetition deck</p>
+                <p className="section-label">WordFlow</p>
+                <p className="mt-1 text-[15px] text-muted">Apple-inspired vocabulary studio</p>
               </div>
             </Link>
+
+            <nav className="space-y-2">
+              {appNavItems.map((item) => {
+                const active = item.match ? item.match(pathname) : pathname === item.href
+                const Icon = item.icon
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    prefetch
+                    aria-current={active ? "page" : undefined}
+                    className={`flex min-h-[52px] items-center gap-3 rounded-card px-4 text-[17px] font-semibold transition ${
+                      active
+                        ? "bg-background-primary text-accent shadow-subtle"
+                        : "text-muted hover:bg-background-primary hover:text-ink"
+                    }`}
+                  >
+                    <Icon size={20} strokeWidth={active ? 2.4 : 2} />
+                    <span>{item.label}</span>
+                  </Link>
+                )
+              })}
+              {user?.role === "ADMIN" ? (
+                <Link
+                  href="/admin"
+                  prefetch
+                  aria-current={pathname.startsWith("/admin") ? "page" : undefined}
+                  className={`flex min-h-[52px] items-center gap-3 rounded-card px-4 text-[17px] font-semibold transition ${
+                    pathname.startsWith("/admin")
+                      ? "bg-background-primary text-accent shadow-subtle"
+                      : "text-muted hover:bg-background-primary hover:text-ink"
+                  }`}
+                >
+                  <ArrowRight size={20} strokeWidth={pathname.startsWith("/admin") ? 2.4 : 2} />
+                  <span>Admin</span>
+                </Link>
+              ) : null}
+            </nav>
           </div>
 
-          <nav className="flex flex-wrap items-center gap-2">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                prefetch
-                className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-                  pathname === item.href
-                    ? "bg-ink text-white"
-                    : "text-muted hover:bg-[#F4F5F7] hover:text-ink"
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
-            {user?.role === "ADMIN" ? (
-              <Link
-                href="/admin"
-                prefetch
-                className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-                  pathname.startsWith("/admin")
-                    ? "bg-ink text-white"
-                    : "text-muted hover:bg-[#F4F5F7] hover:text-ink"
-                }`}
-              >
-                Admin
-              </Link>
-            ) : null}
-          </nav>
-
-          <div className="flex items-center gap-3">
-            <div className="hidden text-right md:block">
-              <p className="text-sm font-medium text-ink">
-                {guestActive ? "Guest explorer" : user?.name || user?.email || "WordFlow user"}
-              </p>
-              <p className="text-xs text-quiet">
-                {user?.role === "ADMIN" ? "ADMIN" : guestActive ? "Guest mode" : "Learner"}
-              </p>
+          <div className="panel space-y-4 p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-background-secondary text-sm font-semibold text-ink">
+                {initials}
+              </div>
+              <div>
+                <p className="text-[15px] font-semibold text-ink">{accountLabel}</p>
+                <p className="text-[13px] text-quiet">{accountRole}</p>
+              </div>
             </div>
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F4F5F7] text-sm font-semibold text-ink">
-              {initials}
-            </div>
-            <button
-              type="button"
-              onClick={handleExit}
-              className="button-secondary px-4 py-2 text-sm font-medium"
-            >
+            <button type="button" onClick={handleExit} className="button-secondary w-full">
+              <LogOut size={18} />
               {guestActive ? "Exit guest" : "Sign out"}
             </button>
           </div>
-        </header>
+        </aside>
 
-        <div className="mt-5">
-          <GuestBanner />
+        <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+          <div className="page-with-tabbar flex-1 px-4 py-4 md:px-8 md:py-8">
+            <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 md:gap-6">
+              <section className="panel p-4 md:hidden">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-accent text-lg font-semibold text-white">
+                      W
+                    </div>
+                    <div>
+                      <p className="section-label">WordFlow</p>
+                      <p className="mt-1 text-[15px] font-semibold text-ink">{accountLabel}</p>
+                    </div>
+                  </div>
+                  <button type="button" onClick={handleExit} className="button-secondary px-4 text-[15px]">
+                    {guestActive ? "Exit" : "Sign out"}
+                  </button>
+                </div>
+                <p className="mt-3 text-[13px] text-quiet">{accountRole}</p>
+              </section>
+
+              <GuestBanner />
+
+              <main className="min-w-0 flex-1">
+                <PageTransition>{children}</PageTransition>
+              </main>
+            </div>
+          </div>
+
+          <BottomTabBar items={appNavItems} variant="app" />
         </div>
-
-        <main className="mt-5 flex-1">
-          <PageTransition>{children}</PageTransition>
-        </main>
       </div>
     </div>
   )

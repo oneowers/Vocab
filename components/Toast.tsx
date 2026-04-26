@@ -43,16 +43,16 @@ export function ToastProvider({
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <div className="pointer-events-none fixed bottom-4 right-4 z-50 flex w-[min(92vw,22rem)] flex-col gap-3">
+      <div className="pointer-events-none fixed bottom-[calc(var(--tab-bar-height)+16px)] right-4 z-50 flex w-[min(92vw,24rem)] flex-col gap-3 md:bottom-6">
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`pointer-events-auto rounded-3xl border px-4 py-3 text-sm shadow-panel animate-slide-in ${
+            className={`pointer-events-auto rounded-[18px] border px-4 py-3 text-[15px] shadow-panel backdrop-blur-xl animate-slide-in ${
               toast.tone === "success"
-                ? "border-green-200 bg-successBg text-successText"
+                ? "border-line bg-successBg text-successText"
                 : toast.tone === "error"
-                  ? "border-red-200 bg-dangerBg text-dangerText"
-                  : "border-line bg-white text-ink"
+                  ? "border-line bg-dangerBg text-dangerText"
+                  : "border-line bg-background-primary/90 text-ink"
             }`}
           >
             {toast.message}
