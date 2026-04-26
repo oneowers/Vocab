@@ -64,7 +64,7 @@ export async function buildUserStats(userId: string): Promise<StatsPayload> {
   ])
 
   const today = getTodayDateKey()
-  const last30 = listRecentDateKeys(30, today)
+  const last7 = listRecentDateKeys(7, today)
   const upcoming = listUpcomingDateKeys(7, today)
   const serializedCards = cards.map((card) => serializeCard(card))
   const reviewDates = reviewLogs.map((log) => log.createdAt.toISOString().slice(0, 10))
@@ -88,12 +88,12 @@ export async function buildUserStats(userId: string): Promise<StatsPayload> {
     currentStreak: user.streak,
     longestStreak: getLongestStreak(reviewDates),
     accuracyRate: totalReviewed ? Math.round((correct / totalReviewed) * 100) : 0,
-    cardsAdded: last30.map((date) => ({
+    cardsAdded: last7.map((date) => ({
       date,
       label: formatDateLabel(date),
       value: addedDates.filter((item) => item === date).length
     })),
-    reviewsPerDay: last30.map((date) => ({
+    reviewsPerDay: last7.map((date) => ({
       date,
       label: formatDateLabel(date),
       value: reviewDates.filter((item) => item === date).length

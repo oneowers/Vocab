@@ -75,17 +75,36 @@ export function CSSBarChart({
             })}
 
             <div className="absolute inset-x-0 bottom-0 top-0 flex items-end gap-3">
-              {points.map((point) => (
-                <div key={point.date} className="flex min-w-0 flex-1 flex-col justify-end">
+              {points.map((point) => {
+                const barHeight = Math.max((point.value / peak) * 100, point.value > 0 ? 8 : 0)
+
+                return (
+                <div
+                  key={point.date}
+                  className="relative flex h-full min-w-0 flex-1 flex-col justify-end"
+                >
+                  <span
+                    className="pointer-events-none absolute left-1/2 z-10 -translate-x-1/2 rounded-full bg-bg-primary/95 px-2 py-0.5 text-center text-[11px] font-semibold text-text-primary shadow-subtle"
+                    style={{
+                      bottom:
+                        point.value > 0
+                          ? `clamp(8px, calc(${barHeight}% + 8px), calc(100% - 20px))`
+                          : "8px"
+                    }}
+                  >
+                    {point.value}
+                    {valueSuffix}
+                  </span>
                   <div
-                    className="w-full rounded-t-[18px] transition-all"
+                    className="w-full rounded-t-[8px] transition-all"
                     style={{
                       background: toneMap[tone],
-                      height: `${Math.max((point.value / peak) * 100, point.value > 0 ? 8 : 0)}%`
+                      height: `${barHeight}%`
                     }}
                   />
                 </div>
-              ))}
+                )
+              })}
             </div>
           </div>
 

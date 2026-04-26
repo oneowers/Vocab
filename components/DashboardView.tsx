@@ -207,21 +207,6 @@ export function DashboardView() {
       />
 
       <div className="space-y-4">
-        <section className="stats-strip">
-          <div className="stats-strip-item">
-            <span className="stats-strip-value">{summary.streak}</span>
-            <span className="stats-strip-label">Streak</span>
-          </div>
-          <div className="stats-strip-item">
-            <span className="stats-strip-value">{summary.dueToday}</span>
-            <span className="stats-strip-label">Due</span>
-          </div>
-          <div className="stats-strip-item">
-            <span className="stats-strip-value">{summary.mastered}</span>
-            <span className="stats-strip-label">Mastered</span>
-          </div>
-        </section>
-
         <TranslatorPanel
           guestMode={guestMode}
           onAddCard={(card) => {

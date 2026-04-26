@@ -11,6 +11,7 @@ export function AdminOverviewView() {
   const [data, setData] = useState<AdminAnalyticsPayload | null>(null)
   const [loading, setLoading] = useState(true)
   const { showToast } = useToast()
+  const weeklyDays = data?.days.slice(-7) ?? []
 
   useEffect(() => {
     async function loadOverview() {
@@ -59,7 +60,7 @@ export function AdminOverviewView() {
       <div className="grid gap-5 xl:grid-cols-2">
         <CSSBarChart
           title="New users per day"
-          points={data.days.map((day) => ({
+          points={weeklyDays.map((day) => ({
             date: day.date,
             label: day.label,
             value: day.newUsers
@@ -69,7 +70,7 @@ export function AdminOverviewView() {
         />
         <CSSBarChart
           title="Review sessions per day"
-          points={data.days.slice(-7).map((day) => ({
+          points={weeklyDays.map((day) => ({
             date: day.date,
             label: day.label,
             value: day.totalSessions

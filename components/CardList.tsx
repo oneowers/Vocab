@@ -1,7 +1,6 @@
 "use client"
 
 import { getTooltipMessage } from "@/lib/config"
-import { formatDateLabel } from "@/lib/date"
 import { speakText, canSpeak } from "@/lib/tts"
 import type { CardRecord } from "@/lib/types"
 import { Trash2, Volume2 } from "lucide-react"
@@ -38,7 +37,7 @@ export function CardList({
   description
 }: CardListProps) {
   return (
-    <section className="panel p-5">
+    <section className="space-y-4">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="section-label">Deck</p>
@@ -99,26 +98,26 @@ export function CardList({
       <div
         className={
           variant === "grid"
-            ? "mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
-            : "mt-5 space-y-3"
+            ? "grid gap-2 sm:grid-cols-2 xl:grid-cols-3"
+            : "space-y-2"
         }
       >
         {cards.length ? (
           cards.map((card) => (
             <article
               key={card.id}
-              className={`rounded-card border border-separator bg-bg-primary px-4 py-3 transition hover:-translate-y-0.5 hover:shadow-panel ${
-                variant === "grid" ? "h-full min-h-[144px]" : ""
+              className={`relative rounded-card bg-bg-primary px-3 py-2.5 transition hover:-translate-y-0.5 ${
+                variant === "grid" ? "h-full min-h-[112px]" : ""
               }`}
             >
               <div
                 className={`flex gap-3 ${
                   variant === "grid"
-                    ? "h-full flex-col justify-between"
-                    : "flex-col sm:flex-row sm:items-center sm:justify-between"
+                    ? "h-full flex-col justify-between pr-11"
+                    : "flex-col pr-11 sm:flex-row sm:items-center sm:justify-between"
                 }`}
               >
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <h3 className="truncate text-[18px] font-bold tracking-[-0.4px] text-text-primary">
                       {card.original}
@@ -141,27 +140,18 @@ export function CardList({
                   </div>
                   <p className="mt-1 truncate text-[14px] text-text-secondary">{card.translation}</p>
                 </div>
-
-                <div
-                  className={`flex items-center gap-3 ${
-                    variant === "grid" ? "justify-between" : "justify-between sm:justify-end"
-                  }`}
-                >
-                  <p className="text-[13px] text-text-tertiary">
-                    {formatDateLabel(card.nextReviewDate)}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => onDeleteRequest(card)}
-                    disabled={guestMode}
-                    title={guestMode ? getTooltipMessage() : undefined}
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-dangerBg text-dangerText transition hover:opacity-85 disabled:bg-bg-secondary disabled:text-text-tertiary"
-                    aria-label={`Delete ${card.original}`}
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
               </div>
+
+              <button
+                type="button"
+                onClick={() => onDeleteRequest(card)}
+                disabled={guestMode}
+                title={guestMode ? getTooltipMessage() : undefined}
+                className="absolute right-2.5 top-2.5 inline-flex h-9 w-9 items-center justify-center rounded-full border border-separator bg-bg-secondary text-dangerText transition hover:border-transparent hover:bg-dangerBg disabled:border-separator disabled:bg-bg-secondary disabled:text-text-tertiary"
+                aria-label={`Delete ${card.original}`}
+              >
+                <Trash2 size={16} />
+              </button>
             </article>
           ))
         ) : (

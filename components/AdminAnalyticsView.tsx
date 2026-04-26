@@ -10,6 +10,7 @@ export function AdminAnalyticsView() {
   const [data, setData] = useState<AdminAnalyticsPayload | null>(null)
   const [loading, setLoading] = useState(true)
   const { showToast } = useToast()
+  const weeklyDays = data?.days.slice(-7) ?? []
 
   useEffect(() => {
     async function loadAnalytics() {
@@ -58,7 +59,7 @@ export function AdminAnalyticsView() {
       <div className="grid gap-5 xl:grid-cols-2">
         <CSSBarChart
           title="New users"
-          points={data.days.slice(-7).map((day) => ({
+          points={weeklyDays.map((day) => ({
             date: day.date,
             label: day.label,
             value: day.newUsers
@@ -68,7 +69,7 @@ export function AdminAnalyticsView() {
         />
         <CSSBarChart
           title="New cards"
-          points={data.days.slice(-7).map((day) => ({
+          points={weeklyDays.map((day) => ({
             date: day.date,
             label: day.label,
             value: day.newCards
@@ -78,7 +79,7 @@ export function AdminAnalyticsView() {
         />
         <CSSBarChart
           title="Sessions"
-          points={data.days.slice(-7).map((day) => ({
+          points={weeklyDays.map((day) => ({
             date: day.date,
             label: day.label,
             value: day.totalSessions
@@ -88,7 +89,7 @@ export function AdminAnalyticsView() {
         />
         <CSSBarChart
           title="Reviews"
-          points={data.days.slice(-7).map((day) => ({
+          points={weeklyDays.map((day) => ({
             date: day.date,
             label: day.label,
             value: day.totalReviews
