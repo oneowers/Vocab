@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 
 import { useToast } from "@/components/Toast"
+import { hasSupabaseEnv } from "@/lib/config"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
 import { getGuestCards, setGuestSessionActive } from "@/lib/guest"
 
@@ -15,6 +16,7 @@ export function LoginCard({ guestModeEnabled }: LoginCardProps) {
   const [loading, setLoading] = useState<"google" | "guest" | null>(null)
   const router = useRouter()
   const { showToast } = useToast()
+  const supabaseEnabled = hasSupabaseEnv()
 
   useEffect(() => {
     router.prefetch("/")
@@ -69,7 +71,7 @@ export function LoginCard({ guestModeEnabled }: LoginCardProps) {
         <button
           type="button"
           onClick={handleGoogleSignIn}
-          disabled={guestModeEnabled || loading !== null}
+          disabled={!supabaseEnabled || loading !== null}
           className="button-primary px-5 py-4 text-sm font-medium"
         >
           {loading === "google" ? "Redirecting..." : "Continue with Google"}
@@ -89,6 +91,11 @@ export function LoginCard({ guestModeEnabled }: LoginCardProps) {
       {guestModeEnabled ? (
         <p className="mt-4 text-[15px] text-text-tertiary">
           Guest mode — your progress will not be saved.
+        </p>
+      ) : null}
+      {!supabaseEnabled ? (
+        <p className="mt-2 text-[15px] text-text-tertiary">
+          Local mode: you can continue as a guest without registration.
         </p>
       ) : null}
     </div>

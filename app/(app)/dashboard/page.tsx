@@ -1,6 +1,5 @@
-import { DashboardView } from "@/components/DashboardView"
+import { CardsPageView } from "@/components/CardsPageView"
 
 export default function DashboardPage() {
-  return <DashboardView />
+  return <CardsPageView />
 }
-

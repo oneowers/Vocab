@@ -69,7 +69,7 @@ textarea {
 }
 
 .page-with-tabbar {
-  padding-bottom: calc(var(--tab-bar-height) + 24px);
+  padding-bottom: calc(var(--tab-bar-height) + 32px);
 }
 
 .hide-scrollbar {
@@ -332,5 +332,11 @@ textarea {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .page-with-tabbar {
+    padding-bottom: calc(var(--tab-bar-height) + 40px);
   }
 }

@@ -12,11 +12,23 @@ interface CSSBarChartProps {
 }
 
 const toneMap = {
-  ink: "linear-gradient(180deg, var(--accent) 0%, var(--text-primary) 100%)",
-  gold: "linear-gradient(180deg, var(--warning) 0%, var(--accent) 100%)",
-  green: "linear-gradient(180deg, var(--success) 0%, var(--accent) 100%)",
-  rose: "linear-gradient(180deg, var(--destructive) 0%, var(--accent) 100%)"
+  ink: "var(--accent)",
+  gold: "var(--warning)",
+  green: "var(--success)",
+  rose: "var(--destructive)"
 } satisfies Record<NonNullable<CSSBarChartProps["tone"]>, string>
+
+function formatAxisValue(value: number) {
+  if (value >= 1_000_000) {
+    return `${Math.round(value / 1_000_000)}M`
+  }
+
+  if (value >= 1_000) {
+    return `${Math.round(value / 1_000)}K`
+  }
+
+  return String(value)
+}
 
 export function CSSBarChart({
   title,
@@ -28,39 +40,69 @@ export function CSSBarChart({
   valueSuffix = ""
 }: CSSBarChartProps) {
   const peak = Math.max(...points.map((point) => point.value), 1)
-  const gridClassName = points.length > 7 ? "grid-cols-10" : "grid-cols-7"
   const total = points.reduce((sum, point) => sum + point.value, 0)
   const summary = summaryLabel ? `${total}${valueSuffix} ${summaryLabel}` : `Last ${points.length} days`
+  const ticks = [0, 0.33, 0.66, 1].map((step) => Math.round(peak * step))
 
   return (
     <section className="panel p-5">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-ink">{title}</h2>
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+        <h2 className="text-[22px] font-bold tracking-[-0.5px] text-ink">{title}</h2>
         <span className="text-xs uppercase tracking-[0.24em] text-quiet">
           {periodLabel || summary}
         </span>
       </div>
-      <div className={`mt-6 grid ${gridClassName} gap-2 ${heightClassName}`}>
-        {points.map((point) => (
-          <div key={point.date} className="flex min-w-0 flex-col justify-end">
-            <div className="flex-1 rounded-2xl bg-bg-secondary p-1">
-              <div
-                className="w-full rounded-[1rem] transition-all"
-                style={{
-                  background: toneMap[tone],
-                  height: `${Math.max((point.value / peak) * 100, point.value > 0 ? 8 : 0)}%`
-                }}
-              />
+
+      <div className="mt-6">
+        <div className="relative pl-16">
+          <div className={`relative ${heightClassName}`}>
+            {ticks.map((tick, index) => {
+              const bottom = `${(index / (ticks.length - 1)) * 100}%`
+
+              return (
+                <div
+                  key={`${title}-tick-${tick}-${index}`}
+                  className="absolute inset-x-0"
+                  style={{ bottom }}
+                >
+                  <div className="absolute -left-16 -translate-y-1/2 text-right text-[11px] font-medium text-quiet">
+                    {formatAxisValue(tick)}
+                    {valueSuffix}
+                  </div>
+                  <div className="border-t border-separator" />
+                </div>
+              )
+            })}
+
+            <div className="absolute inset-x-0 bottom-0 top-0 flex items-end gap-3">
+              {points.map((point) => (
+                <div key={point.date} className="flex min-w-0 flex-1 flex-col justify-end">
+                  <div
+                    className="w-full rounded-t-[18px] transition-all"
+                    style={{
+                      background: toneMap[tone],
+                      height: `${Math.max((point.value / peak) * 100, point.value > 0 ? 8 : 0)}%`
+                    }}
+                  />
+                </div>
+              ))}
             </div>
-            <span className="mt-2 truncate text-center text-[11px] text-quiet">
-              {point.label || formatDateLabel(point.date)}
-            </span>
-            <span className="text-center text-[11px] font-medium text-ink">
-              {point.value}
-              {valueSuffix}
-            </span>
           </div>
-        ))}
+
+          <div className="mt-4 flex gap-3">
+            {points.map((point) => (
+              <div key={`${point.date}-label`} className="flex min-w-0 flex-1 flex-col items-center gap-1">
+                <span className="truncate text-center text-[12px] font-medium text-quiet">
+                  {point.label || formatDateLabel(point.date)}
+                </span>
+                <span className="text-center text-[11px] font-semibold text-ink">
+                  {point.value}
+                  {valueSuffix}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   )

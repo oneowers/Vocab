@@ -1,5 +1,9 @@
+export function isLocalDevelopment() {
+  return process.env.NODE_ENV === "development"
+}
+
 export function isGuestModeEnabled() {
-  return process.env.NEXT_PUBLIC_GUEST_MODE === "true"
+  return process.env.NEXT_PUBLIC_GUEST_MODE === "true" || isLocalDevelopment()
 }
 
 export function hasSupabaseEnv() {
@@ -16,4 +20,3 @@ export function hasDatabaseEnv() {
 export function getTooltipMessage() {
   return "Technical maintenance — saving is temporarily unavailable"
 }
-

@@ -47,10 +47,22 @@ export const appMobileNavItems: NavItem[] = [
     match: (pathname) => pathname === "/"
   },
   {
+    href: "/dashboard",
+    label: "Cards",
+    icon: Library,
+    match: (pathname) => pathname === "/dashboard"
+  },
+  {
     href: "/practice",
     label: "Practice",
     icon: Sparkles,
     match: (pathname) => pathname === "/practice" || pathname === "/review"
+  },
+  {
+    href: "/stats",
+    label: "Stats",
+    icon: BarChart3,
+    match: (pathname) => pathname === "/stats"
   },
   {
     href: "/profile",

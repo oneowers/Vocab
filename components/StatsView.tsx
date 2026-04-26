@@ -84,8 +84,8 @@ function computeGuestStats(cards: CardRecord[], logs: GuestReviewLog[]): StatsPa
     currentStreak: computeCurrentStreak(logs),
     longestStreak: computeLongestStreak(logs),
     accuracyRate: total ? Math.round((totalCorrect / total) * 100) : 0,
-    cardsAdded: countByDate(cardDates, listRecentDateKeys(30, today)),
-    reviewsPerDay: countByDate(reviewDates, listRecentDateKeys(30, today)),
+    cardsAdded: countByDate(cardDates, listRecentDateKeys(7, today)),
+    reviewsPerDay: countByDate(reviewDates, listRecentDateKeys(7, today)),
     hardestCards: [...cards].sort((left, right) => right.wrongCount - left.wrongCount).slice(0, 5),
     dueByDay: listUpcomingDateKeys(7, today).map((date) => ({
       date,
@@ -137,29 +137,31 @@ export function StatsView() {
 
   return (
     <div className="space-y-5">
-      <section className="grid gap-4 md:grid-cols-3">
-        <CSSBarChart
-          title="Current streak"
-          points={[{ date: "current-streak", label: "Now", value: stats.currentStreak }]}
-          tone="gold"
-          heightClassName="h-28"
-          summaryLabel="days"
-        />
-        <CSSBarChart
-          title="Longest streak"
-          points={[{ date: "longest-streak", label: "Best", value: stats.longestStreak }]}
-          tone="ink"
-          heightClassName="h-28"
-          summaryLabel="days"
-        />
-        <CSSBarChart
-          title="Accuracy"
-          points={[{ date: "accuracy", label: "Rate", value: stats.accuracyRate }]}
-          tone="green"
-          heightClassName="h-28"
-          summaryLabel="accuracy"
-          valueSuffix="%"
-        />
+      <section className="grid grid-cols-3 gap-3">
+        <article className="panel rounded-[1.5rem] p-3 md:rounded-[2rem] md:p-5">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-quiet md:text-xs md:tracking-[0.24em]">
+            Current streak
+          </p>
+          <p className="mt-3 text-[24px] font-semibold text-ink md:mt-4 md:text-4xl">
+            {stats.currentStreak}
+          </p>
+        </article>
+        <article className="panel rounded-[1.5rem] p-3 md:rounded-[2rem] md:p-5">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-quiet md:text-xs md:tracking-[0.24em]">
+            Longest streak
+          </p>
+          <p className="mt-3 text-[24px] font-semibold text-ink md:mt-4 md:text-4xl">
+            {stats.longestStreak}
+          </p>
+        </article>
+        <article className="panel rounded-[1.5rem] p-3 md:rounded-[2rem] md:p-5">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-quiet md:text-xs md:tracking-[0.24em]">
+            Accuracy
+          </p>
+          <p className="mt-3 text-[24px] font-semibold text-ink md:mt-4 md:text-4xl">
+            {stats.accuracyRate}%
+          </p>
+        </article>
       </section>
 
       <div className="grid gap-5 xl:grid-cols-2">
@@ -167,13 +169,13 @@ export function StatsView() {
           title="Cards added per day"
           points={stats.cardsAdded}
           tone="gold"
-          periodLabel="Last 30 days"
+          periodLabel="Last 7 days"
         />
         <CSSBarChart
           title="Reviews per day"
           points={stats.reviewsPerDay}
           tone="ink"
-          periodLabel="Last 30 days"
+          periodLabel="Last 7 days"
         />
       </div>
 
@@ -184,36 +186,40 @@ export function StatsView() {
           tone="green"
           periodLabel="Next 7 days"
         />
-        <CSSBarChart
-          title="Top 5 hardest cards"
-          points={
-            stats.hardestCards.length
-              ? stats.hardestCards.map((card) => ({
-                  date: card.id,
-                  label: card.original,
-                  value: card.wrongCount
-                }))
-              : [{ date: "none", label: "None", value: 0 }]
-          }
-          tone="rose"
-          periodLabel="Wrong answers"
-        />
+        <section className="panel rounded-[2rem] p-5">
+          <h2 className="text-lg font-semibold text-ink">Top 5 hardest cards</h2>
+          <div className="mt-5 space-y-3">
+            {stats.hardestCards.length ? (
+              stats.hardestCards.map((card) => (
+                <div key={card.id} className="rounded-[1.5rem] border border-separator bg-bg-primary px-4 py-4">
+                  <p className="font-semibold text-ink">
+                    {card.original} <span className="font-normal text-muted">→ {card.translation}</span>
+                  </p>
+                  <p className="mt-1 text-sm text-quiet">Wrong answers: {card.wrongCount}</p>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-muted">No difficult cards yet. Nice work.</p>
+            )}
+          </div>
+        </section>
       </div>
 
-      <CSSBarChart
-        title="Breakdown by tag"
-        points={
-          stats.tagBreakdown.length
-            ? stats.tagBreakdown.map((item) => ({
-                date: item.tag,
-                label: item.tag,
-                value: item.count
-              }))
-            : [{ date: "none", label: "None", value: 0 }]
-        }
-        tone="ink"
-        periodLabel="Cards per tag"
-      />
+      <section className="panel rounded-[2rem] p-5">
+        <h2 className="text-lg font-semibold text-ink">Breakdown by tag</h2>
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {stats.tagBreakdown.length ? (
+            stats.tagBreakdown.map((item) => (
+              <div key={item.tag} className="rounded-[1.5rem] border border-separator bg-bg-primary px-4 py-4">
+                <p className="font-semibold text-ink">{item.tag}</p>
+                <p className="mt-1 text-sm text-muted">{item.count} cards</p>
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-muted">No tags yet.</p>
+          )}
+        </div>
+      </section>
     </div>
   )
 }

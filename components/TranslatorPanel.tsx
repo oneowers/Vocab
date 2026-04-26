@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { ArrowLeftRight, Languages, Volume2 } from "lucide-react"
 
 import { useToast } from "@/components/Toast"
 import { getTooltipMessage } from "@/lib/config"
@@ -18,7 +19,6 @@ export function TranslatorPanel({
 }: TranslatorPanelProps) {
   const [query, setQuery] = useState("")
   const [direction, setDirection] = useState<Direction>("en-ru")
-  const [tags, setTags] = useState("")
   const [translation, setTranslation] = useState("")
   const [example, setExample] = useState<string | null>(null)
   const [phonetic, setPhonetic] = useState<string | null>(null)
@@ -97,10 +97,7 @@ export function TranslatorPanel({
           direction,
           example,
           phonetic,
-          tags: tags
-            .split(",")
-            .map((tag) => tag.trim())
-            .filter(Boolean)
+          tags: []
         })
       })
 
@@ -120,156 +117,154 @@ export function TranslatorPanel({
     }
   }
 
+  function handleSwapDirection() {
+    setDirection((current) => (current === "en-ru" ? "ru-en" : "en-ru"))
+    setQuery(translation || query)
+    setTranslation(query)
+  }
+
   const ttsLanguage = direction === "en-ru" ? "en-US" : "ru-RU"
   const translatedLanguage = direction === "en-ru" ? "ru-RU" : "en-US"
-  const headline =
-    query.trim() ||
-    (direction === "en-ru" ? "Type a word to translate" : "Введите слово для перевода")
-  const subtitle = direction === "en-ru" ? "English to Russian" : "Russian to English"
+  const sourceLabel = direction === "en-ru" ? "English" : "Russian"
+  const targetLabel = direction === "en-ru" ? "Russian" : "English"
 
   return (
-    <section className="panel rounded-[20px] p-6 md:p-8">
-      <div className="flex flex-col gap-6">
-        <div className="flex flex-wrap justify-center gap-2 md:justify-start">
+    <section className="panel overflow-hidden rounded-[20px] p-0">
+      <div className="border-b border-separator px-4 py-3 md:px-6">
+        <div className="flex items-center gap-2 text-[15px] font-semibold text-text-secondary">
+          <Languages size={18} className="text-accent" />
+          Translator
+        </div>
+        <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-center md:gap-3">
           <button
             type="button"
             onClick={() => setDirection("en-ru")}
-            className="chip-button"
+            className="rounded-[12px] px-3 py-2 text-[15px] font-semibold transition data-[active=true]:bg-bg-secondary data-[active=true]:text-text-primary md:px-4"
             data-active={direction === "en-ru"}
           >
-            EN → RU
+            English
+          </button>
+          <button
+            type="button"
+            onClick={handleSwapDirection}
+            className="mx-auto inline-flex h-10 w-10 items-center justify-center rounded-full bg-bg-secondary text-text-tertiary transition hover:text-text-primary"
+            aria-label="Swap languages"
+          >
+            <ArrowLeftRight size={18} />
           </button>
           <button
             type="button"
             onClick={() => setDirection("ru-en")}
-            className="chip-button"
+            className="rounded-[12px] px-3 py-2 text-[15px] font-semibold transition data-[active=true]:bg-bg-secondary data-[active=true]:text-text-primary md:px-4"
             data-active={direction === "ru-en"}
           >
-            RU → EN
+            Russian
           </button>
         </div>
+      </div>
 
-        <div className="space-y-2 text-center">
-          <p className="section-label">Translation</p>
-          <h2 className="text-[28px] font-bold tracking-[-0.5px] text-text-primary">
-            {headline}
-          </h2>
-          <p className="text-[13px] text-text-tertiary">{subtitle}</p>
-        </div>
-
-        <div className="grid gap-4 lg:grid-cols-[1.15fr,0.85fr]">
-        <div className="rounded-[16px] border border-separator bg-bg-primary p-4">
-          <label
-            className="text-[15px] font-semibold text-text-primary"
-            htmlFor="translation-query"
-          >
-            Word or phrase
-          </label>
-            <div className="mt-3 flex flex-col gap-3">
-              <input
-                id="translation-query"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    void handleTranslate()
-                  }
-                }}
-                autoCapitalize="none"
-                autoCorrect="off"
-                autoComplete="off"
-                spellCheck={false}
-                placeholder={
-                  direction === "en-ru" ? "Type an English word..." : "Введите русское слово..."
-                }
-                className="input-field"
-              />
-              <div className="flex flex-col gap-3 sm:flex-row">
-                {canSpeak() ? (
-                  <button
-                    type="button"
-                    onClick={() => speakText(query, ttsLanguage)}
-                    className="button-secondary w-full sm:w-auto"
-                    aria-label="Speak source word"
-                  >
-                    Listen
-                  </button>
-                ) : null}
-                <button
-                  type="button"
-                  onClick={() => void handleTranslate()}
-                  disabled={loading}
-                  className="button-primary w-full"
-                >
-                  {loading ? "Translating..." : "Translate"}
-                </button>
-              </div>
-            </div>
+      <div className="grid lg:grid-cols-2">
+        <div className="border-b border-separator p-4 md:p-6 lg:border-b-0 lg:border-r">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-text-tertiary">
+              {sourceLabel}
+            </p>
+            {canSpeak() ? (
+              <button
+                type="button"
+                onClick={() => speakText(query, ttsLanguage)}
+                className="button-ghost min-h-[36px] px-2"
+                aria-label="Speak source word"
+              >
+                <Volume2 size={18} />
+              </button>
+            ) : null}
           </div>
-
-          <div className="rounded-[16px] border border-separator bg-bg-secondary p-4">
-            <p className="text-[15px] font-semibold text-text-primary">Result</p>
-            {loading ? (
-              <div className="mt-4 space-y-3">
-                <div className="skeleton h-7 w-3/4 rounded-[12px]" />
-                <div className="skeleton h-4 w-1/2 rounded-[12px]" />
-                <div className="skeleton h-20 w-full rounded-[16px]" />
-              </div>
-            ) : translation ? (
-              <div className="mt-4 space-y-4">
-                <div className="space-y-1 text-center lg:text-left">
-                  <p className="text-[28px] font-bold tracking-[-0.5px] text-text-primary">{translation}</p>
-                  {phonetic ? <p className="text-[13px] text-text-tertiary">{phonetic}</p> : null}
-                </div>
-                {canSpeak() ? (
-                  <button
-                    type="button"
-                    onClick={() => speakText(translation, translatedLanguage)}
-                    className="button-secondary w-full"
-                  >
-                    Listen to translation
-                  </button>
-                ) : null}
-                {example ? (
-                  <p className="rounded-[16px] bg-bg-primary px-4 py-3 text-[15px] leading-6 text-text-secondary">
-                    {example}
-                  </p>
-                ) : null}
-              </div>
-            ) : (
-              <p className="mt-4 text-[15px] leading-6 text-text-secondary">
-                Translate a word to see the meaning, phonetic hint, and example sentence.
-              </p>
-            )}
-          </div>
-        </div>
-
-        <div className="rounded-[16px] border border-separator bg-bg-primary p-4">
-          <label className="text-[15px] font-semibold text-text-primary" htmlFor="tag-input">
-            Tags
-          </label>
-          <input
-            id="tag-input"
-            value={tags}
-            onChange={(event) => setTags(event.target.value)}
+          <textarea
+            id="translation-query"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
             autoCapitalize="none"
             autoCorrect="off"
             autoComplete="off"
-            placeholder="travel, verbs, work"
-            className="input-field mt-3"
+            spellCheck={false}
+            placeholder={
+              direction === "en-ru" ? "Type text to translate" : "Введите текст для перевода"
+            }
+            className="mt-4 min-h-[132px] w-full resize-none border-0 bg-transparent p-0 text-[24px] font-bold tracking-[-0.5px] text-text-primary outline-none placeholder:text-text-tertiary md:min-h-[220px] md:text-[28px]"
           />
-
-          <div className="mt-4 flex flex-wrap gap-3">
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row">
             <button
               type="button"
-              onClick={() => void handleAddCard()}
-              disabled={guestMode || saving || !translation}
-              title={guestMode ? getTooltipMessage() : undefined}
+              onClick={() => void handleTranslate()}
+              disabled={loading || !query.trim()}
               className="button-primary w-full"
             >
-              {saving ? "Saving..." : "Add to cards"}
+              {loading ? "Translating..." : "Translate"}
             </button>
           </div>
+        </div>
+
+        <div className="bg-bg-secondary/45 p-4 md:p-6">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-text-tertiary">
+              {targetLabel}
+            </p>
+            {canSpeak() && translation ? (
+              <button
+                type="button"
+                onClick={() => speakText(translation, translatedLanguage)}
+                className="button-ghost min-h-[36px] px-2"
+                aria-label="Speak translated text"
+              >
+                <Volume2 size={18} />
+              </button>
+            ) : null}
+          </div>
+
+          {loading ? (
+            <div className="mt-4 space-y-3">
+              <div className="skeleton h-8 w-2/3 rounded-[12px]" />
+              <div className="skeleton h-4 w-1/3 rounded-[12px]" />
+              <div className="skeleton h-20 w-full rounded-[16px] md:h-24" />
+            </div>
+          ) : translation ? (
+            <div className="mt-4 space-y-4">
+              <div className="space-y-1">
+                <p className="text-[24px] font-bold tracking-[-0.5px] text-text-primary md:text-[28px]">
+                  {translation}
+                </p>
+                {phonetic ? <p className="text-[13px] text-text-tertiary">{phonetic}</p> : null}
+              </div>
+              {example ? (
+                <p className="rounded-[16px] bg-bg-primary px-4 py-3 text-[15px] leading-6 text-text-secondary">
+                  {example}
+                </p>
+              ) : (
+                <div className="min-h-[84px] rounded-[16px] bg-bg-primary/70 md:min-h-[120px]" />
+              )}
+            </div>
+          ) : (
+            <div className="mt-4 flex min-h-[132px] items-center rounded-[16px] bg-bg-primary/70 px-5 md:min-h-[220px]">
+              <p className="text-[18px] text-text-tertiary">
+                Translation will appear here
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="border-t border-separator p-4 md:px-6 md:py-5">
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={() => void handleAddCard()}
+            disabled={guestMode || saving || !translation}
+            title={guestMode ? getTooltipMessage() : undefined}
+            className="button-primary w-full"
+          >
+            {saving ? "Saving..." : "Add to cards"}
+          </button>
         </div>
       </div>
     </section>
