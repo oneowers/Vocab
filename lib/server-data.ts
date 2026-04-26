@@ -144,11 +144,12 @@ function getLongestStreak(dateKeys: string[]) {
   return longest
 }
 
-export function buildDashboardSummary(cards: CardRecord[], streak: number) {
+export function buildDashboardSummary(cards: CardRecord[], streak: number, reviewLives = 3) {
   const today = getTodayDateKey()
 
   return {
     streak,
+    reviewLives,
     totalCards: cards.length,
     dueToday: cards.filter((card) => isDueDate(card.nextReviewDate, today)).length,
     mastered: cards.filter((card) => isMastered(card.reviewCount)).length

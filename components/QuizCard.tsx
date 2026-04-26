@@ -2,76 +2,179 @@
 
 import { useEffect, useState } from "react"
 
-import { speakText, canSpeak } from "@/lib/tts"
-import type { CardRecord, ReviewResult } from "@/lib/types"
-
-interface QuizCardProps {
-  card: CardRecord
-  options: string[]
-  onResolved: (result: ReviewResult) => void
+export interface QuizMatchItem {
+  id: string
+  sourceCardId: string
+  text: string
 }
 
-export function QuizCard({ card, options, onResolved }: QuizCardProps) {
-  const [selected, setSelected] = useState<string | null>(null)
+interface QuizCardProps {
+  leftItems: QuizMatchItem[]
+  rightItems: QuizMatchItem[]
+  batchIndex: number
+  totalBatches: number
+  onLifeLost: () => void
+  onBatchCompleted: () => void
+  onProgressChange: (count: number) => void
+}
+
+export function QuizCard({
+  leftItems,
+  rightItems,
+  batchIndex,
+  totalBatches,
+  onLifeLost,
+  onBatchCompleted,
+  onProgressChange
+}: QuizCardProps) {
+  const [selectedLeftId, setSelectedLeftId] = useState<string | null>(null)
+  const [selectedRightId, setSelectedRightId] = useState<string | null>(null)
+  const [solvedLeftIds, setSolvedLeftIds] = useState<string[]>([])
+  const [solvedRightIds, setSolvedRightIds] = useState<string[]>([])
+  const [rejectedIds, setRejectedIds] = useState<string[]>([])
+  const [resolving, setResolving] = useState(false)
 
   useEffect(() => {
-    setSelected(null)
-  }, [card.id])
+    setSelectedLeftId(null)
+    setSelectedRightId(null)
+    setSolvedLeftIds([])
+    setSolvedRightIds([])
+    setRejectedIds([])
+    setResolving(false)
+    onProgressChange(0)
+  }, [leftItems, onProgressChange, rightItems])
 
-  function handleSelect(option: string) {
-    if (selected) {
+  function handleResolvedPair(nextSolvedCount: number) {
+    onProgressChange(nextSolvedCount)
+
+    if (nextSolvedCount === leftItems.length) {
+      window.setTimeout(() => {
+        onBatchCompleted()
+      }, 220)
+    }
+  }
+
+  function resolveSelection(nextLeftId: string, nextRightId: string) {
+    const leftItem = leftItems.find((item) => item.id === nextLeftId)
+    const rightItem = rightItems.find((item) => item.id === nextRightId)
+
+    if (!leftItem || !rightItem) {
       return
     }
 
-    setSelected(option)
+    if (leftItem.sourceCardId === rightItem.sourceCardId) {
+      const nextSolvedCount = solvedLeftIds.length + 1
+      setSolvedLeftIds((current) => [...current, nextLeftId])
+      setSolvedRightIds((current) => [...current, nextRightId])
+      setSelectedLeftId(null)
+      setSelectedRightId(null)
+      handleResolvedPair(nextSolvedCount)
+      return
+    }
 
-    const nextResult: ReviewResult = option === card.translation ? "known" : "unknown"
-    window.setTimeout(() => onResolved(nextResult), 1200)
+    setResolving(true)
+    setRejectedIds([nextLeftId, nextRightId])
+
+    window.setTimeout(() => {
+      setResolving(false)
+      setRejectedIds([])
+      setSelectedLeftId(null)
+      setSelectedRightId(null)
+      onLifeLost()
+    }, 420)
+  }
+
+  function handleSelectLeft(id: string) {
+    if (resolving || solvedLeftIds.includes(id)) {
+      return
+    }
+
+    if (selectedRightId) {
+      setSelectedLeftId(id)
+      resolveSelection(id, selectedRightId)
+      return
+    }
+
+    setSelectedLeftId((current) => (current === id ? null : id))
+  }
+
+  function handleSelectRight(id: string) {
+    if (resolving || solvedRightIds.includes(id)) {
+      return
+    }
+
+    if (selectedLeftId) {
+      setSelectedRightId(id)
+      resolveSelection(selectedLeftId, id)
+      return
+    }
+
+    setSelectedRightId((current) => (current === id ? null : id))
+  }
+
+  function getItemClassName(itemId: string, side: "left" | "right") {
+    const solvedIds = side === "left" ? solvedLeftIds : solvedRightIds
+    const selectedId = side === "left" ? selectedLeftId : selectedRightId
+
+    if (solvedIds.includes(itemId)) {
+      return "border-successText bg-successBg text-successText"
+    }
+
+    if (rejectedIds.includes(itemId)) {
+      return "border-dangerText bg-dangerBg text-dangerText"
+    }
+
+    if (selectedId === itemId) {
+      return "border-accent bg-accent/15 text-text-primary"
+    }
+
+    return "border-separator bg-bg-primary text-text-primary hover:border-accent"
   }
 
   return (
     <div className="panel p-6">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-[15px] text-text-secondary">Choose the right translation</p>
-          <p className="mt-3 text-[28px] font-bold tracking-[-0.5px] text-text-primary">{card.original}</p>
+          <p className="text-[15px] text-text-secondary">Match Russian to English</p>
+          <p className="mt-2 text-[28px] font-bold tracking-[-0.5px] text-text-primary">
+            Build all 4 pairs
+          </p>
         </div>
-        {canSpeak() ? (
-          <button
-            type="button"
-            onClick={() =>
-              speakText(card.original, card.direction === "en-ru" ? "en-US" : "ru-RU")
-            }
-            className="button-secondary px-3 py-2 text-sm"
-          >
-            🔊
-          </button>
-        ) : null}
+        <p className="text-sm text-text-tertiary">
+          Batch {batchIndex + 1} of {totalBatches}
+        </p>
       </div>
 
       <div className="mt-6 grid gap-3 md:grid-cols-2">
-        {options.map((option) => {
-          const isCorrect = option === card.translation
-          const isSelected = selected === option
-          const className = !selected
-            ? "border-separator bg-bg-primary text-text-primary hover:border-accent"
-            : isCorrect
-              ? "border-separator bg-successBg text-successText"
-              : isSelected
-                ? "border-separator bg-dangerBg text-dangerText"
-                : "border-separator bg-bg-secondary text-text-tertiary"
-
-          return (
+        <div className="space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-quiet">Russian</p>
+          {leftItems.map((item) => (
             <button
-              key={option}
+              key={item.id}
               type="button"
-              onClick={() => handleSelect(option)}
-              className={`min-h-[84px] rounded-[1.5rem] border px-4 py-4 text-left text-sm font-medium transition ${className}`}
+              onClick={() => handleSelectLeft(item.id)}
+              disabled={resolving || solvedLeftIds.includes(item.id)}
+              className={`min-h-[72px] w-full rounded-[1.5rem] border px-4 py-4 text-left text-sm font-medium transition ${getItemClassName(item.id, "left")}`}
             >
-              {option}
+              {item.text}
             </button>
-          )
-        })}
+          ))}
+        </div>
+
+        <div className="space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-quiet">English</p>
+          {rightItems.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => handleSelectRight(item.id)}
+              disabled={resolving || solvedRightIds.includes(item.id)}
+              className={`min-h-[72px] w-full rounded-[1.5rem] border px-4 py-4 text-left text-sm font-medium transition ${getItemClassName(item.id, "right")}`}
+            >
+              {item.text}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   )

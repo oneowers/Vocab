@@ -35,6 +35,7 @@ export interface AppUserRecord {
   name: string | null
   avatarUrl: string | null
   role: Role
+  reviewLives: number
   streak: number
   createdAt: string
   lastActiveAt: string | null
@@ -61,6 +62,7 @@ export interface ProfileActivityPayload {
 
 export interface DashboardSummary {
   streak: number
+  reviewLives: number
   totalCards: number
   dueToday: number
   mastered: number

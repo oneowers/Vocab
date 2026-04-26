@@ -1,36 +1,58 @@
 "use client"
 
 import Link from "next/link"
+import { Outfit } from "next/font/google"
+import { Heart } from "lucide-react"
 import { useEffect, useState } from "react"
 
 import { FlipCard } from "@/components/FlipCard"
-import { QuizCard } from "@/components/QuizCard"
+import { QuizCard, type QuizMatchItem } from "@/components/QuizCard"
+import { ReviewSessionOverview } from "@/components/ReviewSessionOverview"
+import { ReviewStageStepper } from "@/components/ReviewStageStepper"
 import { WriteCard } from "@/components/WriteCard"
+import styles from "@/components/review-session.module.css"
 import { useToast } from "@/components/Toast"
 import { getTodayDateKey } from "@/lib/date"
 import {
+  DEFAULT_GUEST_REVIEW_LIVES,
+  commitGuestReviewSession,
   getGuestCards,
   getGuestReviewLogs,
-  isGuestSessionActive,
-  recordGuestReview
+  isGuestSessionActive
 } from "@/lib/guest"
 import { matchesCardStatus, sortDueCards } from "@/lib/spaced-repetition"
 import type { CardRecord, CardsResponse, CardStatusFilter, ReviewResult } from "@/lib/types"
 
-type ReviewMode = "flip" | "write" | "quiz"
+type ReviewStage = "flip" | "quiz" | "write"
+type ReviewSessionStatus = "idle" | "active" | "saving" | "save-error" | "success"
 
-function shuffleOptions(options: string[]) {
-  const nextOptions = [...options]
+interface QuizBatch {
+  id: string
+  leftItems: QuizMatchItem[]
+  rightItems: QuizMatchItem[]
+}
 
-  for (let index = nextOptions.length - 1; index > 0; index -= 1) {
+const QUIZ_BATCH_SIZE = 4
+const REVIEW_STEPS: Array<{ value: ReviewStage; label: string }> = [
+  { value: "flip", label: "Flip" },
+  { value: "quiz", label: "Quiz" },
+  { value: "write", label: "Write" }
+]
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  weight: ["500", "600", "700", "800"]
+})
+
+function shuffleItems<T>(items: T[]) {
+  const nextItems = [...items]
+
+  for (let index = nextItems.length - 1; index > 0; index -= 1) {
     const swapIndex = Math.floor(Math.random() * (index + 1))
-    ;[nextOptions[index], nextOptions[swapIndex]] = [
-      nextOptions[swapIndex],
-      nextOptions[index]
-    ]
+    ;[nextItems[index], nextItems[swapIndex]] = [nextItems[swapIndex], nextItems[index]]
   }
 
-  return nextOptions
+  return nextItems
 }
 
 function getGuestStreak() {
@@ -59,20 +81,77 @@ function getGuestStreak() {
   return current
 }
 
+function getRussianPrompt(card: CardRecord) {
+  return card.direction === "en-ru" ? card.translation : card.original
+}
+
+function getEnglishAnswer(card: CardRecord) {
+  return card.direction === "en-ru" ? card.original : card.translation
+}
+
+function buildQuizBatches(cards: CardRecord[]) {
+  if (!cards.length) {
+    return []
+  }
+
+  const batches: QuizBatch[] = []
+
+  for (let batchIndex = 0; batchIndex < cards.length; batchIndex += QUIZ_BATCH_SIZE) {
+    const batchCards = cards.slice(batchIndex, batchIndex + QUIZ_BATCH_SIZE)
+    const filledCards = [...batchCards]
+    let fillerIndex = 0
+
+    while (filledCards.length < QUIZ_BATCH_SIZE) {
+      filledCards.push(cards[fillerIndex % cards.length])
+      fillerIndex += 1
+    }
+
+    batches.push({
+      id: `quiz-batch-${batchIndex / QUIZ_BATCH_SIZE}`,
+      leftItems: shuffleItems(
+        filledCards.map((card, index) => ({
+          id: `left-${batchIndex}-${index}-${card.id}`,
+          sourceCardId: card.id,
+          text: getRussianPrompt(card)
+        }))
+      ),
+      rightItems: shuffleItems(
+        filledCards.map((card, index) => ({
+          id: `right-${batchIndex}-${index}-${card.id}`,
+          sourceCardId: card.id,
+          text: getEnglishAnswer(card)
+        }))
+      )
+    })
+  }
+
+  return batches
+}
+
+function getStageLabel(stage: ReviewStage) {
+  return REVIEW_STEPS.find((item) => item.value === stage)?.label ?? "Stage"
+}
+
 export function ReviewSession() {
   const [guestMode, setGuestMode] = useState(false)
   const [loading, setLoading] = useState(true)
   const [allCards, setAllCards] = useState<CardRecord[]>([])
   const [dueCards, setDueCards] = useState<CardRecord[]>([])
-  const [mode, setMode] = useState<ReviewMode>("flip")
-  const [selectedStatus, setSelectedStatus] = useState<CardStatusFilter>("All")
-  const [started, setStarted] = useState(false)
-  const [roundCards, setRoundCards] = useState<CardRecord[]>([])
-  const [roundResults, setRoundResults] = useState<Record<string, ReviewResult>>({})
-  const [index, setIndex] = useState(0)
-  const [correct, setCorrect] = useState(0)
-  const [wrong, setWrong] = useState(0)
   const [streak, setStreak] = useState(0)
+  const [reviewLives, setReviewLives] = useState(DEFAULT_GUEST_REVIEW_LIVES)
+  const [selectedStatus, setSelectedStatus] = useState<CardStatusFilter>("All")
+  const [sessionStatus, setSessionStatus] = useState<ReviewSessionStatus>("idle")
+  const [sessionCards, setSessionCards] = useState<CardRecord[]>([])
+  const [quizBatches, setQuizBatches] = useState<QuizBatch[]>([])
+  const [activeStageIndex, setActiveStageIndex] = useState(0)
+  const [completedStages, setCompletedStages] = useState<ReviewStage[]>([])
+  const [livesRemaining, setLivesRemaining] = useState(DEFAULT_GUEST_REVIEW_LIVES)
+  const [stageAttempt, setStageAttempt] = useState(0)
+  const [flipIndex, setFlipIndex] = useState(0)
+  const [quizBatchIndex, setQuizBatchIndex] = useState(0)
+  const [quizSolvedPairs, setQuizSolvedPairs] = useState(0)
+  const [writeIndex, setWriteIndex] = useState(0)
+  const [mistakes, setMistakes] = useState(0)
   const { showToast } = useToast()
 
   useEffect(() => {
@@ -84,6 +163,8 @@ export function ReviewSession() {
         const cards = sortDueCards(getGuestCards())
         setAllCards(cards)
         setDueCards(cards.filter((card) => card.nextReviewDate <= getTodayDateKey()))
+        setStreak(getGuestStreak())
+        setReviewLives(DEFAULT_GUEST_REVIEW_LIVES)
         setLoading(false)
         return
       }
@@ -102,6 +183,7 @@ export function ReviewSession() {
         setAllCards(sortedCards)
         setDueCards(sortedCards.filter((card) => card.nextReviewDate <= getTodayDateKey()))
         setStreak(payload.summary.streak)
+        setReviewLives(payload.summary.reviewLives)
       } catch {
         showToast("Could not load review cards.", "error")
       } finally {
@@ -114,291 +196,397 @@ export function ReviewSession() {
 
   const availableCards = dueCards.filter((card) => matchesCardStatus(card, selectedStatus))
   const allAvailableCards = allCards.filter((card) => matchesCardStatus(card, selectedStatus))
-  const currentCard = roundCards[index]
+  const activeStage = REVIEW_STEPS[activeStageIndex]?.value ?? "flip"
+  const currentCard =
+    activeStage === "flip"
+      ? sessionCards[flipIndex]
+      : activeStage === "write"
+        ? sessionCards[writeIndex]
+        : null
+  const currentQuizBatch = quizBatches[quizBatchIndex]
 
-  async function handleAnswer(result: ReviewResult) {
-    if (!currentCard) {
+  function refreshCardCollections(nextCards: CardRecord[]) {
+    const sortedCards = sortDueCards(nextCards)
+    setAllCards(sortedCards)
+    setDueCards(sortedCards.filter((card) => card.nextReviewDate <= getTodayDateKey()))
+  }
+
+  function startSession(cards: CardRecord[]) {
+    setSessionCards(cards)
+    setQuizBatches(buildQuizBatches(cards))
+    setActiveStageIndex(0)
+    setCompletedStages([])
+    setLivesRemaining(reviewLives)
+    setFlipIndex(0)
+    setQuizBatchIndex(0)
+    setQuizSolvedPairs(0)
+    setWriteIndex(0)
+    setMistakes(0)
+    setStageAttempt(0)
+    setSessionStatus("active")
+  }
+
+  function restartActiveStage() {
+    const stage = REVIEW_STEPS[activeStageIndex].value
+
+    setLivesRemaining(reviewLives)
+    setStageAttempt((current) => current + 1)
+    setQuizSolvedPairs(0)
+
+    if (stage === "flip") {
+      setFlipIndex(0)
+    }
+
+    if (stage === "quiz") {
+      setQuizBatchIndex(0)
+    }
+
+    if (stage === "write") {
+      setWriteIndex(0)
+    }
+
+    showToast(`${getStageLabel(stage)} restarted. Lives refilled.`, "error")
+  }
+
+  function spendLife() {
+    const nextLives = livesRemaining - 1
+    setMistakes((current) => current + 1)
+
+    if (nextLives > 0) {
+      setLivesRemaining(nextLives)
+      return false
+    }
+
+    restartActiveStage()
+    return true
+  }
+
+  function advanceToNextStage(stage: ReviewStage) {
+    setCompletedStages((current) =>
+      current.includes(stage) ? current : [...current, stage]
+    )
+    setLivesRemaining(reviewLives)
+    setStageAttempt((current) => current + 1)
+    setQuizSolvedPairs(0)
+
+    if (stage === "flip") {
+      setActiveStageIndex(1)
+      setQuizBatchIndex(0)
       return
     }
 
-    if (result === "known") {
-      setCorrect((value) => value + 1)
-    } else {
-      setWrong((value) => value + 1)
+    if (stage === "quiz") {
+      setActiveStageIndex(2)
+      setWriteIndex(0)
     }
-    setRoundResults((current) => ({
-      ...current,
-      [currentCard.id]: result
-    }))
+  }
+
+  async function commitSession() {
+    setSessionStatus("saving")
 
     try {
       if (guestMode) {
-        const nextCards = recordGuestReview(currentCard.id, result)
-        const nextDueCards = sortDueCards(nextCards).filter(
-          (card) => card.nextReviewDate <= getTodayDateKey()
-        )
-        setAllCards(sortDueCards(nextCards))
-        setDueCards(nextDueCards)
+        const nextCards = commitGuestReviewSession(sessionCards.map((card) => card.id))
+        refreshCardCollections(nextCards)
         setStreak(getGuestStreak())
-        setIndex((currentIndex) => currentIndex + 1)
       } else {
-        const response = await fetch("/api/review", {
+        const response = await fetch("/api/review/session", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            cardId: currentCard.id,
-            result
+            reviews: Array.from(new Set(sessionCards.map((card) => card.id))).map((cardId) => ({
+              cardId,
+              result: "known"
+            }))
           })
         })
 
         if (!response.ok) {
-          throw new Error("Review failed.")
+          throw new Error("Session save failed.")
         }
 
         const payload = (await response.json()) as {
-          card: CardRecord
+          cards: CardRecord[]
           streak: number
         }
-
-        const nextCards = allCards.map((card) =>
-          card.id === payload.card.id ? payload.card : card
-        )
-        const nextDueCards = sortDueCards(nextCards).filter(
-          (card) => card.nextReviewDate <= getTodayDateKey()
-        )
-        setAllCards(sortDueCards(nextCards))
-        setDueCards(nextDueCards)
+        const updatedCards = new Map(payload.cards.map((card) => [card.id, card]))
+        const nextCards = allCards.map((card) => updatedCards.get(card.id) ?? card)
+        refreshCardCollections(nextCards)
         setStreak(payload.streak)
-        setIndex((currentIndex) => currentIndex + 1)
       }
+
+      setCompletedStages((current) =>
+        current.includes("write") ? current : [...current, "write"]
+      )
+      setSessionStatus("success")
     } catch {
-      showToast("Could not save this review result.", "error")
+      setSessionStatus("save-error")
+      showToast("Could not save this linked review session.", "error")
     }
   }
 
-  function startRound(cards: CardRecord[]) {
-    setRoundCards(cards)
-    setRoundResults({})
-    setIndex(0)
-    setCorrect(0)
-    setWrong(0)
-    setStarted(true)
+  function handleFlipResolved(result: ReviewResult) {
+    if (result === "unknown" && spendLife()) {
+      return
+    }
+
+    if (flipIndex + 1 >= sessionCards.length) {
+      advanceToNextStage("flip")
+      return
+    }
+
+    setFlipIndex((current) => current + 1)
   }
 
-  function buildQuizOptions(card: CardRecord) {
-    const pool = allCards
-      .filter((item) => item.id !== card.id)
-      .map((item) => item.translation)
-      .filter((value, optionIndex, values) => values.indexOf(value) === optionIndex)
-    const distractors = shuffleOptions(pool).slice(0, 3)
-    return shuffleOptions([card.translation, ...distractors])
+  function handleQuizLifeLost() {
+    spendLife()
+  }
+
+  function handleQuizBatchCompleted() {
+    if (quizBatchIndex + 1 >= quizBatches.length) {
+      advanceToNextStage("quiz")
+      return
+    }
+
+    setQuizBatchIndex((current) => current + 1)
+    setQuizSolvedPairs(0)
+  }
+
+  function handleWriteResolved(result: ReviewResult) {
+    if (result === "unknown" && spendLife()) {
+      return
+    }
+
+    if (writeIndex + 1 >= sessionCards.length) {
+      void commitSession()
+      return
+    }
+
+    setWriteIndex((current) => current + 1)
+  }
+
+  function getActiveStageProgress() {
+    if (!sessionCards.length) {
+      return 0
+    }
+
+    if (activeStage === "flip") {
+      return Math.round(((flipIndex + 1) / sessionCards.length) * 100)
+    }
+
+    if (activeStage === "write") {
+      return Math.round(((writeIndex + 1) / sessionCards.length) * 100)
+    }
+
+    const totalPairs = Math.max(quizBatches.length * QUIZ_BATCH_SIZE, 1)
+    const currentPair = Math.min(
+      quizBatchIndex * QUIZ_BATCH_SIZE + quizSolvedPairs + 1,
+      totalPairs
+    )
+
+    return Math.round((currentPair / totalPairs) * 100)
+  }
+
+  function getStageCounterLabel() {
+    if (activeStage === "flip") {
+      return `Card ${Math.min(flipIndex + 1, sessionCards.length)} of ${sessionCards.length}`
+    }
+
+    if (activeStage === "write") {
+      return `Card ${Math.min(writeIndex + 1, sessionCards.length)} of ${sessionCards.length}`
+    }
+
+    const totalPairs = quizBatches.length * QUIZ_BATCH_SIZE
+    const currentPair = Math.min(
+      quizBatchIndex * QUIZ_BATCH_SIZE + quizSolvedPairs + 1,
+      totalPairs
+    )
+
+    return `Pair ${currentPair} of ${totalPairs}`
   }
 
   if (loading) {
     return <div className="skeleton h-[32rem] rounded-[2rem]" />
   }
 
-  if (!started) {
+  if (sessionStatus === "idle") {
     return (
-      <section className="panel mx-auto max-w-3xl p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-quiet">
-              Review
-            </p>
-            <h1 className="mt-2 text-[28px] font-bold tracking-[-0.5px] text-text-primary">
-              Start today&apos;s session
-            </h1>
-            <p className="mt-3 text-[15px] leading-6 text-text-secondary">
-              Choose a mode, filter by status if you want, and work through every due card.
-            </p>
-          </div>
-          <Link
-            href="/"
-            prefetch
-            className="button-secondary inline-flex px-4 py-2 text-sm font-medium"
-          >
-            Exit
-          </Link>
-        </div>
+      <div className={outfit.className}>
+        <ReviewSessionOverview
+          currentStage="flip"
+          completedStages={[]}
+          lives={reviewLives}
+          cardsDue={availableCards.length}
+          totalCards={allAvailableCards.length}
+          selectedStatus={selectedStatus}
+          onSelectStatus={setSelectedStatus}
+          onStartDue={() => startSession(availableCards)}
+          onRepeatAll={() => startSession(allAvailableCards)}
+        />
+      </div>
+    )
+  }
 
-        <div className="mt-6 grid gap-3 md:grid-cols-3">
-          {[
-            { value: "flip", label: "Flip" },
-            { value: "write", label: "Write" },
-            { value: "quiz", label: "Quiz" }
-          ].map((item) => (
+  if (sessionStatus === "saving" || sessionStatus === "save-error") {
+    return (
+      <section className={`panel mx-auto max-w-3xl p-6 text-center ${outfit.className}`}>
+        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-quiet">
+          {sessionStatus === "saving" ? "Saving" : "Save error"}
+        </p>
+        <h1 className="mt-3 text-[28px] font-bold tracking-[-0.5px] text-text-primary">
+          {sessionStatus === "saving"
+            ? "Saving your linked session"
+            : "We couldn&apos;t save this session"}
+        </h1>
+        <div className="mt-6">
+          <ReviewStageStepper
+            items={REVIEW_STEPS}
+            currentStage="write"
+            completedValues={completedStages}
+            variant="compact"
+          />
+        </div>
+        <p className="mt-6 text-[15px] text-text-secondary">
+          {sessionStatus === "saving"
+            ? "Please wait while we save your completed stages."
+            : "Your review path is finished, but the final save needs another try."}
+        </p>
+        {sessionStatus === "save-error" ? (
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
             <button
-              key={item.value}
               type="button"
-              onClick={() => setMode(item.value as ReviewMode)}
-              className={`rounded-[1.75rem] border px-5 py-5 text-left ${
-                mode === item.value
-                  ? "border-accent bg-accent text-accentForeground"
-                  : "border-separator bg-bg-primary text-text-primary"
-              }`}
+              onClick={() => void commitSession()}
+              className="button-primary min-h-[48px] px-5 py-3 text-sm font-medium"
             >
-              <p className="text-[15px] font-semibold">{item.label}</p>
+              Retry save
             </button>
-          ))}
-        </div>
-
-        <div className="mt-6 flex flex-wrap gap-2">
-          {(["All", "known", "unknown"] as CardStatusFilter[]).map((status) => (
-            <button
-              key={status}
-              type="button"
-              onClick={() => setSelectedStatus(status)}
-              className="chip-button"
-              data-active={selectedStatus === status}
+            <Link
+              href="/"
+              prefetch
+              className="button-secondary inline-flex min-h-[48px] items-center justify-center px-5 py-3 text-sm font-medium"
             >
-              {status === "All"
-                ? "All"
-                : status === "known"
-                  ? "Known"
-                  : "Unknown"}
-            </button>
-          ))}
-        </div>
-
-        {mode === "quiz" && allCards.length < 4 ? (
-          <div className="mt-6 rounded-[1.5rem] bg-dangerBg px-4 py-4 text-sm text-dangerText">
-            Add at least 4 cards to unlock quiz mode.
+              Back to deck
+            </Link>
           </div>
         ) : null}
-
-        <div className="mt-6 grid gap-3 md:grid-cols-2">
-          <div className="rounded-[1.75rem] border border-separator bg-bg-secondary px-5 py-5">
-            <p className="text-[15px] text-text-secondary">
-              Cards due now: <span className="font-semibold text-text-primary">{availableCards.length}</span>
-            </p>
-          </div>
-          <div className="rounded-[1.75rem] border border-separator bg-bg-secondary px-5 py-5">
-            <p className="text-[15px] text-text-secondary">
-              All matching cards: <span className="font-semibold text-text-primary">{allAvailableCards.length}</span>
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-          <button
-            type="button"
-            onClick={() => {
-              if (mode === "quiz" && availableCards.length < 4) {
-                return
-              }
-              startRound(availableCards)
-            }}
-            disabled={!availableCards.length || (mode === "quiz" && availableCards.length < 4)}
-            className="button-primary min-h-[48px] flex-1 px-5 py-3 text-sm font-medium"
-          >
-            Start due words
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              if (mode === "quiz" && allAvailableCards.length < 4) {
-                return
-              }
-              startRound(allAvailableCards)
-            }}
-            disabled={!allAvailableCards.length || (mode === "quiz" && allAvailableCards.length < 4)}
-            className="button-secondary min-h-[48px] flex-1 px-5 py-3 text-sm font-medium"
-          >
-            Repeat all words
-          </button>
-        </div>
       </section>
     )
   }
 
-  if (!currentCard) {
-    const total = correct + wrong
-    const accuracy = total ? Math.round((correct / total) * 100) : 0
-    const unknownCards = roundCards
-      .filter((card) => roundResults[card.id] === "unknown")
-      .map((card) => allCards.find((item) => item.id === card.id) ?? card)
-
+  if (sessionStatus === "success") {
     return (
-      <section className="panel mx-auto max-w-3xl p-6 text-center">
+      <section className={`panel mx-auto max-w-3xl p-6 text-center ${outfit.className}`}>
         <p className="text-xs font-semibold uppercase tracking-[0.28em] text-quiet">
           Session complete
         </p>
-        <h1 className="mt-3 text-[28px] font-bold tracking-[-0.5px] text-text-primary">Session complete!</h1>
-        <p className="mt-4 text-[15px] text-text-secondary">
-          Correct: {correct} | Wrong: {wrong} | Accuracy: {accuracy}%
+        <h1 className="mt-3 text-[28px] font-bold tracking-[-0.5px] text-text-primary">
+          You crushed it
+        </h1>
+        <div className="mt-6">
+          <ReviewStageStepper
+            items={REVIEW_STEPS}
+            currentStage="write"
+            completedValues={REVIEW_STEPS.map((item) => item.value)}
+            variant="compact"
+          />
+        </div>
+        <p className="mt-6 text-[15px] text-text-secondary">
+          {sessionCards.length} cards completed across all 3 stages.
         </p>
-        <p className="mt-2 text-[15px] text-text-secondary">Streak: {streak} days</p>
-        {unknownCards.length ? (
-          <div className="mt-6 space-y-3">
-            <p className="text-[15px] text-text-secondary">
-              Unknown words left:{" "}
-              <span className="font-semibold text-text-primary">{unknownCards.length}</span>
-            </p>
-            <button
-              type="button"
-              onClick={() => startRound(unknownCards)}
-              className="button-primary inline-flex min-h-[48px] px-5 py-3 text-sm font-medium"
-            >
-              Play unknown words again
-            </button>
-          </div>
-        ) : (
-          <Link
-            href="/"
-            prefetch
-            className="button-primary mt-8 inline-flex min-h-[48px] px-5 py-3 text-sm font-medium"
-          >
-            Back to deck
-          </Link>
-        )}
+        <p className="mt-2 text-[15px] text-text-secondary">
+          Mistakes spent: {mistakes} | Streak: {streak} days
+        </p>
+        <Link
+          href="/"
+          prefetch
+          className="button-primary mt-8 inline-flex min-h-[48px] px-5 py-3 text-sm font-medium"
+        >
+          Back to deck
+        </Link>
       </section>
     )
   }
 
-  const progress = Math.round(((index + 1) / roundCards.length) * 100)
+  if (!currentCard && activeStage !== "quiz") {
+    return null
+  }
+
+  const progress = getActiveStageProgress()
 
   return (
-    <div className="mx-auto max-w-4xl space-y-5">
-      <div className="panel p-5">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-sm font-medium text-ink">
-              Card {Math.min(index + 1, roundCards.length)} of {roundCards.length}
-            </p>
-            <p className="mt-1 text-sm text-muted">
-              Mode: {mode.charAt(0).toUpperCase() + mode.slice(1)}
-            </p>
+    <div className={`mx-auto max-w-4xl space-y-5 ${outfit.className}`}>
+      <div className={`panel p-5 ${styles.activeHeader}`}>
+        <div className={styles.activeHeaderTop}>
+          <div className="min-w-0 flex-1">
+            <div className={styles.sessionMeta}>
+              <p className={styles.sessionCounter}>{getStageCounterLabel()}</p>
+              <p className={styles.sessionStage}>Stage: {getStageLabel(activeStage)}</p>
+            </div>
+            <div className={styles.stepperBlock}>
+              <ReviewStageStepper
+                items={REVIEW_STEPS}
+                currentStage={activeStage}
+                completedValues={completedStages}
+                variant="compact"
+              />
+            </div>
           </div>
-          <Link
-            href="/"
-            prefetch
-            className="button-secondary inline-flex px-4 py-2 text-sm font-medium"
-          >
-            Exit
-          </Link>
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className={`${styles.livesPill} ${styles.livesCompact}`}>
+              <div className={styles.heartRow}>
+                {Array.from({ length: livesRemaining }).map((_, index) => (
+                  <Heart key={`live-heart-${index}`} size={16} fill="currentColor" />
+                ))}
+              </div>
+              <p className={styles.livesText}>{livesRemaining} left</p>
+            </div>
+            <Link
+              href="/"
+              prefetch
+              className={`button-secondary inline-flex px-4 py-2 text-sm font-medium ${styles.exitButton}`}
+            >
+              Exit
+            </Link>
+          </div>
         </div>
-        <div className="mt-4 h-3 rounded-full bg-bg-secondary">
+
+        <div className={styles.progressTrack}>
           <div
-            className="h-3 rounded-full bg-accent transition-all"
+            className={styles.progressFill}
             style={{ width: `${progress}%` }}
           />
         </div>
       </div>
 
-      {mode === "flip" ? (
-        <FlipCard card={currentCard} onAnswer={(result) => void handleAnswer(result)} />
+      {activeStage === "flip" ? (
+        <FlipCard
+          key={`flip-${stageAttempt}-${currentCard?.id ?? "none"}`}
+          card={currentCard as CardRecord}
+          onAnswer={handleFlipResolved}
+        />
       ) : null}
-      {mode === "write" ? (
-        <WriteCard card={currentCard} onResolved={(result) => void handleAnswer(result)} />
-      ) : null}
-      {mode === "quiz" ? (
+
+      {activeStage === "quiz" && currentQuizBatch ? (
         <QuizCard
-          card={currentCard}
-          options={buildQuizOptions(currentCard)}
-          onResolved={(result) => void handleAnswer(result)}
+          key={`${currentQuizBatch.id}-${stageAttempt}`}
+          leftItems={currentQuizBatch.leftItems}
+          rightItems={currentQuizBatch.rightItems}
+          batchIndex={quizBatchIndex}
+          totalBatches={quizBatches.length}
+          onLifeLost={handleQuizLifeLost}
+          onBatchCompleted={handleQuizBatchCompleted}
+          onProgressChange={setQuizSolvedPairs}
+        />
+      ) : null}
+
+      {activeStage === "write" ? (
+        <WriteCard
+          key={`write-${stageAttempt}-${currentCard?.id ?? "none"}`}
+          card={currentCard as CardRecord}
+          onResolved={handleWriteResolved}
         />
       ) : null}
     </div>

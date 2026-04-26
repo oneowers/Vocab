@@ -4,6 +4,8 @@ import { getTodayDateKey } from "@/lib/date"
 import { getReviewOutcome } from "@/lib/spaced-repetition"
 import type { CardRecord, GuestReviewLog, ReviewResult } from "@/lib/types"
 
+export const DEFAULT_GUEST_REVIEW_LIVES = 3
+
 const GUEST_MODE_KEY = "wordflow.guest-mode"
 const GUEST_CARDS_KEY = "wordflow.guest-cards"
 const GUEST_REVIEW_LOGS_KEY = "wordflow.guest-review-logs"
@@ -162,21 +164,45 @@ export function getGuestReviewLogs() {
   }
 }
 
-export function recordGuestReview(cardId: string, result: ReviewResult) {
+function saveGuestReviewLogs(logs: GuestReviewLog[]) {
+  if (!canUseStorage()) {
+    return
+  }
+
+  window.localStorage.setItem(GUEST_REVIEW_LOGS_KEY, JSON.stringify(logs))
+}
+
+export function recordGuestReviews(
+  reviews: Array<{
+    cardId: string
+    result: ReviewResult
+  }>
+) {
+  if (!reviews.length) {
+    return getGuestCards()
+  }
+
   const cards = getGuestCards()
   const today = getTodayDateKey()
-  const outcome = getReviewOutcome(result, today)
+  const groupedReviews = reviews.reduce<Record<string, ReviewResult[]>>((accumulator, review) => {
+    accumulator[review.cardId] = [...(accumulator[review.cardId] ?? []), review.result]
+    return accumulator
+  }, {})
 
   const nextCards = cards.map((card) =>
-    card.id === cardId
-      ? {
-          ...card,
-          nextReviewDate: outcome.nextReviewDate,
-          lastReviewResult: outcome.lastReviewResult,
-          reviewCount: card.reviewCount + outcome.reviewCountDelta,
-          correctCount: card.correctCount + outcome.correctCountDelta,
-          wrongCount: card.wrongCount + outcome.wrongCountDelta
-        }
+    groupedReviews[card.id]?.length
+      ? groupedReviews[card.id].reduce((currentCard, result) => {
+          const outcome = getReviewOutcome(result, today)
+
+          return {
+            ...currentCard,
+            nextReviewDate: outcome.nextReviewDate,
+            lastReviewResult: outcome.lastReviewResult,
+            reviewCount: currentCard.reviewCount + outcome.reviewCountDelta,
+            correctCount: currentCard.correctCount + outcome.correctCountDelta,
+            wrongCount: currentCard.wrongCount + outcome.wrongCountDelta
+          }
+        }, card)
       : card
   )
 
@@ -184,17 +210,28 @@ export function recordGuestReview(cardId: string, result: ReviewResult) {
 
   const nextLogs = [
     ...getGuestReviewLogs(),
-    {
-      id: `${cardId}-${Date.now()}`,
-      cardId,
-      result,
+    ...reviews.map((review, index) => ({
+      id: `${review.cardId}-${Date.now()}-${index}`,
+      cardId: review.cardId,
+      result: review.result,
       createdAt: new Date().toISOString()
-    }
+    }))
   ]
 
-  if (canUseStorage()) {
-    window.localStorage.setItem(GUEST_REVIEW_LOGS_KEY, JSON.stringify(nextLogs))
-  }
+  saveGuestReviewLogs(nextLogs)
 
   return nextCards
+}
+
+export function recordGuestReview(cardId: string, result: ReviewResult) {
+  return recordGuestReviews([{ cardId, result }])
+}
+
+export function commitGuestReviewSession(cardIds: string[]) {
+  return recordGuestReviews(
+    Array.from(new Set(cardIds)).map((cardId) => ({
+      cardId,
+      result: "known" as const
+    }))
+  )
 }

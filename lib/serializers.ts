@@ -9,6 +9,7 @@ export function serializeUser(user: User): AppUserRecord {
     name: user.name,
     avatarUrl: user.avatarUrl,
     role: user.role,
+    reviewLives: user.reviewLives,
     streak: user.streak,
     createdAt: user.createdAt.toISOString(),
     lastActiveAt: user.lastActiveAt?.toISOString() ?? null,

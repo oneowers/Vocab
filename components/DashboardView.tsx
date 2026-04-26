@@ -14,6 +14,7 @@ import type { CardRecord, CardsResponse, DashboardSummary, CardStatusFilter } fr
 
 const EMPTY_SUMMARY: DashboardSummary = {
   streak: 0,
+  reviewLives: 3,
   totalCards: 0,
   dueToday: 0,
   mastered: 0
@@ -23,6 +24,7 @@ function buildSummary(cards: CardRecord[], streak: number) {
   const today = getTodayDateKey()
   return {
     streak,
+    reviewLives: 3,
     totalCards: cards.length,
     dueToday: cards.filter((card) => card.nextReviewDate <= today).length,
     mastered: cards.filter((card) => isMastered(card.reviewCount)).length

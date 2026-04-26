@@ -13,6 +13,7 @@ model User {
   name           String?
   avatarUrl      String?
   role           Role        @default(USER)
+  reviewLives    Int         @default(3)
   createdAt      DateTime    @default(now())
   lastActiveAt   DateTime?
   streak         Int         @default(0)

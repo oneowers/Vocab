@@ -3,10 +3,10 @@
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowRight, LogOut, Shield } from "lucide-react"
+import { ArrowRight, Heart, LogOut, Shield } from "lucide-react"
 
 import { useToast } from "@/components/Toast"
-import { clearGuestSession, isGuestSessionActive } from "@/lib/guest"
+import { DEFAULT_GUEST_REVIEW_LIVES, clearGuestSession, isGuestSessionActive } from "@/lib/guest"
 import { getRoleLabel } from "@/lib/roles"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
 import type { AppUserRecord, ProfileActivityPayload } from "@/lib/types"
@@ -20,10 +20,16 @@ export function ProfileView({ user, activity }: ProfileViewProps) {
   const router = useRouter()
   const { showToast } = useToast()
   const [guestActive, setGuestActive] = useState(false)
+  const [reviewLives, setReviewLives] = useState(user?.reviewLives ?? DEFAULT_GUEST_REVIEW_LIVES)
+  const [savingLives, setSavingLives] = useState(false)
 
   useEffect(() => {
     setGuestActive(isGuestSessionActive())
   }, [])
+
+  useEffect(() => {
+    setReviewLives(user?.reviewLives ?? DEFAULT_GUEST_REVIEW_LIVES)
+  }, [user?.reviewLives])
 
   async function handleExit() {
     if (guestActive) {
@@ -79,6 +85,41 @@ export function ProfileView({ user, activity }: ProfileViewProps) {
     })
   }, [activity.months, heatmapCellSize, heatmapGap])
 
+  async function handleReviewLivesChange(nextLives: number) {
+    if (guestActive || !user || savingLives || nextLives === reviewLives) {
+      return
+    }
+
+    setSavingLives(true)
+
+    try {
+      const response = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          reviewLives: nextLives
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error("Could not update review lives.")
+      }
+
+      setReviewLives(nextLives)
+      router.refresh()
+      showToast("Review lives updated.", "success")
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : "Could not update review lives.",
+        "error"
+      )
+    } finally {
+      setSavingLives(false)
+    }
+  }
+
   return (
     <div className="space-y-4">
       <section className="panel p-6">
@@ -106,6 +147,47 @@ export function ProfileView({ user, activity }: ProfileViewProps) {
               <ArrowRight size={18} className="text-text-tertiary" />
             </Link>
           ) : null}
+        </div>
+      </section>
+
+      <section className="panel p-4 md:p-5">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="section-label">Review lives</p>
+            <h2 className="mt-2 text-[22px] font-bold tracking-[-0.5px] text-text-primary">
+              {guestActive ? DEFAULT_GUEST_REVIEW_LIVES : reviewLives} tries per stage
+            </h2>
+            <p className="mt-1 text-[15px] text-text-secondary">
+              {guestActive
+                ? "Guest mode always uses 3 lives for linked review sessions."
+                : "Choose how many mistakes each review stage allows before it resets."}
+            </p>
+          </div>
+          <div className="flex items-center gap-1 text-dangerText">
+            {Array.from({
+              length: guestActive ? DEFAULT_GUEST_REVIEW_LIVES : reviewLives
+            }).map((_, index) => (
+              <Heart key={`profile-heart-${index}`} size={16} fill="currentColor" />
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-5 flex flex-wrap gap-2">
+          {[1, 2, 3, 4, 5].map((value) => (
+            <button
+              key={value}
+              type="button"
+              disabled={guestActive || savingLives}
+              onClick={() => void handleReviewLivesChange(value)}
+              className={`min-w-[56px] rounded-[1rem] border px-4 py-3 text-sm font-semibold transition ${
+                (guestActive ? DEFAULT_GUEST_REVIEW_LIVES : reviewLives) === value
+                  ? "border-accent bg-accent text-accentForeground"
+                  : "border-separator bg-bg-primary text-text-primary hover:border-accent"
+              } ${guestActive || savingLives ? "cursor-not-allowed opacity-70" : ""}`}
+            >
+              {value}
+            </button>
+          ))}
         </div>
       </section>
 
