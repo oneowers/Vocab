@@ -19,9 +19,6 @@ import type {
   StatsPayload
 } from "@/lib/types"
 
-const HEATMAP_WEEKS = 53
-const HEATMAP_DAYS = HEATMAP_WEEKS * 7
-
 function startOfWeekSunday(date: Date) {
   const next = new Date(date)
   next.setUTCHours(0, 0, 0, 0)
@@ -61,25 +58,33 @@ function getActivityLevel(count: number): ProfileActivityDay["level"] {
 
 function buildActivitySkeleton(endDateKey = getTodayDateKey()) {
   const today = parseDateKey(endDateKey)
-  const currentWeekStart = startOfWeekSunday(today)
-  const gridStart = addDays(currentWeekStart, -(HEATMAP_DAYS - 7))
-  const lastYearStartKey = addDaysToDateKey(endDateKey, -364)
+  const yearStart = new Date(Date.UTC(today.getUTCFullYear(), 0, 1))
+  const gridStart = startOfWeekSunday(yearStart)
+  const totalDays =
+    Math.floor((today.getTime() - gridStart.getTime()) / (24 * 60 * 60 * 1000)) + 1
+  const yearStartKey = toDateKey(yearStart)
 
-  const days = Array.from({ length: HEATMAP_DAYS }, (_, index) => {
+  const days = Array.from({ length: totalDays }, (_, index) => {
     const date = addDays(gridStart, index)
     return {
       date: toDateKey(date),
       weekIndex: Math.floor(index / 7),
-      inLastYear: toDateKey(date) >= lastYearStartKey && toDateKey(date) <= endDateKey
+      inCurrentYear: toDateKey(date) >= yearStartKey && toDateKey(date) <= endDateKey
     }
   })
 
   const months = days.reduce<ProfileActivityMonthLabel[]>((accumulator, day, index) => {
+    if (!day.inCurrentYear) {
+      return accumulator
+    }
+
     const date = parseDateKey(day.date)
     const label = date.toLocaleDateString("en-US", { month: "short" })
     const previous = index > 0 ? days[index - 1] : null
     const previousMonth = previous
-      ? parseDateKey(previous.date).getUTCMonth()
+      ? previous.inCurrentYear
+        ? parseDateKey(previous.date).getUTCMonth()
+        : null
       : null
 
     if (index === 0 || date.getUTCMonth() !== previousMonth) {
@@ -205,7 +210,7 @@ export async function buildProfileActivity(userId: string): Promise<ProfileActiv
   const prisma = getPrisma()
   const today = getTodayDateKey()
   const skeleton = buildActivitySkeleton(today)
-  const startDate = parseDateKey(addDaysToDateKey(today, -364))
+  const startDate = new Date(Date.UTC(parseDateKey(today).getUTCFullYear(), 0, 1))
   const endDate = new Date(`${today}T23:59:59.999Z`)
   const reviewLogs = await prisma.reviewLog.findMany({
     where: {
@@ -232,7 +237,7 @@ export async function buildProfileActivity(userId: string): Promise<ProfileActiv
     return {
       date: day.date,
       count,
-      level: day.inLastYear ? getActivityLevel(count) : 0
+      level: day.inCurrentYear ? getActivityLevel(count) : 0
     }
   })
 

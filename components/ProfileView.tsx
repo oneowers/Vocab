@@ -54,27 +54,30 @@ export function ProfileView({ user, activity }: ProfileViewProps) {
     ? "Guest mode"
     : getRoleLabel(user?.role ?? null)
   const heatmapDays = useMemo(() => activity.days, [activity.days])
-  const heatmapWeekCount = 53
-  const heatmapWeeks = useMemo(
-    () =>
-      Array.from({ length: heatmapWeekCount }, (_, weekIndex) =>
-        heatmapDays.slice(weekIndex * 7, weekIndex * 7 + 7)
-      ),
-    [heatmapDays]
+  const heatmapCellSize = 12
+  const heatmapGap = 4
+  const heatmapWeekCount = Math.max(
+    1,
+    ...activity.months.map((month) => month.weekIndex + 1),
+    Math.ceil(heatmapDays.length / 7)
   )
+  const heatmapWidth =
+    heatmapWeekCount * heatmapCellSize + Math.max(heatmapWeekCount - 1, 0) * heatmapGap
   const visibleMonths = useMemo(() => {
-    const minLabelSpacingWeeks = 6
-    let lastWeekIndex = -Infinity
+    const minLabelSpacing = 28
+    let lastLeft = -Infinity
 
     return activity.months.filter((month) => {
-      if (month.weekIndex - lastWeekIndex < minLabelSpacingWeeks) {
+      const left = month.weekIndex * (heatmapCellSize + heatmapGap)
+
+      if (left - lastLeft < minLabelSpacing) {
         return false
       }
 
-      lastWeekIndex = month.weekIndex
+      lastLeft = left
       return true
     })
-  }, [activity.months])
+  }, [activity.months, heatmapCellSize, heatmapGap])
 
   return (
     <div className="space-y-4">
@@ -111,12 +114,12 @@ export function ProfileView({ user, activity }: ProfileViewProps) {
           <div>
             <p className="section-label">Activity</p>
             <h2 className="mt-2 text-[22px] font-bold tracking-[-0.5px] text-text-primary">
-              {activity.activeDaysLastYear} active days in the last year
+              {activity.activeDaysLastYear} active days this year
             </h2>
             <p className="mt-1 text-[15px] text-text-secondary">
               {guestActive
-                ? "Guest mode does not keep a year-long activity history yet."
-                : `${activity.totalReviewsLastYear} review attempts recorded across the past 12 months.`}
+                ? "Guest mode does not keep a year-to-date activity history yet."
+                : `${activity.totalReviewsLastYear} review attempts recorded since January 1.`}
             </p>
           </div>
           <div className="flex items-center gap-2 text-[13px] text-text-tertiary">
@@ -128,17 +131,18 @@ export function ProfileView({ user, activity }: ProfileViewProps) {
           </div>
         </div>
 
-        <div className="mt-5 overflow-hidden">
-          <div className="w-full">
+        <div className="mt-5 overflow-x-auto pb-1 hide-scrollbar native-scroll">
+          <div className="min-w-[760px]">
             <div
               className="relative ml-12 h-6 text-[12px] leading-none text-text-tertiary"
+              style={{ width: `${heatmapWidth}px` }}
             >
               {visibleMonths.map((month) => (
                 <span
                   key={`${month.label}-${month.weekIndex}`}
                   className="absolute top-0"
                   style={{
-                    left: `${(month.weekIndex / heatmapWeekCount) * 100}%`
+                    left: `${month.weekIndex * (heatmapCellSize + heatmapGap)}px`
                   }}
                 >
                   {month.label}
@@ -155,19 +159,18 @@ export function ProfileView({ user, activity }: ProfileViewProps) {
                 ))}
               </div>
 
-              <div className="grid flex-1 grid-cols-[repeat(53,minmax(0,1fr))] gap-1">
-                {heatmapWeeks.map((week, weekIndex) => (
-                  <div key={`week-${weekIndex}`} className="grid grid-rows-7 gap-1">
-                    {week.map((day) => (
-                      <div
-                        key={day.date}
-                        className="activity-cell aspect-square h-auto w-full"
-                        data-level={day.level}
-                        title={`${day.count} reviews on ${day.date}`}
-                        aria-label={`${day.count} reviews on ${day.date}`}
-                      />
-                    ))}
-                  </div>
+              <div
+                className="grid grid-flow-col grid-rows-7 gap-1"
+                style={{ width: `${heatmapWidth}px` }}
+              >
+                {heatmapDays.map((day) => (
+                  <div
+                    key={day.date}
+                    className="activity-cell"
+                    data-level={day.level}
+                    title={`${day.count} reviews on ${day.date}`}
+                    aria-label={`${day.count} reviews on ${day.date}`}
+                  />
                 ))}
               </div>
             </div>
