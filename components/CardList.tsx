@@ -1,15 +1,15 @@
 "use client"
 
 import { getTooltipMessage } from "@/lib/config"
+import { matchesCardStatus } from "@/lib/spaced-repetition"
 import { speakText, canSpeak } from "@/lib/tts"
-import type { CardRecord } from "@/lib/types"
+import type { CardRecord, CardStatusFilter } from "@/lib/types"
 import { Trash2, Volume2 } from "lucide-react"
 
 interface CardListProps {
   cards: CardRecord[]
-  tags: string[]
-  selectedTag: string
-  onSelectTag: (tag: string) => void
+  selectedStatus: CardStatusFilter
+  onSelectStatus: (status: CardStatusFilter) => void
   search: string
   onSearchChange: (value: string) => void
   onExport: () => void
@@ -23,9 +23,8 @@ interface CardListProps {
 
 export function CardList({
   cards,
-  tags,
-  selectedTag,
-  onSelectTag,
+  selectedStatus,
+  onSelectStatus,
   search,
   onSearchChange,
   onExport,
@@ -64,23 +63,19 @@ export function CardList({
 
       <div className="mt-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => onSelectTag("All")}
-            className="chip-button"
-            data-active={selectedTag === "All"}
-          >
-            All
-          </button>
-          {tags.map((tag) => (
+          {(["All", "known", "unknown"] as CardStatusFilter[]).map((status) => (
             <button
-              key={tag}
+              key={status}
               type="button"
-              onClick={() => onSelectTag(tag)}
+              onClick={() => onSelectStatus(status)}
               className="chip-button"
-              data-active={selectedTag === tag}
+              data-active={selectedStatus === status}
             >
-              {tag}
+              {status === "All"
+                ? "All"
+                : status === "known"
+                  ? "Known"
+                  : "Unknown"}
             </button>
           ))}
         </div>
@@ -139,6 +134,9 @@ export function CardList({
                     ) : null}
                   </div>
                   <p className="mt-1 truncate text-[14px] text-text-secondary">{card.translation}</p>
+                  <p className="mt-1 text-[12px] font-medium text-text-tertiary">
+                    {matchesCardStatus(card, "known") ? "Known" : "Unknown"}
+                  </p>
                 </div>
               </div>
 

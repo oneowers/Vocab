@@ -20,9 +20,9 @@ function createSampleCards(): CardRecord[] {
       direction: "en-ru",
       example: "She packed an apple for the trip.",
       phonetic: "/ˈæp.əl/",
-      tags: ["food", "starter"],
       dateAdded: new Date().toISOString(),
       nextReviewDate: today,
+      lastReviewResult: "unknown",
       reviewCount: 0,
       correctCount: 0,
       wrongCount: 0
@@ -35,9 +35,9 @@ function createSampleCards(): CardRecord[] {
       direction: "en-ru",
       example: "The river is calm in the morning.",
       phonetic: "/ˈrɪv.ər/",
-      tags: ["nature"],
       dateAdded: new Date().toISOString(),
       nextReviewDate: today,
+      lastReviewResult: "unknown",
       reviewCount: 0,
       correctCount: 0,
       wrongCount: 0
@@ -50,9 +50,9 @@ function createSampleCards(): CardRecord[] {
       direction: "ru-en",
       example: "I want to study every day.",
       phonetic: "/ˈstʌd.i/",
-      tags: ["verbs"],
       dateAdded: new Date().toISOString(),
       nextReviewDate: today,
+      lastReviewResult: "unknown",
       reviewCount: 0,
       correctCount: 0,
       wrongCount: 0
@@ -65,9 +65,9 @@ function createSampleCards(): CardRecord[] {
       direction: "en-ru",
       example: "The room feels bright and warm.",
       phonetic: "/braɪt/",
-      tags: ["adjectives"],
       dateAdded: new Date().toISOString(),
       nextReviewDate: today,
+      lastReviewResult: "unknown",
       reviewCount: 0,
       correctCount: 0,
       wrongCount: 0
@@ -77,6 +77,13 @@ function createSampleCards(): CardRecord[] {
 
 function canUseStorage() {
   return typeof window !== "undefined"
+}
+
+function normalizeGuestCards(cards: CardRecord[]) {
+  return cards.map((card) => ({
+    ...card,
+    lastReviewResult: card.lastReviewResult ?? "unknown"
+  }))
 }
 
 export function isGuestSessionActive() {
@@ -119,7 +126,9 @@ export function getGuestCards() {
   }
 
   try {
-    return JSON.parse(existing) as CardRecord[]
+    const parsed = normalizeGuestCards(JSON.parse(existing) as CardRecord[])
+    saveGuestCards(parsed)
+    return parsed
   } catch {
     const sampleCards = createSampleCards()
     saveGuestCards(sampleCards)
@@ -163,6 +172,7 @@ export function recordGuestReview(cardId: string, result: ReviewResult) {
       ? {
           ...card,
           nextReviewDate: outcome.nextReviewDate,
+          lastReviewResult: outcome.lastReviewResult,
           reviewCount: card.reviewCount + outcome.reviewCountDelta,
           correctCount: card.correctCount + outcome.correctCountDelta,
           wrongCount: card.wrongCount + outcome.wrongCountDelta
@@ -188,4 +198,3 @@ export function recordGuestReview(cardId: string, result: ReviewResult) {
 
   return nextCards
 }
-

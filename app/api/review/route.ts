@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
       },
       data: {
         nextReviewDate: outcome.nextReviewDate,
+        lastReviewResult: outcome.lastReviewResult,
         reviewCount: {
           increment: outcome.reviewCountDelta
         },
@@ -105,4 +106,3 @@ export async function POST(request: NextRequest) {
     streak: nextStreak
   })
 }
-

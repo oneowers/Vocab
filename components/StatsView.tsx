@@ -73,12 +73,6 @@ function computeGuestStats(cards: CardRecord[], logs: GuestReviewLog[]): StatsPa
   const totalCorrect = cards.reduce((sum, card) => sum + card.correctCount, 0)
   const totalWrong = cards.reduce((sum, card) => sum + card.wrongCount, 0)
   const total = totalCorrect + totalWrong
-  const tags = cards.reduce<Record<string, number>>((accumulator, card) => {
-    card.tags.forEach((tag) => {
-      accumulator[tag] = (accumulator[tag] ?? 0) + 1
-    })
-    return accumulator
-  }, {})
 
   return {
     currentStreak: computeCurrentStreak(logs),
@@ -91,8 +85,7 @@ function computeGuestStats(cards: CardRecord[], logs: GuestReviewLog[]): StatsPa
       date,
       label: formatDateLabel(date),
       value: cards.filter((card) => card.nextReviewDate === date).length
-    })),
-    tagBreakdown: Object.entries(tags).map(([tag, count]) => ({ tag, count }))
+    }))
   }
 }
 
@@ -204,22 +197,6 @@ export function StatsView() {
           </div>
         </section>
       </div>
-
-      <section className="panel rounded-[2rem] p-5">
-        <h2 className="text-lg font-semibold text-ink">Breakdown by tag</h2>
-        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {stats.tagBreakdown.length ? (
-            stats.tagBreakdown.map((item) => (
-              <div key={item.tag} className="rounded-[1.5rem] border border-separator bg-bg-primary px-4 py-4">
-                <p className="font-semibold text-ink">{item.tag}</p>
-                <p className="mt-1 text-sm text-muted">{item.count} cards</p>
-              </div>
-            ))
-          ) : (
-            <p className="text-sm text-muted">No tags yet.</p>
-          )}
-        </div>
-      </section>
     </div>
   )
 }

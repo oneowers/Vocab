@@ -8,14 +8,14 @@ import { ConfirmModal } from "@/components/ConfirmModal"
 import { useToast } from "@/components/Toast"
 import { getTodayDateKey } from "@/lib/date"
 import { getGuestCards, isGuestSessionActive } from "@/lib/guest"
-import { sortDueCards } from "@/lib/spaced-repetition"
-import type { CardRecord, CardsResponse } from "@/lib/types"
+import { matchesCardStatus, sortDueCards } from "@/lib/spaced-repetition"
+import type { CardRecord, CardsResponse, CardStatusFilter } from "@/lib/types"
 
 export function CardsPageView() {
   const [guestMode, setGuestMode] = useState(false)
   const [loading, setLoading] = useState(true)
   const [cards, setCards] = useState<CardRecord[]>([])
-  const [selectedTag, setSelectedTag] = useState("All")
+  const [selectedStatus, setSelectedStatus] = useState<CardStatusFilter>("All")
   const [search, setSearch] = useState("")
   const [cardToDelete, setCardToDelete] = useState<CardRecord | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -54,18 +54,14 @@ export function CardsPageView() {
     void loadCards()
   }, [showToast])
 
-  const tagOptions = Array.from(new Set(cards.flatMap((card) => card.tags)))
-    .filter(Boolean)
-    .sort((left, right) => left.localeCompare(right))
-
   const visibleCards = cards.filter((card) => {
-    const matchesTag = selectedTag === "All" || card.tags.includes(selectedTag)
+    const matchesStatus = matchesCardStatus(card, selectedStatus)
     const matchesSearch =
       !search.trim() ||
       card.original.toLowerCase().includes(search.trim().toLowerCase()) ||
       card.translation.toLowerCase().includes(search.trim().toLowerCase())
 
-    return matchesTag && matchesSearch
+    return matchesStatus && matchesSearch
   })
   const dueCount = cards.filter((card) => card.nextReviewDate <= getTodayDateKey()).length
 
@@ -152,8 +148,7 @@ export function CardsPageView() {
             translation: card.translation,
             direction: card.direction,
             example: card.example,
-            phonetic: card.phonetic,
-            tags: card.tags
+            phonetic: card.phonetic
           })
         })
       }
@@ -198,9 +193,8 @@ export function CardsPageView() {
         ) : (
           <CardList
             cards={visibleCards}
-            tags={tagOptions}
-            selectedTag={selectedTag}
-            onSelectTag={setSelectedTag}
+            selectedStatus={selectedStatus}
+            onSelectStatus={setSelectedStatus}
             search={search}
             onSearchChange={setSearch}
             onExport={handleExport}

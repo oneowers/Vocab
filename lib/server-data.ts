@@ -72,17 +72,6 @@ export async function buildUserStats(userId: string): Promise<StatsPayload> {
   const correct = cards.reduce((total, card) => total + card.correctCount, 0)
   const wrong = cards.reduce((total, card) => total + card.wrongCount, 0)
   const totalReviewed = correct + wrong
-  const tagCounts = cards.reduce<Record<string, number>>((accumulator, card) => {
-    card.tags.forEach((tag) => {
-      const trimmed = tag.trim()
-      if (!trimmed) {
-        return
-      }
-
-      accumulator[trimmed] = (accumulator[trimmed] ?? 0) + 1
-    })
-    return accumulator
-  }, {})
 
   return {
     currentStreak: user.streak,
@@ -105,10 +94,7 @@ export async function buildUserStats(userId: string): Promise<StatsPayload> {
       date,
       label: formatDateLabel(date),
       value: serializedCards.filter((card) => card.nextReviewDate === date).length
-    })),
-    tagBreakdown: Object.entries(tagCounts)
-      .map(([tag, count]) => ({ tag, count }))
-      .sort((left, right) => right.count - left.count)
+    }))
   }
 }
 

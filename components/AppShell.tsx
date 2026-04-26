@@ -91,9 +91,9 @@ export function AppShell({ user, children }: AppShellProps) {
                 return (
                   <Link
                     key={item.href}
-                    href={item.href}
-                    prefetch
-                    aria-current={active ? "page" : undefined}
+                  href={item.href}
+                  prefetch
+                  aria-current={active ? "page" : undefined}
                     className={`flex min-h-[52px] items-center gap-3 rounded-card px-4 text-[17px] font-semibold transition ${
                       active
                         ? "bg-bg-primary text-accent shadow-subtle"

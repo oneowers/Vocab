@@ -9,8 +9,8 @@ import { TranslatorPanel } from "@/components/TranslatorPanel"
 import { useToast } from "@/components/Toast"
 import { getTodayDateKey } from "@/lib/date"
 import { getGuestCards, isGuestSessionActive } from "@/lib/guest"
-import { isMastered, sortDueCards } from "@/lib/spaced-repetition"
-import type { CardRecord, CardsResponse, DashboardSummary } from "@/lib/types"
+import { isMastered, matchesCardStatus, sortDueCards } from "@/lib/spaced-repetition"
+import type { CardRecord, CardsResponse, DashboardSummary, CardStatusFilter } from "@/lib/types"
 
 const EMPTY_SUMMARY: DashboardSummary = {
   streak: 0,
@@ -34,7 +34,7 @@ export function DashboardView() {
   const [loading, setLoading] = useState(true)
   const [cards, setCards] = useState<CardRecord[]>([])
   const [summary, setSummary] = useState<DashboardSummary>(EMPTY_SUMMARY)
-  const [selectedTag, setSelectedTag] = useState("All")
+  const [selectedStatus, setSelectedStatus] = useState<CardStatusFilter>("All")
   const [search, setSearch] = useState("")
   const [cardToDelete, setCardToDelete] = useState<CardRecord | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -76,17 +76,13 @@ export function DashboardView() {
     void loadCards()
   }, [showToast])
 
-  const tagOptions = Array.from(new Set(cards.flatMap((card) => card.tags)))
-    .filter(Boolean)
-    .sort((left, right) => left.localeCompare(right))
-
   const visibleCards = cards.filter((card) => {
-    const matchesTag = selectedTag === "All" || card.tags.includes(selectedTag)
+    const matchesStatus = matchesCardStatus(card, selectedStatus)
     const matchesSearch =
       !search.trim() ||
       card.original.toLowerCase().includes(search.trim().toLowerCase()) ||
       card.translation.toLowerCase().includes(search.trim().toLowerCase())
-    return matchesTag && matchesSearch
+    return matchesStatus && matchesSearch
   })
 
   function updateCards(nextCards: CardRecord[]) {
@@ -161,8 +157,7 @@ export function DashboardView() {
             translation: card.translation,
             direction: card.direction,
             example: card.example,
-            phonetic: card.phonetic,
-            tags: card.tags
+            phonetic: card.phonetic
           })
         })
       }
@@ -219,9 +214,8 @@ export function DashboardView() {
 
         <CardList
           cards={visibleCards}
-          tags={tagOptions}
-          selectedTag={selectedTag}
-          onSelectTag={setSelectedTag}
+          selectedStatus={selectedStatus}
+          onSelectStatus={setSelectedStatus}
           search={search}
           onSearchChange={setSearch}
           onExport={handleExport}

@@ -31,13 +31,12 @@ export function serializeCard(
     direction: card.direction as CardRecord["direction"],
     example: card.example ?? null,
     phonetic: card.phonetic ?? null,
-    tags: card.tags,
     dateAdded: card.dateAdded.toISOString(),
     nextReviewDate: card.nextReviewDate,
+    lastReviewResult: card.lastReviewResult as CardRecord["lastReviewResult"],
     reviewCount: card.reviewCount,
     correctCount: card.correctCount,
     wrongCount: card.wrongCount,
     userEmail: card.user?.email
   }
 }
-

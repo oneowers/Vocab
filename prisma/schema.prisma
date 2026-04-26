@@ -35,9 +35,9 @@ model Card {
   direction      String
   example        String?
   phonetic       String?
-  tags           String[]
   dateAdded      DateTime @default(now())
   nextReviewDate String
+  lastReviewResult String @default("unknown")
   reviewCount    Int      @default(0)
   correctCount   Int      @default(0)
   wrongCount     Int      @default(0)

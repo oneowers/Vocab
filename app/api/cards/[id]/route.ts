@@ -32,6 +32,7 @@ export async function PATCH(
 
   const body = (await request.json()) as {
     nextReviewDate?: string
+    lastReviewResult?: "known" | "unknown"
     reviewCount?: number
     correctCount?: number
     wrongCount?: number
@@ -43,6 +44,7 @@ export async function PATCH(
     },
     data: {
       nextReviewDate: body.nextReviewDate ?? existing.nextReviewDate,
+      lastReviewResult: body.lastReviewResult ?? existing.lastReviewResult,
       reviewCount: typeof body.reviewCount === "number" ? body.reviewCount : existing.reviewCount,
       correctCount:
         typeof body.correctCount === "number" ? body.correctCount : existing.correctCount,
@@ -87,4 +89,3 @@ export async function DELETE(
 
   return NextResponse.json({ success: true })
 }
-

@@ -96,8 +96,7 @@ export function TranslatorPanel({
           translation: translation.trim(),
           direction,
           example,
-          phonetic,
-          tags: []
+          phonetic
         })
       })
 

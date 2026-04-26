@@ -6,16 +6,6 @@ import { getPrisma } from "@/lib/prisma"
 import { serializeCard } from "@/lib/serializers"
 import { buildDashboardSummary } from "@/lib/server-data"
 
-function sanitizeTags(input: unknown) {
-  if (!Array.isArray(input)) {
-    return []
-  }
-
-  return input
-    .map((tag) => (typeof tag === "string" ? tag.trim() : ""))
-    .filter(Boolean)
-}
-
 export async function GET(request: NextRequest) {
   const user = await getOptionalAuthUser()
 
@@ -24,7 +14,7 @@ export async function GET(request: NextRequest) {
   }
 
   const prisma = getPrisma()
-  const tag = request.nextUrl.searchParams.get("tag")?.trim()
+  const status = request.nextUrl.searchParams.get("status")
   const search = request.nextUrl.searchParams.get("search")?.trim()
   const due = request.nextUrl.searchParams.get("due")
   const today = getTodayDateKey()
@@ -32,7 +22,9 @@ export async function GET(request: NextRequest) {
   const cards = await prisma.card.findMany({
     where: {
       userId: user.id,
-      ...(tag && tag !== "All" ? { tags: { has: tag } } : {}),
+      ...(status === "known" || status === "unknown"
+        ? { lastReviewResult: status }
+        : {}),
       ...(search
         ? {
             OR: [
@@ -81,7 +73,6 @@ export async function POST(request: NextRequest) {
     direction?: "en-ru" | "ru-en"
     example?: string | null
     phonetic?: string | null
-    tags?: unknown
   }
 
   const original = body.original?.trim()
@@ -101,8 +92,8 @@ export async function POST(request: NextRequest) {
       direction,
       example: body.example?.trim() || null,
       phonetic: body.phonetic?.trim() || null,
-      tags: sanitizeTags(body.tags),
-      nextReviewDate: getTodayDateKey()
+      nextReviewDate: getTodayDateKey(),
+      lastReviewResult: "unknown"
     }
   })
 
@@ -123,4 +114,3 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({ card: serializeCard(card) }, { status: 201 })
 }
-

@@ -14,8 +14,8 @@ import {
   isGuestSessionActive,
   recordGuestReview
 } from "@/lib/guest"
-import { sortDueCards } from "@/lib/spaced-repetition"
-import type { CardRecord, CardsResponse, ReviewResult } from "@/lib/types"
+import { matchesCardStatus, sortDueCards } from "@/lib/spaced-repetition"
+import type { CardRecord, CardsResponse, CardStatusFilter, ReviewResult } from "@/lib/types"
 
 type ReviewMode = "flip" | "write" | "quiz"
 
@@ -65,8 +65,10 @@ export function ReviewSession() {
   const [allCards, setAllCards] = useState<CardRecord[]>([])
   const [dueCards, setDueCards] = useState<CardRecord[]>([])
   const [mode, setMode] = useState<ReviewMode>("flip")
-  const [selectedTag, setSelectedTag] = useState("All")
+  const [selectedStatus, setSelectedStatus] = useState<CardStatusFilter>("All")
   const [started, setStarted] = useState(false)
+  const [roundCards, setRoundCards] = useState<CardRecord[]>([])
+  const [roundResults, setRoundResults] = useState<Record<string, ReviewResult>>({})
   const [index, setIndex] = useState(0)
   const [correct, setCorrect] = useState(0)
   const [wrong, setWrong] = useState(0)
@@ -110,15 +112,8 @@ export function ReviewSession() {
     void loadSession()
   }, [showToast])
 
-  const availableTags = Array.from(new Set(allCards.flatMap((card) => card.tags)))
-    .filter(Boolean)
-    .sort((left, right) => left.localeCompare(right))
-
-  const sessionCards = dueCards.filter(
-    (card) => selectedTag === "All" || card.tags.includes(selectedTag)
-  )
-
-  const currentCard = sessionCards[index]
+  const availableCards = dueCards.filter((card) => matchesCardStatus(card, selectedStatus))
+  const currentCard = roundCards[index]
 
   async function handleAnswer(result: ReviewResult) {
     if (!currentCard) {
@@ -130,6 +125,10 @@ export function ReviewSession() {
     } else {
       setWrong((value) => value + 1)
     }
+    setRoundResults((current) => ({
+      ...current,
+      [currentCard.id]: result
+    }))
 
     try {
       if (guestMode) {
@@ -140,9 +139,7 @@ export function ReviewSession() {
         setAllCards(sortDueCards(nextCards))
         setDueCards(nextDueCards)
         setStreak(getGuestStreak())
-        setIndex((currentIndex) =>
-          currentIndex >= nextDueCards.length ? nextDueCards.length : currentIndex
-        )
+        setIndex((currentIndex) => currentIndex + 1)
       } else {
         const response = await fetch("/api/review", {
           method: "POST",
@@ -173,13 +170,20 @@ export function ReviewSession() {
         setAllCards(sortDueCards(nextCards))
         setDueCards(nextDueCards)
         setStreak(payload.streak)
-        setIndex((currentIndex) =>
-          currentIndex >= nextDueCards.length ? nextDueCards.length : currentIndex
-        )
+        setIndex((currentIndex) => currentIndex + 1)
       }
     } catch {
       showToast("Could not save this review result.", "error")
     }
+  }
+
+  function startRound(cards: CardRecord[]) {
+    setRoundCards(cards)
+    setRoundResults({})
+    setIndex(0)
+    setCorrect(0)
+    setWrong(0)
+    setStarted(true)
   }
 
   function buildQuizOptions(card: CardRecord) {
@@ -207,7 +211,7 @@ export function ReviewSession() {
               Start today&apos;s session
             </h1>
             <p className="mt-3 text-[15px] leading-6 text-text-secondary">
-              Choose a mode, filter by tag if you want, and work through every due card.
+              Choose a mode, filter by status if you want, and work through every due card.
             </p>
           </div>
           <Link
@@ -241,23 +245,19 @@ export function ReviewSession() {
         </div>
 
         <div className="mt-6 flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => setSelectedTag("All")}
-            className="chip-button"
-            data-active={selectedTag === "All"}
-          >
-            All
-          </button>
-          {availableTags.map((tag) => (
+          {(["All", "known", "unknown"] as CardStatusFilter[]).map((status) => (
             <button
-              key={tag}
+              key={status}
               type="button"
-              onClick={() => setSelectedTag(tag)}
+              onClick={() => setSelectedStatus(status)}
               className="chip-button"
-              data-active={selectedTag === tag}
+              data-active={selectedStatus === status}
             >
-              {tag}
+              {status === "All"
+                ? "All"
+                : status === "known"
+                  ? "Known"
+                  : "Unknown"}
             </button>
           ))}
         </div>
@@ -270,7 +270,7 @@ export function ReviewSession() {
 
         <div className="mt-6 rounded-[1.75rem] border border-separator bg-bg-secondary px-5 py-5">
           <p className="text-[15px] text-text-secondary">
-            Cards due now: <span className="font-semibold text-text-primary">{sessionCards.length}</span>
+            Cards due now: <span className="font-semibold text-text-primary">{availableCards.length}</span>
           </p>
         </div>
 
@@ -280,12 +280,9 @@ export function ReviewSession() {
             if (mode === "quiz" && allCards.length < 4) {
               return
             }
-            setIndex(0)
-            setCorrect(0)
-            setWrong(0)
-            setStarted(true)
+            startRound(availableCards)
           }}
-          disabled={!sessionCards.length || (mode === "quiz" && allCards.length < 4)}
+          disabled={!availableCards.length || (mode === "quiz" && allCards.length < 4)}
           className="button-primary mt-6 min-h-[48px] px-5 py-3 text-sm font-medium"
         >
           Start session
@@ -297,6 +294,9 @@ export function ReviewSession() {
   if (!currentCard) {
     const total = correct + wrong
     const accuracy = total ? Math.round((correct / total) * 100) : 0
+    const unknownCards = roundCards
+      .filter((card) => roundResults[card.id] === "unknown")
+      .map((card) => allCards.find((item) => item.id === card.id) ?? card)
 
     return (
       <section className="panel mx-auto max-w-3xl p-6 text-center">
@@ -308,18 +308,34 @@ export function ReviewSession() {
           Correct: {correct} | Wrong: {wrong} | Accuracy: {accuracy}%
         </p>
         <p className="mt-2 text-[15px] text-text-secondary">Streak: {streak} days</p>
-        <Link
-          href="/"
-          prefetch
-          className="button-primary mt-8 inline-flex min-h-[48px] px-5 py-3 text-sm font-medium"
-        >
-          Back to deck
-        </Link>
+        {unknownCards.length ? (
+          <div className="mt-6 space-y-3">
+            <p className="text-[15px] text-text-secondary">
+              Unknown words left:{" "}
+              <span className="font-semibold text-text-primary">{unknownCards.length}</span>
+            </p>
+            <button
+              type="button"
+              onClick={() => startRound(unknownCards)}
+              className="button-primary inline-flex min-h-[48px] px-5 py-3 text-sm font-medium"
+            >
+              Play unknown words again
+            </button>
+          </div>
+        ) : (
+          <Link
+            href="/"
+            prefetch
+            className="button-primary mt-8 inline-flex min-h-[48px] px-5 py-3 text-sm font-medium"
+          >
+            Back to deck
+          </Link>
+        )}
       </section>
     )
   }
 
-  const progress = Math.round(((index + 1) / sessionCards.length) * 100)
+  const progress = Math.round(((index + 1) / roundCards.length) * 100)
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
@@ -327,7 +343,7 @@ export function ReviewSession() {
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-sm font-medium text-ink">
-              Card {Math.min(index + 1, sessionCards.length)} of {sessionCards.length}
+              Card {Math.min(index + 1, roundCards.length)} of {roundCards.length}
             </p>
             <p className="mt-1 text-sm text-muted">
               Mode: {mode.charAt(0).toUpperCase() + mode.slice(1)}

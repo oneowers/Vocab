@@ -3,6 +3,7 @@ import type { LucideIcon } from "lucide-react"
 export type Role = "USER" | "ADMIN"
 export type Direction = "en-ru" | "ru-en"
 export type ReviewResult = "known" | "unknown"
+export type CardStatusFilter = "All" | "known" | "unknown"
 
 export interface NavItem {
   href: string
@@ -19,9 +20,9 @@ export interface CardRecord {
   direction: Direction
   example: string | null
   phonetic: string | null
-  tags: string[]
   dateAdded: string
   nextReviewDate: string
+  lastReviewResult: ReviewResult
   reviewCount: number
   correctCount: number
   wrongCount: number
@@ -73,7 +74,6 @@ export interface StatsPayload {
   reviewsPerDay: ChartPoint[]
   hardestCards: CardRecord[]
   dueByDay: ChartPoint[]
-  tagBreakdown: Array<{ tag: string; count: number }>
 }
 
 export interface AdminUserRow extends AppUserRecord {
