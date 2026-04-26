@@ -2,7 +2,6 @@
 
 import Link from "next/link"
 import { Outfit } from "next/font/google"
-import { Heart } from "lucide-react"
 import { useEffect, useState } from "react"
 
 import { FlipCard } from "@/components/FlipCard"
@@ -25,6 +24,7 @@ import type { CardRecord, CardsResponse, CardStatusFilter, ReviewResult } from "
 
 type ReviewStage = "flip" | "quiz" | "write"
 type ReviewSessionStatus = "idle" | "active" | "saving" | "save-error" | "success"
+type ReviewFlow = "linked" | "single"
 
 interface QuizBatch {
   id: string
@@ -140,7 +140,9 @@ export function ReviewSession() {
   const [streak, setStreak] = useState(0)
   const [reviewLives, setReviewLives] = useState(DEFAULT_GUEST_REVIEW_LIVES)
   const [selectedStatus, setSelectedStatus] = useState<CardStatusFilter>("All")
+  const [practiceStage, setPracticeStage] = useState<ReviewStage>("flip")
   const [sessionStatus, setSessionStatus] = useState<ReviewSessionStatus>("idle")
+  const [sessionFlow, setSessionFlow] = useState<ReviewFlow>("linked")
   const [sessionCards, setSessionCards] = useState<CardRecord[]>([])
   const [quizBatches, setQuizBatches] = useState<QuizBatch[]>([])
   const [activeStageIndex, setActiveStageIndex] = useState(0)
@@ -211,10 +213,11 @@ export function ReviewSession() {
     setDueCards(sortedCards.filter((card) => card.nextReviewDate <= getTodayDateKey()))
   }
 
-  function startSession(cards: CardRecord[]) {
+  function startSession(cards: CardRecord[], startStage: ReviewStage = "flip", flow: ReviewFlow = "linked") {
+    const startIndex = REVIEW_STEPS.findIndex((item) => item.value === startStage)
     setSessionCards(cards)
     setQuizBatches(buildQuizBatches(cards))
-    setActiveStageIndex(0)
+    setActiveStageIndex(startIndex >= 0 ? startIndex : 0)
     setCompletedStages([])
     setLivesRemaining(reviewLives)
     setFlipIndex(0)
@@ -223,6 +226,7 @@ export function ReviewSession() {
     setWriteIndex(0)
     setMistakes(0)
     setStageAttempt(0)
+    setSessionFlow(flow)
     setSessionStatus("active")
   }
 
@@ -333,6 +337,10 @@ export function ReviewSession() {
     }
 
     if (flipIndex + 1 >= sessionCards.length) {
+      if (sessionFlow === "single") {
+        void commitSession()
+        return
+      }
       advanceToNextStage("flip")
       return
     }
@@ -346,6 +354,10 @@ export function ReviewSession() {
 
   function handleQuizBatchCompleted() {
     if (quizBatchIndex + 1 >= quizBatches.length) {
+      if (sessionFlow === "single") {
+        void commitSession()
+        return
+      }
       advanceToNextStage("quiz")
       return
     }
@@ -417,13 +429,14 @@ export function ReviewSession() {
         <ReviewSessionOverview
           currentStage="flip"
           completedStages={[]}
-          lives={reviewLives}
           cardsDue={availableCards.length}
           totalCards={allAvailableCards.length}
           selectedStatus={selectedStatus}
+          practiceStage={practiceStage}
           onSelectStatus={setSelectedStatus}
-          onStartDue={() => startSession(availableCards)}
-          onRepeatAll={() => startSession(allAvailableCards)}
+          onSelectPracticeStage={setPracticeStage}
+          onStartDue={() => startSession(availableCards, "flip", "linked")}
+          onStartPractice={() => startSession(allAvailableCards, practiceStage, "single")}
         />
       </div>
     )
@@ -517,7 +530,7 @@ export function ReviewSession() {
 
   return (
     <div className={`mx-auto max-w-4xl space-y-5 ${outfit.className}`}>
-      <div className={`panel p-5 ${styles.activeHeader}`}>
+        <div className={`panel p-5 ${styles.activeHeader}`}>
         <div className={styles.activeHeaderTop}>
           <div className="min-w-0 flex-1">
             <div className={styles.sessionMeta}>
@@ -532,24 +545,6 @@ export function ReviewSession() {
                 variant="compact"
               />
             </div>
-          </div>
-
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className={`${styles.livesPill} ${styles.livesCompact}`}>
-              <div className={styles.heartRow}>
-                {Array.from({ length: livesRemaining }).map((_, index) => (
-                  <Heart key={`live-heart-${index}`} size={16} fill="currentColor" />
-                ))}
-              </div>
-              <p className={styles.livesText}>{livesRemaining} left</p>
-            </div>
-            <Link
-              href="/"
-              prefetch
-              className={`button-secondary inline-flex px-4 py-2 text-sm font-medium ${styles.exitButton}`}
-            >
-              Exit
-            </Link>
           </div>
         </div>
 
