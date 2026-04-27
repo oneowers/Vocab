@@ -56,7 +56,7 @@ export function AdminCatalogView() {
   const [editingItemId, setEditingItemId] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [savingLimit, setSavingLimit] = useState(false)
-  const [autofilling, setAutofilling] = useState(false)
+  const [autofilling, setAutofilling] = useState<string | null>(null)
   const { showToast } = useToast()
   const { data, loading, refreshing } = useClientResource<{
     catalog: AdminCatalogPayload
@@ -124,7 +124,7 @@ export function AdminCatalogView() {
       return
     }
 
-    setAutofilling(true)
+    setAutofilling("form")
 
     try {
       const [translationResponse, dictionaryResponse] = await Promise.all([
@@ -155,14 +155,14 @@ export function AdminCatalogView() {
         if (payload.example) {
           setForm((current) => ({
             ...current,
-            example: current.example.trim() ? current.example : payload.example
+            example: current.example.trim() ? current.example : (payload.example || "")
           }))
         }
 
         if (payload.phonetic) {
           setForm((current) => ({
             ...current,
-            phonetic: current.phonetic.trim() ? current.phonetic : payload.phonetic
+            phonetic: current.phonetic.trim() ? current.phonetic : (payload.phonetic || "")
           }))
         }
       }
@@ -171,7 +171,7 @@ export function AdminCatalogView() {
     } catch {
       showToast("Could not auto-fill this word.", "error")
     } finally {
-      setAutofilling(false)
+      setAutofilling(null)
     }
   }
 
@@ -315,9 +315,74 @@ export function AdminCatalogView() {
   }
 
   async function startReview(item: WordCatalogRecord) {
-    startEditing(item)
-    window.scrollTo({ top: 0, behavior: "smooth" })
-    await handleAutofill(item.word)
+    if (autofilling) return
+
+    setAutofilling(item.id)
+
+    try {
+      const [translationResponse, dictionaryResponse] = await Promise.all([
+        fetch(
+          `/api/translate?q=${encodeURIComponent(item.word)}&langpair=${encodeURIComponent("en|ru")}`,
+          { cache: "no-store" }
+        ),
+        fetch(`/api/dictionary?word=${encodeURIComponent(item.word)}`, {
+          cache: "no-store"
+        })
+      ])
+
+      let nextTranslation = item.translation
+      let nextExample = item.example
+      let nextPhonetic = item.phonetic
+
+      if (translationResponse.ok) {
+        const payload = (await translationResponse.json()) as TranslationPayload
+        if (payload.translation && !nextTranslation.trim()) {
+          nextTranslation = payload.translation
+        }
+      }
+
+      if (dictionaryResponse.ok) {
+        const payload = (await dictionaryResponse.json()) as DictionaryPayload
+        if (payload.example && !nextExample.trim()) {
+          nextExample = payload.example || ""
+        }
+        if (payload.phonetic && !nextPhonetic.trim()) {
+          nextPhonetic = payload.phonetic || ""
+        }
+      }
+
+      const response = await fetch(`/api/admin/catalog/${item.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          translation: nextTranslation,
+          example: nextExample,
+          phonetic: nextPhonetic,
+          enrichmentStatus: "completed"
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error("Could not update the word.")
+      }
+
+      const saved = (await response.json()) as { item: WordCatalogRecord }
+
+      setPayload((current) =>
+        current
+          ? {
+              ...current,
+              items: current.items.map((entry) => (entry.id === saved.item.id ? saved.item : entry))
+            }
+          : current
+      )
+
+      showToast("Word enriched and saved.", "success")
+    } catch {
+      showToast("Could not auto-fill this word.", "error")
+    } finally {
+      setAutofilling(null)
+    }
   }
 
   return (
@@ -406,10 +471,10 @@ export function AdminCatalogView() {
               <button
                 type="button"
                 onClick={() => void handleAutofill()}
-                disabled={autofilling}
+                disabled={!!autofilling}
                 className="button-secondary"
               >
-                {autofilling ? "Auto-filling..." : "Auto-fill"}
+                {autofilling === "form" ? "Auto-filling..." : "Auto-fill"}
               </button>
               <button
                 type="button"
@@ -545,13 +610,21 @@ export function AdminCatalogView() {
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-[17px] font-semibold text-text-primary">{item.word}</p>
-                      <p className="text-[15px] text-text-secondary">{item.translation || "—"}</p>
+                      {autofilling === item.id ? (
+                        <div className="skeleton mt-1 h-5 w-24 rounded" />
+                      ) : (
+                        <p className="text-[15px] text-text-secondary">{item.translation || "—"}</p>
+                      )}
                     </div>
                     <span className="rounded-full bg-bg-secondary px-3 py-1 text-xs font-semibold text-text-secondary">
                       {item.cefrLevel}
                     </span>
                   </div>
-                  <p className="mt-3 text-sm text-text-secondary">{item.example || "No example yet"}</p>
+                  {autofilling === item.id ? (
+                    <div className="skeleton mt-3 h-5 w-full rounded" />
+                  ) : (
+                    <p className="mt-3 text-sm text-text-secondary">{item.example || "No example yet"}</p>
+                  )}
                   <div className="mt-4 grid grid-cols-2 gap-3 text-[13px] text-text-tertiary">
                     <div>Topic: {item.topic}</div>
                     <div>POS: {item.partOfSpeech}</div>
@@ -573,10 +646,11 @@ export function AdminCatalogView() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => startReview(item)}
+                      onClick={() => void startReview(item)}
+                      disabled={!!autofilling}
                       className="button-secondary flex-1"
                     >
-                      Autofill
+                      {autofilling === item.id ? "..." : "Autofill"}
                     </button>
                     <button
                       type="button"
@@ -604,7 +678,13 @@ export function AdminCatalogView() {
                 {payload.items.map((item) => (
                   <tr key={item.id} className="border-t border-line">
                     <td className="px-3 py-4 font-medium text-ink">{item.word}</td>
-                    <td className="px-3 py-4 text-muted">{item.translation || "—"}</td>
+                    <td className="px-3 py-4 text-muted">
+                      {autofilling === item.id ? (
+                        <div className="skeleton h-4 w-20 rounded" />
+                      ) : (
+                        item.translation || "—"
+                      )}
+                    </td>
                     <td className="px-3 py-4 text-muted">{item.cefrLevel}</td>
                     <td className="px-3 py-4 text-muted">{item.topic}</td>
                     <td className="px-3 py-4 text-muted">{item.priority}</td>
@@ -624,9 +704,10 @@ export function AdminCatalogView() {
                         <button
                           type="button"
                           onClick={() => void startReview(item)}
+                          disabled={!!autofilling}
                           className="button-secondary px-3 py-2 text-xs font-medium"
                         >
-                          Autofill
+                          {autofilling === item.id ? "..." : "Autofill"}
                         </button>
                         <button
                           type="button"
