@@ -7,7 +7,7 @@ export function BrandLogo({ className = "h-full w-full" }: BrandLogoProps) {
     <img
       src="/brand-logo.png"
       alt="Wlingo"
-      className={className}
+      className={`${className} object-contain`}
       draggable={false}
     />
   )
