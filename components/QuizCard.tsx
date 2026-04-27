@@ -6,6 +6,7 @@ export interface QuizMatchItem {
   id: string
   sourceCardId: string
   text: string
+  cefrLevel?: string | null
 }
 
 interface QuizCardProps {
@@ -171,7 +172,14 @@ export function QuizCard({
               disabled={resolving || solvedRightIds.includes(item.id)}
               className={`min-h-[68px] w-full rounded-[1.25rem] border px-3 py-3 text-center text-sm font-medium leading-5 transition md:min-h-[72px] md:rounded-[1.5rem] md:px-4 md:py-4 ${getItemClassName(item.id, "right")}`}
             >
-              {item.text}
+              <div className="flex flex-col items-center gap-1">
+                <span>{item.text}</span>
+                {item.cefrLevel ? (
+                  <span className="text-[10px] font-normal opacity-75">
+                    {item.cefrLevel}
+                  </span>
+                ) : null}
+              </div>
             </button>
           ))}
         </div>

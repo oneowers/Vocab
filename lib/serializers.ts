@@ -47,6 +47,7 @@ export function serializeCard(
     direction: card.direction as CardRecord["direction"],
     example: resolvedExample,
     phonetic: resolvedPhonetic,
+    cefrLevel: card.catalogWord?.cefrLevel ?? null,
     dateAdded: card.dateAdded.toISOString(),
     nextReviewDate: card.nextReviewDate,
     lastReviewResult: card.lastReviewResult as CardRecord["lastReviewResult"],

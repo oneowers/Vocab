@@ -25,6 +25,7 @@ export interface CardRecord {
   direction: Direction
   example: string | null
   phonetic: string | null
+  cefrLevel?: CefrLevel | null
   dateAdded: string
   nextReviewDate: string
   lastReviewResult: ReviewResult

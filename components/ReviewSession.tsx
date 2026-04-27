@@ -119,7 +119,8 @@ function buildQuizBatches(cards: CardRecord[]) {
         filledCards.map((card, index) => ({
           id: `right-${batchIndex}-${index}-${card.id}`,
           sourceCardId: card.id,
-          text: getEnglishAnswer(card)
+          text: getEnglishAnswer(card),
+          cefrLevel: card.cefrLevel
         }))
       )
     })

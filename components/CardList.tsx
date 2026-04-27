@@ -3,8 +3,41 @@
 import { getTooltipMessage } from "@/lib/config"
 import { matchesCardStatus } from "@/lib/spaced-repetition"
 import { speakText, canSpeak } from "@/lib/tts"
-import type { CardRecord, CardStatusFilter } from "@/lib/types"
+import type { CardRecord, CardStatusFilter, CefrLevel } from "@/lib/types"
 import { Trash2, Volume2 } from "lucide-react"
+
+const CEFR_STYLES: Record<CefrLevel, { badge: string; dot: string; label: string }> = {
+  A1: {
+    badge: "border-emerald-200 bg-emerald-500/10 text-emerald-700",
+    dot: "bg-emerald-500",
+    label: "Beginner"
+  },
+  A2: {
+    badge: "border-lime-200 bg-lime-500/10 text-lime-700",
+    dot: "bg-lime-500",
+    label: "Elementary"
+  },
+  B1: {
+    badge: "border-sky-200 bg-sky-500/10 text-sky-700",
+    dot: "bg-sky-500",
+    label: "Intermediate"
+  },
+  B2: {
+    badge: "border-indigo-200 bg-indigo-500/10 text-indigo-700",
+    dot: "bg-indigo-500",
+    label: "Upper-intermediate"
+  },
+  C1: {
+    badge: "border-fuchsia-200 bg-fuchsia-500/10 text-fuchsia-700",
+    dot: "bg-fuchsia-500",
+    label: "Advanced"
+  },
+  C2: {
+    badge: "border-rose-200 bg-rose-500/10 text-rose-700",
+    dot: "bg-rose-500",
+    label: "Mastery"
+  }
+}
 
 interface CardListProps {
   cards: CardRecord[]
@@ -133,6 +166,15 @@ export function CardList({
                       </button>
                     ) : null}
                   </div>
+                  {card.cefrLevel ? (
+                    <div className="pt-1">
+                      <span
+                        className={`inline-flex items-center rounded-full border px-3 py-1 text-[12px] font-semibold ${CEFR_STYLES[card.cefrLevel].badge}`}
+                      >
+                        {card.cefrLevel} · {CEFR_STYLES[card.cefrLevel].label}
+                      </span>
+                    </div>
+                  ) : null}
                   <p className="mt-1 truncate text-[14px] text-text-secondary">{card.translation}</p>
                   <p className="mt-1 text-[12px] font-medium text-text-tertiary">
                     {matchesCardStatus(card, "known") ? "Known" : "Unknown"}
