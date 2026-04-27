@@ -117,8 +117,9 @@ export function AdminCatalogView() {
     }))
   }
 
-  async function handleAutofill() {
-    if (!form.word.trim()) {
+  async function handleAutofill(wordOverride?: string) {
+    const word = (wordOverride || form.word).trim()
+    if (!word) {
       showToast("Enter a word first.", "error")
       return
     }
@@ -128,32 +129,41 @@ export function AdminCatalogView() {
     try {
       const [translationResponse, dictionaryResponse] = await Promise.all([
         fetch(
-          `/api/translate?q=${encodeURIComponent(form.word.trim())}&langpair=${encodeURIComponent("en|ru")}`,
+          `/api/translate?q=${encodeURIComponent(word)}&langpair=${encodeURIComponent("en|ru")}`,
           {
             cache: "no-store"
           }
         ),
-        fetch(`/api/dictionary?word=${encodeURIComponent(form.word.trim())}`, {
+        fetch(`/api/dictionary?word=${encodeURIComponent(word)}`, {
           cache: "no-store"
         })
       ])
 
       if (translationResponse.ok) {
         const payload = (await translationResponse.json()) as TranslationPayload
-        if (payload.translation && !form.translation.trim()) {
-          updateForm("translation", payload.translation)
+        if (payload.translation) {
+          setForm((current) => ({
+            ...current,
+            translation: current.translation.trim() ? current.translation : payload.translation
+          }))
         }
       }
 
       if (dictionaryResponse.ok) {
         const payload = (await dictionaryResponse.json()) as DictionaryPayload
 
-        if (payload.example && !form.example.trim()) {
-          updateForm("example", payload.example)
+        if (payload.example) {
+          setForm((current) => ({
+            ...current,
+            example: current.example.trim() ? current.example : payload.example
+          }))
         }
 
-        if (payload.phonetic && !form.phonetic.trim()) {
-          updateForm("phonetic", payload.phonetic)
+        if (payload.phonetic) {
+          setForm((current) => ({
+            ...current,
+            phonetic: current.phonetic.trim() ? current.phonetic : payload.phonetic
+          }))
         }
       }
 
@@ -302,6 +312,12 @@ export function AdminCatalogView() {
       priority: String(item.priority),
       isPublished: item.isPublished
     })
+  }
+
+  async function startReview(item: WordCatalogRecord) {
+    startEditing(item)
+    window.scrollTo({ top: 0, behavior: "smooth" })
+    await handleAutofill(item.word)
   }
 
   return (
@@ -557,6 +573,13 @@ export function AdminCatalogView() {
                     </button>
                     <button
                       type="button"
+                      onClick={() => startReview(item)}
+                      className="button-secondary flex-1"
+                    >
+                      Autofill
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => void handleTogglePublished(item)}
                       className="button-secondary flex-1"
                     >
@@ -597,6 +620,13 @@ export function AdminCatalogView() {
                           className="button-secondary px-3 py-2 text-xs font-medium"
                         >
                           Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void startReview(item)}
+                          className="button-secondary px-3 py-2 text-xs font-medium"
+                        >
+                          Autofill
                         </button>
                         <button
                           type="button"

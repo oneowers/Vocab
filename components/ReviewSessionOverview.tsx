@@ -2,7 +2,7 @@
 
 import { ReviewStageStepper } from "@/components/ReviewStageStepper"
 import styles from "@/components/review-session.module.css"
-import type { CardStatusFilter } from "@/lib/types"
+import type { CardStatusFilter, DailyCatalogStatus } from "@/lib/types"
 
 interface ReviewSessionOverviewProps {
   currentStage: "flip" | "quiz" | "write"
@@ -11,8 +11,12 @@ interface ReviewSessionOverviewProps {
   totalCards: number
   selectedStatus: CardStatusFilter
   practiceStage: "flip" | "quiz" | "write"
+  guestMode: boolean
+  claiming: boolean
+  dailyCatalog: DailyCatalogStatus | null
   onSelectStatus: (status: CardStatusFilter) => void
   onSelectPracticeStage: (stage: "flip" | "quiz" | "write") => void
+  onClaimDailyWords: () => void
   onStartDue: () => void
   onStartPractice: () => void
 }
@@ -30,8 +34,12 @@ export function ReviewSessionOverview({
   totalCards,
   selectedStatus,
   practiceStage,
+  guestMode,
+  claiming,
+  dailyCatalog,
   onSelectStatus,
   onSelectPracticeStage,
+  onClaimDailyWords,
   onStartDue,
   onStartPractice
 }: ReviewSessionOverviewProps) {
@@ -62,6 +70,22 @@ export function ReviewSessionOverview({
             <div className={styles.statValue}>{cardsDue}</div>
             <div className={styles.statLabel}>Words ready for today&apos;s session</div>
           </div>
+
+          <section className=" flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap gap-2">
+              {!guestMode ? (
+                <button
+                  type="button"
+                  onClick={() => void onClaimDailyWords()}
+                  disabled={claiming || (dailyCatalog?.remainingToday ?? 0) === 0}
+                  className="button-secondary px-5 py-3 text-sm font-medium"
+                >
+                  {claiming ? "Adding..." : "Get today's words"}
+                </button>
+              ) : null}
+            </div>
+          </section>
+
 
           <button
             type="button"

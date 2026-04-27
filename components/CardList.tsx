@@ -9,32 +9,32 @@ import { Trash2, Volume2 } from "lucide-react"
 const CEFR_STYLES: Record<CefrLevel, { badge: string; dot: string; label: string }> = {
   A1: {
     badge: "border-emerald-200 bg-emerald-500/10 text-emerald-700",
-    dot: "bg-emerald-500",
+    dot: "text-emerald-500",
     label: "Beginner"
   },
   A2: {
     badge: "border-lime-200 bg-lime-500/10 text-lime-700",
-    dot: "bg-lime-500",
+    dot: "text-lime-500",
     label: "Elementary"
   },
   B1: {
     badge: "border-sky-200 bg-sky-500/10 text-sky-700",
-    dot: "bg-sky-500",
+    dot: "text-sky-500",
     label: "Intermediate"
   },
   B2: {
     badge: "border-indigo-200 bg-indigo-500/10 text-indigo-700",
-    dot: "bg-indigo-500",
+    dot: "text-indigo-500",
     label: "Upper-intermediate"
   },
   C1: {
     badge: "border-fuchsia-200 bg-fuchsia-500/10 text-fuchsia-700",
-    dot: "bg-fuchsia-500",
+    dot: "text-fuchsia-500",
     label: "Advanced"
   },
   C2: {
     badge: "border-rose-200 bg-rose-500/10 text-rose-700",
-    dot: "bg-rose-500",
+    dot: "text-rose-500",
     label: "Mastery"
   }
 }
@@ -153,25 +153,22 @@ export function CardList({
           cards.map((card) => (
             <article
               key={card.id}
-              className={`relative rounded-card bg-bg-primary px-3 py-2.5 transition hover:-translate-y-0.5 ${
-                variant === "grid" ? "h-full min-h-[112px]" : ""
-              }`}
+              className={`relative rounded-card bg-bg-primary px-3 py-2.5 transition hover:-translate-y-0.5 ${variant === "grid" ? "h-full min-h-[112px]" : ""
+                }`}
             >
               <div
-                className={`flex gap-3 ${
-                  variant === "grid"
-                    ? "h-full flex-col justify-between pr-11"
-                    : "flex-col pr-11 sm:flex-row sm:items-center sm:justify-between"
-                }`}
+                className={`flex gap-3 ${variant === "grid"
+                  ? "h-full flex-col justify-between pr-11"
+                  : "flex-col pr-11 sm:flex-row sm:items-center sm:justify-between"
+                  }`}
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <h3
-                      className={`truncate text-[18px] font-bold tracking-[-0.4px] ${
-                        matchesCardStatus(card, "known") && card.cefrLevel
-                          ? `${CEFR_STYLES[card.cefrLevel].dot} text-white`
-                          : "text-text-primary"
-                      }`}
+                      className={`truncate text-[18px] font-bold tracking-[-0.4px] ${matchesCardStatus(card, "known") && card.cefrLevel
+                        ? `${CEFR_STYLES[card.cefrLevel].dot}`
+                        : "text-text-primary"
+                        }`}
                     >
                       {card.original}
                     </h3>

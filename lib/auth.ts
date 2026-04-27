@@ -1,7 +1,8 @@
 import type { User as SupabaseUser } from "@supabase/supabase-js"
+import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 
-import { hasDatabaseEnv, isGuestModeEnabled } from "@/lib/config"
+import { hasDatabaseEnv, isGuestModeEnabled, isLocalDevelopment } from "@/lib/config"
 import { getPrisma } from "@/lib/prisma"
 import { createSupabaseServerClient } from "@/lib/supabase-server"
 
@@ -20,17 +21,52 @@ export async function getOptionalSessionUser() {
 }
 
 export async function getOptionalAuthUser() {
+  if (isLocalDevelopment()) {
+    const cookieStore = cookies()
+    if (cookieStore.get("dev-admin")?.value === "true") {
+      const email = "admin@localhost"
+      const prisma = getPrisma()
+      let user = await prisma.user.findUnique({
+        where: { email }
+      })
+
+      if (!user) {
+        user = await prisma.user.create({
+          data: {
+            email,
+            name: "Dev Admin",
+            role: "ADMIN"
+          }
+        })
+      }
+
+      return {
+        ...user,
+        role: "ADMIN" as const
+      }
+    }
+  }
+
   const sessionUser = await getOptionalSessionUser()
 
   if (!sessionUser?.email || !hasDatabaseEnv()) {
     return null
   }
 
-  return getPrisma().user.findUnique({
+  const user = await getPrisma().user.findUnique({
     where: {
       email: sessionUser.email
     }
   })
+
+  if (user && isLocalDevelopment()) {
+    return {
+      ...user,
+      role: "ADMIN" as const
+    }
+  }
+
+  return user
 }
 
 export async function requireSignedInAppUser() {

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 
 import { BrandLogo } from "@/components/BrandLogo"
 import { useToast } from "@/components/Toast"
-import { hasSupabaseEnv } from "@/lib/config"
+import { hasSupabaseEnv, isLocalDevelopment } from "@/lib/config"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
 import { getGuestCards, setGuestSessionActive } from "@/lib/guest"
 
@@ -77,6 +77,15 @@ export function LoginCard({ guestModeEnabled }: LoginCardProps) {
         >
           {loading === "google" ? "Redirecting..." : "Continue with Google"}
         </button>
+        {!isLocalDevelopment() ? null : (
+          <button
+            type="button"
+            onClick={() => router.push("/api/auth/dev-login")}
+            className="button-secondary px-5 py-4 text-sm font-medium border-ink/20"
+          >
+            Login as Admin (Local)
+          </button>
+        )}
         {!guestModeEnabled ? null : (
           <button
             type="button"

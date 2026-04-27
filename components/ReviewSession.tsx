@@ -20,7 +20,7 @@ import {
   isGuestSessionActive
 } from "@/lib/guest"
 import { matchesCardStatus, sortDueCards } from "@/lib/spaced-repetition"
-import type { CardRecord, CardsResponse, CardStatusFilter, ReviewResult } from "@/lib/types"
+import type { CardRecord, CardsResponse, CardStatusFilter, DailyCatalogStatus, DailyClaimResponse, ReviewResult } from "@/lib/types"
 
 type ReviewStage = "flip" | "quiz" | "write"
 type ReviewSessionStatus = "idle" | "active" | "saving" | "save-error" | "success"
@@ -155,6 +155,8 @@ export function ReviewSession() {
   const [quizSolvedPairs, setQuizSolvedPairs] = useState(0)
   const [writeIndex, setWriteIndex] = useState(0)
   const [mistakes, setMistakes] = useState(0)
+  const [claiming, setClaiming] = useState(false)
+  const [dailyCatalog, setDailyCatalog] = useState<DailyCatalogStatus | null>(null)
   const { showToast } = useToast()
 
   useEffect(() => {
@@ -187,6 +189,7 @@ export function ReviewSession() {
         setDueCards(sortedCards.filter((card) => card.nextReviewDate <= getTodayDateKey()))
         setStreak(payload.summary.streak)
         setReviewLives(payload.summary.reviewLives)
+        setDailyCatalog(payload.dailyCatalog)
       } catch {
         showToast("Could not load review cards.", "error")
       } finally {
@@ -212,6 +215,54 @@ export function ReviewSession() {
     const sortedCards = sortDueCards(nextCards)
     setAllCards(sortedCards)
     setDueCards(sortedCards.filter((card) => card.nextReviewDate <= getTodayDateKey()))
+  }
+
+  async function handleClaimDailyWords() {
+    if (guestMode || claiming) {
+      return
+    }
+
+    setClaiming(true)
+
+    try {
+      const response = await fetch("/api/cards/daily", {
+        method: "POST"
+      })
+
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as { error?: string } | null
+        throw new Error(payload?.error || "Could not add today's words.")
+      }
+
+      const payload = (await response.json()) as DailyClaimResponse
+
+      setDailyCatalog({
+        claimedToday: payload.claimedToday,
+        dailyLimit: payload.dailyLimit,
+        remainingToday: payload.remainingToday,
+        cefrLevel: dailyCatalog?.cefrLevel ?? "A1"
+      })
+
+      if (payload.cards.length) {
+        refreshCardCollections([...payload.cards, ...allCards])
+        showToast(`${payload.createdCount} new word${payload.createdCount === 1 ? "" : "s"} added.`, "success")
+        return
+      }
+
+      if (payload.limitReached) {
+        showToast("Today's word limit is already reached.", "success")
+        return
+      }
+
+      showToast("No more matching words are available for your level.", "error")
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : "Could not add today's words.",
+        "error"
+      )
+    } finally {
+      setClaiming(false)
+    }
   }
 
   function startSession(cards: CardRecord[], startStage: ReviewStage = "flip", flow: ReviewFlow = "linked") {
@@ -434,8 +485,12 @@ export function ReviewSession() {
           totalCards={allAvailableCards.length}
           selectedStatus={selectedStatus}
           practiceStage={practiceStage}
+          guestMode={guestMode}
+          claiming={claiming}
+          dailyCatalog={dailyCatalog}
           onSelectStatus={setSelectedStatus}
           onSelectPracticeStage={setPracticeStage}
+          onClaimDailyWords={handleClaimDailyWords}
           onStartDue={() => startSession(availableCards, "flip", "linked")}
           onStartPractice={() => startSession(allAvailableCards, practiceStage, "single")}
         />

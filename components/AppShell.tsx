@@ -56,6 +56,14 @@ export function AppShell({ user, children }: AppShellProps) {
       return
     }
 
+    // NEW: Dev admin logout bypass
+    if (user.email === "admin@localhost") {
+      await fetch("/api/auth/dev-logout")
+      router.push("/login")
+      router.refresh()
+      return
+    }
+
     const supabase = createSupabaseBrowserClient()
 
     if (!supabase) {

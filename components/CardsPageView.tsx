@@ -9,19 +9,17 @@ import { useToast } from "@/components/Toast"
 import { getTodayDateKey } from "@/lib/date"
 import { getGuestCards, isGuestSessionActive } from "@/lib/guest"
 import { matchesCardStatus, sortDueCards } from "@/lib/spaced-repetition"
-import type { CardRecord, CardsResponse, CardStatusFilter, CefrLevel, DailyCatalogStatus, DailyClaimResponse } from "@/lib/types"
+import type { CardRecord, CardsResponse, CardStatusFilter, CefrLevel } from "@/lib/types"
 
 export function CardsPageView() {
   const [guestMode, setGuestMode] = useState(false)
   const [loading, setLoading] = useState(true)
   const [cards, setCards] = useState<CardRecord[]>([])
-  const [dailyCatalog, setDailyCatalog] = useState<DailyCatalogStatus | null>(null)
   const [selectedStatus, setSelectedStatus] = useState<CardStatusFilter>("All")
   const [selectedLevel, setSelectedLevel] = useState<CefrLevel | "All">("All")
   const [search, setSearch] = useState("")
   const [cardToDelete, setCardToDelete] = useState<CardRecord | null>(null)
   const [deleting, setDeleting] = useState(false)
-  const [claiming, setClaiming] = useState(false)
   const importRef = useRef<HTMLInputElement | null>(null)
   const { showToast } = useToast()
 
@@ -32,7 +30,6 @@ export function CardsPageView() {
 
       if (guestActive) {
         setCards(sortDueCards(getGuestCards()))
-        setDailyCatalog(null)
         setLoading(false)
         return
       }
@@ -48,7 +45,6 @@ export function CardsPageView() {
 
         const payload = (await response.json()) as CardsResponse
         setCards(sortDueCards(payload.cards))
-        setDailyCatalog(payload.dailyCatalog)
       } catch {
         showToast("Could not load your deck.", "error")
       } finally {
@@ -69,7 +65,6 @@ export function CardsPageView() {
 
     return matchesStatus && matchesLevel && matchesSearch
   })
-  const dueCount = cards.filter((card) => card.nextReviewDate <= getTodayDateKey()).length
 
   async function refreshCards() {
     if (guestMode) {
@@ -87,56 +82,8 @@ export function CardsPageView() {
 
     const payload = (await response.json()) as CardsResponse
     setCards(sortDueCards(payload.cards))
-    setDailyCatalog(payload.dailyCatalog)
   }
 
-  async function handleClaimDailyWords() {
-    if (guestMode || claiming) {
-      return
-    }
-
-    setClaiming(true)
-
-    try {
-      const response = await fetch("/api/cards/daily", {
-        method: "POST"
-      })
-
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as { error?: string } | null
-        throw new Error(payload?.error || "Could not add today&apos;s words.")
-      }
-
-      const payload = (await response.json()) as DailyClaimResponse
-
-      setDailyCatalog({
-        claimedToday: payload.claimedToday,
-        dailyLimit: payload.dailyLimit,
-        remainingToday: payload.remainingToday,
-        cefrLevel: dailyCatalog?.cefrLevel ?? "A1"
-      })
-
-      if (payload.cards.length) {
-        setCards((current) => sortDueCards([...payload.cards, ...current]))
-        showToast(`${payload.createdCount} new word${payload.createdCount === 1 ? "" : "s"} added.`, "success")
-        return
-      }
-
-      if (payload.limitReached) {
-        showToast("Today's word limit is already reached.", "success")
-        return
-      }
-
-      showToast("No more matching words are available for your level.", "error")
-    } catch (error) {
-      showToast(
-        error instanceof Error ? error.message.replace("&apos;", "'") : "Could not add today's words.",
-        "error"
-      )
-    } finally {
-      setClaiming(false)
-    }
-  }
 
   async function handleDeleteConfirmed() {
     if (!cardToDelete) {
@@ -234,21 +181,6 @@ export function CardsPageView() {
       />
 
       <div className="space-y-4">
-        <section className=" flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap gap-2">
-            {!guestMode ? (
-              <button
-                type="button"
-                onClick={() => void handleClaimDailyWords()}
-                disabled={claiming || (dailyCatalog?.remainingToday ?? 0) === 0}
-                className="button-secondary px-5 py-3 text-sm font-medium"
-              >
-                {claiming ? "Adding..." : "Get today's words"}
-              </button>
-            ) : null}
-          </div>
-        </section>
-
         {loading ? (
           <div className="skeleton h-96 rounded-card" />
         ) : (
