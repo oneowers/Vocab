@@ -233,6 +233,15 @@ export function TranslatorPanel({
             }
             className="mt-4 min-h-[132px] w-full resize-none border-0 bg-transparent p-0 text-[24px] font-bold tracking-[-0.5px] text-text-primary outline-none placeholder:text-text-tertiary md:min-h-[220px] md:text-[28px]"
           />
+          {cefrLevel && direction === "en-ru" ? (
+            <div className="pt-1">
+              <span
+                className={`inline-flex items-center rounded-full border px-3 py-1 text-[12px] font-semibold ${CEFR_STYLES[cefrLevel].badge}`}
+              >
+                {cefrLevel} · {CEFR_STYLES[cefrLevel].label}
+              </span>
+            </div>
+          ) : null}
           <div className="mt-4 flex flex-col gap-3 sm:flex-row">
             <button
               type="button"
@@ -275,7 +284,7 @@ export function TranslatorPanel({
                   {translation}
                 </p>
                 {phonetic ? <p className="text-[13px] text-text-tertiary">{phonetic}</p> : null}
-                {cefrLevel ? (
+                {cefrLevel && direction === "ru-en" ? (
                   <div className="pt-1">
                     <span
                       className={`inline-flex items-center rounded-full border px-3 py-1 text-[12px] font-semibold ${CEFR_STYLES[cefrLevel].badge}`}
@@ -309,22 +318,6 @@ export function TranslatorPanel({
               ) : (
                 <div className="min-h-[84px] rounded-[16px] bg-bg-primary/70 md:min-h-[120px]" />
               )}
-              <div className="rounded-[16px] bg-bg-primary px-4 py-3">
-                <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-text-tertiary">
-                  CEFR color guide
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {Object.entries(CEFR_STYLES).map(([level, config]) => (
-                    <span
-                      key={level}
-                      className="inline-flex items-center gap-2 rounded-full bg-bg-secondary px-3 py-1 text-[13px] text-text-secondary"
-                    >
-                      <span className={`h-2.5 w-2.5 rounded-full ${config.dot}`} />
-                      {level}: {config.label}
-                    </span>
-                  ))}
-                </div>
-              </div>
             </div>
           ) : (
             <div className="mt-4 flex min-h-[132px] items-center rounded-[16px] bg-bg-primary/70 px-5 md:min-h-[220px]">
