@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 
 import { levenshtein } from "@/lib/levenshtein"
+import { matchesCardStatus } from "@/lib/spaced-repetition"
 import { speakText, canSpeak } from "@/lib/tts"
 import type { CardRecord, CefrLevel, ReviewResult } from "@/lib/types"
 
@@ -126,7 +127,15 @@ export function WriteCard({ card, onResolved }: WriteCardProps) {
           }`}
         >
           {result === "known" ? "Correct." : "Not quite."} Right answer:{" "}
-          <span className="font-semibold">{expectedAnswer}</span>
+          <span
+            className={`font-semibold ${
+              result === "known" && card.cefrLevel
+                ? CEFR_STYLES[card.cefrLevel].dot + " rounded px-1 py-0.5 text-white"
+                : ""
+            }`}
+          >
+            {expectedAnswer}
+          </span>
           {card.cefrLevel ? (
             <div className="mt-2">
               <span

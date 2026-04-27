@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 
+import { matchesCardStatus } from "@/lib/spaced-repetition"
 import { speakText, canSpeak } from "@/lib/tts"
 import type { CardRecord, CefrLevel, ReviewResult } from "@/lib/types"
 
@@ -53,7 +54,15 @@ export function FlipCard({ card, onAnswer }: FlipCardProps) {
   return (
     <div className="panel p-6 text-center">
       <div className="flex justify-center">
-        <p className="text-[28px] font-bold tracking-[-0.5px] text-text-primary">{card.original}</p>
+        <p
+          className={`text-[28px] font-bold tracking-[-0.5px] ${
+            matchesCardStatus(card, "known") && card.cefrLevel
+              ? `${CEFR_STYLES[card.cefrLevel].dot} text-white`
+              : "text-text-primary"
+          }`}
+        >
+          {card.original}
+        </p>
       </div>
       {card.cefrLevel ? (
         <div className="mt-2 flex justify-center">

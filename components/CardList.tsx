@@ -147,7 +147,13 @@ export function CardList({
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="truncate text-[18px] font-bold tracking-[-0.4px] text-text-primary">
+                    <h3
+                      className={`truncate text-[18px] font-bold tracking-[-0.4px] ${
+                        matchesCardStatus(card, "known") && card.cefrLevel
+                          ? `${CEFR_STYLES[card.cefrLevel].dot} text-white`
+                          : "text-text-primary"
+                      }`}
+                    >
                       {card.original}
                     </h3>
                     {canSpeak() ? (
