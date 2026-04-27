@@ -13,12 +13,14 @@ model User {
   name           String?
   avatarUrl      String?
   role           Role        @default(USER)
+  cefrLevel      CefrLevel   @default(A1)
   reviewLives    Int         @default(3)
   createdAt      DateTime    @default(now())
   lastActiveAt   DateTime?
   streak         Int         @default(0)
   lastReviewDate String?
   cards          Card[]
+  catalogClaims  UserCatalogWord[]
   reviewLogs     ReviewLog[]
 }
 
@@ -28,10 +30,21 @@ enum Role {
   ADMIN
 }
 
+enum CefrLevel {
+  A1
+  A2
+  B1
+  B2
+  C1
+  C2
+}
+
 model Card {
   id             String   @id @default(uuid())
   userId         String
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  catalogWordId  String?
+  catalogWord    WordCatalog? @relation(fields: [catalogWordId], references: [id], onDelete: SetNull)
   original       String
   translation    String
   direction      String
@@ -43,6 +56,8 @@ model Card {
   reviewCount    Int      @default(0)
   correctCount   Int      @default(0)
   wrongCount     Int      @default(0)
+
+  @@index([userId, catalogWordId])
 }
 
 model ReviewLog {
@@ -61,4 +76,41 @@ model AppAnalytics {
   totalReviews  Int    @default(0)
   newUsers      Int    @default(0)
   newCards      Int    @default(0)
+}
+
+model WordCatalog {
+  id           String            @id @default(uuid())
+  word         String            @unique
+  translation  String
+  cefrLevel    CefrLevel
+  partOfSpeech String
+  topic        String
+  example      String
+  phonetic     String
+  priority     Int               @default(0)
+  isPublished  Boolean           @default(false)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  cards        Card[]
+  claims       UserCatalogWord[]
+
+  @@index([cefrLevel, isPublished, priority])
+}
+
+model UserCatalogWord {
+  id           String      @id @default(uuid())
+  userId       String
+  wordCatalogId String
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wordCatalog  WordCatalog @relation(fields: [wordCatalogId], references: [id], onDelete: Cascade)
+  createdAt    DateTime    @default(now())
+
+  @@unique([userId, wordCatalogId])
+  @@index([userId, createdAt])
+}
+
+model AppSettings {
+  id                 String   @id @default("app")
+  dailyNewCardsLimit Int      @default(5)
+  updatedAt          DateTime @updatedAt
 }

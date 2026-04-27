@@ -1,6 +1,6 @@
-import type { Card, User } from "@prisma/client"
+import type { AppSettings, Card, User, WordCatalog } from "@prisma/client"
 
-import type { AppUserRecord, CardRecord } from "@/lib/types"
+import type { AppSettingsRecord, AppUserRecord, CardRecord, WordCatalogRecord } from "@/lib/types"
 
 export function serializeUser(user: User): AppUserRecord {
   return {
@@ -9,6 +9,7 @@ export function serializeUser(user: User): AppUserRecord {
     name: user.name,
     avatarUrl: user.avatarUrl,
     role: user.role,
+    cefrLevel: user.cefrLevel,
     reviewLives: user.reviewLives,
     streak: user.streak,
     createdAt: user.createdAt.toISOString(),
@@ -27,6 +28,7 @@ export function serializeCard(
   return {
     id: card.id,
     userId: card.userId,
+    catalogWordId: card.catalogWordId ?? null,
     original: card.original,
     translation: card.translation,
     direction: card.direction as CardRecord["direction"],
@@ -39,5 +41,30 @@ export function serializeCard(
     correctCount: card.correctCount,
     wrongCount: card.wrongCount,
     userEmail: card.user?.email
+  }
+}
+
+export function serializeWordCatalog(word: WordCatalog): WordCatalogRecord {
+  return {
+    id: word.id,
+    word: word.word,
+    translation: word.translation,
+    cefrLevel: word.cefrLevel,
+    partOfSpeech: word.partOfSpeech,
+    topic: word.topic,
+    example: word.example,
+    phonetic: word.phonetic,
+    priority: word.priority,
+    isPublished: word.isPublished,
+    createdAt: word.createdAt.toISOString(),
+    updatedAt: word.updatedAt.toISOString()
+  }
+}
+
+export function serializeAppSettings(settings: AppSettings): AppSettingsRecord {
+  return {
+    id: settings.id,
+    dailyNewCardsLimit: settings.dailyNewCardsLimit,
+    updatedAt: settings.updatedAt.toISOString()
   }
 }

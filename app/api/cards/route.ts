@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 
 import { getOptionalAuthUser } from "@/lib/auth"
+import { getOrCreateAppSettings } from "@/lib/catalog"
 import { getTodayDateKey, isDueDate } from "@/lib/date"
 import { getPrisma } from "@/lib/prisma"
 import { serializeCard } from "@/lib/serializers"
@@ -18,32 +19,46 @@ export async function GET(request: NextRequest) {
   const search = request.nextUrl.searchParams.get("search")?.trim()
   const due = request.nextUrl.searchParams.get("due")
   const today = getTodayDateKey()
+  const todayStart = new Date(`${today}T00:00:00.000Z`)
+  const tomorrowStart = new Date(todayStart)
+  tomorrowStart.setUTCDate(tomorrowStart.getUTCDate() + 1)
 
-  const cards = await prisma.card.findMany({
-    where: {
-      userId: user.id,
-      ...(status === "known" || status === "unknown"
-        ? { lastReviewResult: status }
-        : {}),
-      ...(search
-        ? {
-            OR: [
-              { original: { contains: search, mode: "insensitive" } },
-              { translation: { contains: search, mode: "insensitive" } }
-            ]
-          }
-        : {}),
-      ...(due === "today" ? { nextReviewDate: { lte: today } } : {})
-    },
-    orderBy: [{ nextReviewDate: "asc" }, { dateAdded: "desc" }]
-  })
-
-  const allCards = await prisma.card.findMany({
-    where: {
-      userId: user.id
-    },
-    orderBy: [{ nextReviewDate: "asc" }, { dateAdded: "desc" }]
-  })
+  const [cards, allCards, settings, claimedToday] = await Promise.all([
+    prisma.card.findMany({
+      where: {
+        userId: user.id,
+        ...(status === "known" || status === "unknown"
+          ? { lastReviewResult: status }
+          : {}),
+        ...(search
+          ? {
+              OR: [
+                { original: { contains: search, mode: "insensitive" } },
+                { translation: { contains: search, mode: "insensitive" } }
+              ]
+            }
+          : {}),
+        ...(due === "today" ? { nextReviewDate: { lte: today } } : {})
+      },
+      orderBy: [{ nextReviewDate: "asc" }, { dateAdded: "desc" }]
+    }),
+    prisma.card.findMany({
+      where: {
+        userId: user.id
+      },
+      orderBy: [{ nextReviewDate: "asc" }, { dateAdded: "desc" }]
+    }),
+    getOrCreateAppSettings(prisma),
+    prisma.userCatalogWord.count({
+      where: {
+        userId: user.id,
+        createdAt: {
+          gte: todayStart,
+          lt: tomorrowStart
+        }
+      }
+    })
+  ])
 
   const serializedCards = cards.map((card) => serializeCard(card))
   const summary = buildDashboardSummary(
@@ -57,6 +72,12 @@ export async function GET(request: NextRequest) {
     summary: {
       ...summary,
       dueToday: allCards.filter((card) => isDueDate(card.nextReviewDate, today)).length
+    },
+    dailyCatalog: {
+      claimedToday,
+      dailyLimit: settings.dailyNewCardsLimit,
+      remainingToday: Math.max(settings.dailyNewCardsLimit - claimedToday, 0),
+      cefrLevel: user.cefrLevel
     }
   })
 }

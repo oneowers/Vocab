@@ -1,6 +1,7 @@
 import {
   BarChart3,
   ChartColumnBig,
+  Cog,
   House,
   Library,
   Shield,
@@ -88,6 +89,12 @@ export const adminNavItems: NavItem[] = [
     label: "Users",
     icon: Users,
     match: (pathname) => pathname.startsWith("/admin/users")
+  },
+  {
+    href: "/admin/catalog",
+    label: "Catalog",
+    icon: Cog,
+    match: (pathname) => pathname.startsWith("/admin/catalog")
   },
   {
     href: "/admin/cards",

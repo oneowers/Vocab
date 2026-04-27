@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 
 import { getOptionalAuthUser } from "@/lib/auth"
+import { isCefrLevel } from "@/lib/catalog"
 import { getPrisma } from "@/lib/prisma"
 import { serializeUser } from "@/lib/serializers"
 
@@ -13,14 +14,29 @@ export async function PATCH(request: NextRequest) {
 
   const body = (await request.json()) as {
     reviewLives?: number
+    cefrLevel?: string
+  }
+
+  const nextReviewLives =
+    typeof body.reviewLives === "number" ? body.reviewLives : undefined
+  const nextCefrLevel =
+    typeof body.cefrLevel === "string" ? body.cefrLevel.trim().toUpperCase() : undefined
+
+  if (
+    nextReviewLives === undefined &&
+    nextCefrLevel === undefined
+  ) {
+    return NextResponse.json({ error: "Invalid payload" }, { status: 400 })
   }
 
   if (
-    typeof body.reviewLives !== "number" ||
-    !Number.isInteger(body.reviewLives) ||
-    body.reviewLives < 1 ||
-    body.reviewLives > 5
+    nextReviewLives !== undefined &&
+    (!Number.isInteger(nextReviewLives) || nextReviewLives < 1 || nextReviewLives > 5)
   ) {
+    return NextResponse.json({ error: "Invalid payload" }, { status: 400 })
+  }
+
+  if (nextCefrLevel !== undefined && !isCefrLevel(nextCefrLevel)) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 })
   }
 
@@ -29,7 +45,8 @@ export async function PATCH(request: NextRequest) {
       id: user.id
     },
     data: {
-      reviewLives: body.reviewLives
+      ...(nextReviewLives !== undefined ? { reviewLives: nextReviewLives } : {}),
+      ...(nextCefrLevel !== undefined ? { cefrLevel: nextCefrLevel } : {})
     }
   })
 

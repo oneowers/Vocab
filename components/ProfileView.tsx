@@ -5,13 +5,14 @@ import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { ArrowRight, Heart, LogOut, Shield } from "lucide-react"
 
+import { CEFR_LEVELS } from "@/lib/catalog"
 import { useToast } from "@/components/Toast"
 import { useClientResource } from "@/hooks/useClientResource"
 import { DEFAULT_GUEST_REVIEW_LIVES, clearGuestSession, isGuestSessionActive } from "@/lib/guest"
 import { getRoleLabel } from "@/lib/roles"
 import { buildEmptyProfileActivity } from "@/lib/server-data"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
-import type { AppUserRecord, ProfileActivityPayload } from "@/lib/types"
+import type { AppUserRecord, CefrLevel, ProfileActivityPayload } from "@/lib/types"
 
 interface ProfileViewProps {
   user: AppUserRecord | null
@@ -23,7 +24,9 @@ export function ProfileView({ user }: ProfileViewProps) {
   const [guestActive, setGuestActive] = useState(false)
   const [profileUser, setProfileUser] = useState(user)
   const [reviewLives, setReviewLives] = useState(user?.reviewLives ?? DEFAULT_GUEST_REVIEW_LIVES)
+  const [cefrLevel, setCefrLevel] = useState<CefrLevel>(user?.cefrLevel ?? "A1")
   const [savingLives, setSavingLives] = useState(false)
+  const [savingLevel, setSavingLevel] = useState(false)
   const fallbackActivity = useMemo(() => buildEmptyProfileActivity(), [])
   const {
     data: activity,
@@ -31,7 +34,7 @@ export function ProfileView({ user }: ProfileViewProps) {
     refreshing: activityRefreshing
   } = useClientResource<ProfileActivityPayload>({
     key: guestActive || !profileUser ? "profile-activity:guest" : `profile-activity:${profileUser.id}`,
-    enabled: true,
+    enabled: !guestActive && Boolean(profileUser),
     initialData: guestActive || !profileUser ? fallbackActivity : null,
     loader: async () => {
       const response = await fetch("/api/profile/activity", {
@@ -56,6 +59,7 @@ export function ProfileView({ user }: ProfileViewProps) {
   useEffect(() => {
     setProfileUser(user)
     setReviewLives(user?.reviewLives ?? DEFAULT_GUEST_REVIEW_LIVES)
+    setCefrLevel(user?.cefrLevel ?? "A1")
   }, [user])
 
   async function handleExit() {
@@ -152,6 +156,45 @@ export function ProfileView({ user }: ProfileViewProps) {
     }
   }
 
+  async function handleCefrLevelChange(nextLevel: CefrLevel) {
+    if (guestActive || !profileUser || savingLevel || nextLevel === cefrLevel) {
+      return
+    }
+
+    setSavingLevel(true)
+
+    try {
+      const response = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          cefrLevel: nextLevel
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error("Could not update CEFR level.")
+      }
+
+      const payload = (await response.json()) as {
+        user: AppUserRecord
+      }
+
+      setProfileUser(payload.user)
+      setCefrLevel(payload.user.cefrLevel)
+      showToast("CEFR level updated.", "success")
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : "Could not update CEFR level.",
+        "error"
+      )
+    } finally {
+      setSavingLevel(false)
+    }
+  }
+
   return (
     <div className="space-y-4">
       <section className="panel p-6">
@@ -216,6 +259,40 @@ export function ProfileView({ user }: ProfileViewProps) {
                   ? "border-accent bg-accent text-accentForeground"
                   : "border-separator bg-bg-primary text-text-primary hover:border-accent"
               } ${guestActive || savingLives ? "cursor-not-allowed opacity-70" : ""}`}
+            >
+              {value}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="panel p-4 md:p-5">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="section-label">Learning level</p>
+            <h2 className="mt-2 text-[22px] font-bold tracking-[-0.5px] text-text-primary">
+              {guestActive ? "A1" : cefrLevel}
+            </h2>
+            <p className="mt-1 text-[15px] text-text-secondary">
+              {guestActive
+                ? "Guest mode keeps the beginner level."
+                : "Choose which CEFR level the shared word catalog should use for daily words."}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5 flex flex-wrap gap-2">
+          {CEFR_LEVELS.map((value) => (
+            <button
+              key={value}
+              type="button"
+              disabled={guestActive || savingLevel}
+              onClick={() => void handleCefrLevelChange(value)}
+              className={`min-w-[64px] rounded-[1rem] border px-4 py-3 text-sm font-semibold transition ${
+                (guestActive ? "A1" : cefrLevel) === value
+                  ? "border-accent bg-accent text-accentForeground"
+                  : "border-separator bg-bg-primary text-text-primary hover:border-accent"
+              } ${guestActive || savingLevel ? "cursor-not-allowed opacity-70" : ""}`}
             >
               {value}
             </button>

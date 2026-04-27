@@ -4,6 +4,7 @@ export type Role = "USER" | "PRO" | "ADMIN"
 export type Direction = "en-ru" | "ru-en"
 export type ReviewResult = "known" | "unknown"
 export type CardStatusFilter = "All" | "known" | "unknown"
+export type CefrLevel = "A1" | "A2" | "B1" | "B2" | "C1" | "C2"
 
 export interface NavItem {
   href: string
@@ -15,6 +16,7 @@ export interface NavItem {
 export interface CardRecord {
   id: string
   userId: string
+  catalogWordId?: string | null
   original: string
   translation: string
   direction: Direction
@@ -35,11 +37,33 @@ export interface AppUserRecord {
   name: string | null
   avatarUrl: string | null
   role: Role
+  cefrLevel: CefrLevel
   reviewLives: number
   streak: number
   createdAt: string
   lastActiveAt: string | null
   lastReviewDate: string | null
+}
+
+export interface WordCatalogRecord {
+  id: string
+  word: string
+  translation: string
+  cefrLevel: CefrLevel
+  partOfSpeech: string
+  topic: string
+  example: string
+  phonetic: string
+  priority: number
+  isPublished: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface AppSettingsRecord {
+  id: string
+  dailyNewCardsLimit: number
+  updatedAt: string
 }
 
 export interface ProfileActivityDay {
@@ -71,6 +95,14 @@ export interface DashboardSummary {
 export interface CardsResponse {
   cards: CardRecord[]
   summary: DashboardSummary
+  dailyCatalog: DailyCatalogStatus
+}
+
+export interface DailyCatalogStatus {
+  claimedToday: number
+  dailyLimit: number
+  remainingToday: number
+  cefrLevel: CefrLevel
 }
 
 export interface ReviewSummary {
@@ -113,6 +145,26 @@ export interface AdminCardsPayload {
   page: number
   totalPages: number
   totalItems: number
+}
+
+export interface AdminCatalogPayload {
+  items: WordCatalogRecord[]
+  page: number
+  totalPages: number
+  totalItems: number
+}
+
+export interface AdminSettingsPayload {
+  settings: AppSettingsRecord
+}
+
+export interface DailyClaimResponse {
+  cards: CardRecord[]
+  createdCount: number
+  claimedToday: number
+  dailyLimit: number
+  remainingToday: number
+  limitReached: boolean
 }
 
 export interface AnalyticsDay {

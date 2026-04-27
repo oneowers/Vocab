@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 
 import { getOptionalAuthUser } from "@/lib/auth"
+import { resolveTranslation } from "@/lib/catalog"
 import { isGuestModeEnabled } from "@/lib/config"
+import { getPrisma } from "@/lib/prisma"
 import { isRateLimited } from "@/lib/throttle"
 
-interface DeepLResponse {
-  translations?: Array<{
-    text?: string
-  }>
-}
+type SupportedLanguage = "EN" | "RU"
 
 function getThrottleKey(request: NextRequest, userId: string | null) {
   const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
@@ -18,10 +16,19 @@ function getThrottleKey(request: NextRequest, userId: string | null) {
 function parseLangpair(langpair: string) {
   const separator = langpair.includes("/") ? "/" : "|"
   const [source = "", target = ""] = langpair.split(separator)
+  const sourceLang = source.slice(0, 2).toUpperCase()
+  const targetLang = target.slice(0, 2).toUpperCase()
+
+  if (
+    (sourceLang !== "EN" && sourceLang !== "RU") ||
+    (targetLang !== "EN" && targetLang !== "RU")
+  ) {
+    return null
+  }
 
   return {
-    sourceLang: source.slice(0, 2).toUpperCase(),
-    targetLang: target.slice(0, 2).toUpperCase()
+    sourceLang: sourceLang as SupportedLanguage,
+    targetLang: targetLang as SupportedLanguage
   }
 }
 
@@ -43,39 +50,28 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Slow down a little." }, { status: 429 })
   }
 
-  if (!process.env.DEEPL_API_KEY) {
-    return NextResponse.json(
-      { error: "Translation service not configured." },
-      { status: 500 }
-    )
+  const parsedLangpair = parseLangpair(langpair)
+
+  if (!parsedLangpair) {
+    return NextResponse.json({ error: "Unsupported language pair" }, { status: 400 })
   }
 
-  const { sourceLang, targetLang } = parseLangpair(langpair)
-
-  const response = await fetch("https://api-free.deepl.com/v2/translate", {
-    method: "POST",
-    headers: {
-      Authorization: `DeepL-Auth-Key ${process.env.DEEPL_API_KEY}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      text: [query],
-      source_lang: sourceLang,
-      target_lang: targetLang
-    }),
-    cache: "no-store"
+  const { sourceLang, targetLang } = parsedLangpair
+  const translation = await resolveTranslation({
+    prisma: getPrisma(),
+    query,
+    sourceLang,
+    targetLang
   })
 
-  if (!response.ok) {
+  if (!translation) {
     return NextResponse.json(
       { error: "Translation service is unavailable." },
       { status: 502 }
     )
   }
 
-  const payload = (await response.json()) as DeepLResponse
-
   return NextResponse.json({
-    translation: payload.translations?.[0]?.text?.trim() || ""
+    translation
   })
 }

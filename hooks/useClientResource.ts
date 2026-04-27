@@ -55,10 +55,20 @@ export function useClientResource<T>({
   const [loading, setLoading] = useState(enabled && startingData === null)
   const [refreshing, setRefreshing] = useState(false)
   const dataRef = useRef<T | null>(startingData)
+  const loaderRef = useRef(loader)
+  const onErrorRef = useRef(onError)
 
   useEffect(() => {
     dataRef.current = data
   }, [data])
+
+  useEffect(() => {
+    loaderRef.current = loader
+  }, [loader])
+
+  useEffect(() => {
+    onErrorRef.current = onError
+  }, [onError])
 
   useEffect(() => {
     if (initialData === null) {
@@ -90,20 +100,20 @@ export function useClientResource<T>({
       }
 
       try {
-        const nextData = await loader()
+        const nextData = await loaderRef.current()
         resourceCache.set(key, {
           data: nextData,
           updatedAt: Date.now()
         })
         setData(nextData)
       } catch (error) {
-        onError?.(error)
+        onErrorRef.current?.(error)
       } finally {
         setLoading(false)
         setRefreshing(false)
       }
     },
-    [enabled, initialData, keepPreviousData, key, loader, onError]
+    [enabled, initialData, keepPreviousData, key]
   )
 
   useEffect(() => {
