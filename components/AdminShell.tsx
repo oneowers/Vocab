@@ -1,7 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+import { useEffect } from "react"
 import { ArrowLeft } from "lucide-react"
 
 import { BrandLogo } from "@/components/BrandLogo"
@@ -17,6 +18,15 @@ interface AdminShellProps {
 
 export function AdminShell({ user, children }: AdminShellProps) {
   const pathname = usePathname()
+  const router = useRouter()
+
+  useEffect(() => {
+    ;["/admin", "/admin/users", "/admin/cards", "/admin/analytics", "/", "/dashboard", "/profile"].forEach(
+      (href) => {
+        router.prefetch(href)
+      }
+    )
+  }, [router])
 
   return (
     <div className="min-h-screen bg-shell">

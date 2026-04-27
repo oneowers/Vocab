@@ -5,6 +5,7 @@ import { useEffect, useState } from "react"
 import { AdminTable } from "@/components/AdminTable"
 import { ConfirmModal } from "@/components/ConfirmModal"
 import { useToast } from "@/components/Toast"
+import { useClientResource } from "@/hooks/useClientResource"
 import { formatTimestamp } from "@/lib/date"
 import type { AdminCardsPayload, CardRecord } from "@/lib/types"
 
@@ -12,37 +13,35 @@ export function AdminCardsView() {
   const [payload, setPayload] = useState<AdminCardsPayload | null>(null)
   const [search, setSearch] = useState("")
   const [page, setPage] = useState(1)
-  const [loading, setLoading] = useState(true)
   const [selectedCard, setSelectedCard] = useState<CardRecord | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const { showToast } = useToast()
+  const { data, loading, refreshing } = useClientResource<AdminCardsPayload>({
+    key: `admin-cards:${page}:${search}`,
+    loader: async () => {
+      const response = await fetch(
+        `/api/admin/cards?page=${page}&search=${encodeURIComponent(search)}`,
+        {
+          cache: "no-store"
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error("Could not load cards.")
+      }
+
+      return (await response.json()) as AdminCardsPayload
+    },
+    onError: () => {
+      showToast("Could not load cards.", "error")
+    }
+  })
 
   useEffect(() => {
-    async function loadCards() {
-      setLoading(true)
-
-      try {
-        const response = await fetch(
-          `/api/admin/cards?page=${page}&search=${encodeURIComponent(search)}`,
-          {
-            cache: "no-store"
-          }
-        )
-
-        if (!response.ok) {
-          throw new Error("Could not load cards.")
-        }
-
-        setPayload((await response.json()) as AdminCardsPayload)
-      } catch {
-        showToast("Could not load cards.", "error")
-      } finally {
-        setLoading(false)
-      }
+    if (data) {
+      setPayload(data)
     }
-
-    void loadCards()
-  }, [page, search, showToast])
+  }, [data])
 
   async function confirmDelete() {
     if (!selectedCard) {
@@ -100,7 +99,7 @@ export function AdminCardsView() {
         {loading || !payload ? (
           <div className="skeleton h-80 rounded-[1.75rem]" />
         ) : (
-          <>
+          <div className={`transition-opacity ${refreshing ? "opacity-70" : "opacity-100"}`}>
             <div className="space-y-3 md:hidden">
               {payload.items.map((card) => (
                 <article key={card.id} className="rounded-card border border-separator bg-bg-primary p-4">
@@ -193,7 +192,7 @@ export function AdminCardsView() {
                 </button>
               </div>
             </div>
-          </>
+          </div>
         )}
       </AdminTable>
 

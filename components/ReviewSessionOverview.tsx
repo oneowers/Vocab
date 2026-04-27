@@ -36,7 +36,7 @@ export function ReviewSessionOverview({
   onStartPractice
 }: ReviewSessionOverviewProps) {
   return (
-    <section className={`mx-auto max-w-5xl ${styles.overviewShell}`}>
+    <section className={`mx-auto `}>
       <div className={styles.sectionGrid}>
         <div className={styles.modeCard}>
           <div className={styles.modeCardHeader}>

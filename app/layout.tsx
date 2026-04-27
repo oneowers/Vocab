@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next"
 import NextTopLoader from "nextjs-toploader"
 
+import { StartupSplash } from "@/components/StartupSplash"
 import { ToastProvider } from "@/components/Toast"
 import "@/styles/apple-theme.css"
 import "./globals.css"
@@ -31,6 +32,7 @@ export default function RootLayout({
           easing="ease"
           showSpinner={false}
         />
+        <StartupSplash />
         <ToastProvider>{children}</ToastProvider>
       </body>
     </html>

@@ -1,39 +1,31 @@
 "use client"
 
-import { useEffect, useState } from "react"
-
 import { CSSBarChart } from "@/components/CSSBarChart"
 import { useToast } from "@/components/Toast"
+import { useClientResource } from "@/hooks/useClientResource"
 import { formatTimestamp } from "@/lib/date"
 import type { AdminAnalyticsPayload } from "@/lib/types"
 
 export function AdminOverviewView() {
-  const [data, setData] = useState<AdminAnalyticsPayload | null>(null)
-  const [loading, setLoading] = useState(true)
   const { showToast } = useToast()
-  const weeklyDays = data?.days.slice(-7) ?? []
+  const { data, loading } = useClientResource<AdminAnalyticsPayload>({
+    key: "admin:overview",
+    loader: async () => {
+      const response = await fetch("/api/admin/analytics", {
+        cache: "no-store"
+      })
 
-  useEffect(() => {
-    async function loadOverview() {
-      try {
-        const response = await fetch("/api/admin/analytics", {
-          cache: "no-store"
-        })
-
-        if (!response.ok) {
-          throw new Error("Could not load analytics.")
-        }
-
-        setData((await response.json()) as AdminAnalyticsPayload)
-      } catch {
-        showToast("Could not load admin analytics.", "error")
-      } finally {
-        setLoading(false)
+      if (!response.ok) {
+        throw new Error("Could not load analytics.")
       }
-    }
 
-    void loadOverview()
-  }, [showToast])
+      return (await response.json()) as AdminAnalyticsPayload
+    },
+    onError: () => {
+      showToast("Could not load admin analytics.", "error")
+    }
+  })
+  const weeklyDays = data?.days.slice(-7) ?? []
 
   if (loading || !data) {
     return <div className="skeleton h-[44rem] rounded-[2rem]" />

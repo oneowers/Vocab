@@ -1,9 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
-
 import { CSSBarChart } from "@/components/CSSBarChart"
 import { useToast } from "@/components/Toast"
+import { useClientResource } from "@/hooks/useClientResource"
 import { formatDateLabel, getTodayDateKey, listRecentDateKeys, listUpcomingDateKeys } from "@/lib/date"
 import { getGuestCards, getGuestReviewLogs, isGuestSessionActive } from "@/lib/guest"
 import type { CardRecord, ChartPoint, GuestReviewLog, StatsPayload } from "@/lib/types"
@@ -90,39 +89,27 @@ function computeGuestStats(cards: CardRecord[], logs: GuestReviewLog[]): StatsPa
 }
 
 export function StatsView() {
-  const [loading, setLoading] = useState(true)
-  const [stats, setStats] = useState<StatsPayload | null>(null)
   const { showToast } = useToast()
+  const guestMode = isGuestSessionActive()
+  const guestStats = guestMode ? computeGuestStats(getGuestCards(), getGuestReviewLogs()) : null
+  const { data: stats, loading } = useClientResource<StatsPayload>({
+    key: guestMode ? "stats:guest" : "stats:user",
+    initialData: guestStats,
+    loader: async () => {
+      const response = await fetch("/api/stats", {
+        cache: "no-store"
+      })
 
-  useEffect(() => {
-    async function loadStats() {
-      const guestMode = isGuestSessionActive()
-
-      if (guestMode) {
-        setStats(computeGuestStats(getGuestCards(), getGuestReviewLogs()))
-        setLoading(false)
-        return
+      if (!response.ok) {
+        throw new Error("Could not load stats.")
       }
 
-      try {
-        const response = await fetch("/api/stats", {
-          cache: "no-store"
-        })
-
-        if (!response.ok) {
-          throw new Error("Could not load stats.")
-        }
-
-        setStats((await response.json()) as StatsPayload)
-      } catch {
-        showToast("Could not load your stats.", "error")
-      } finally {
-        setLoading(false)
-      }
+      return (await response.json()) as StatsPayload
+    },
+    onError: () => {
+      showToast("Could not load your stats.", "error")
     }
-
-    void loadStats()
-  }, [showToast])
+  })
 
   if (loading || !stats) {
     return <div className="skeleton h-[40rem] rounded-[2rem]" />

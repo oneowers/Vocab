@@ -5,6 +5,7 @@ import { useEffect, useState } from "react"
 import { AdminTable } from "@/components/AdminTable"
 import { ConfirmModal } from "@/components/ConfirmModal"
 import { useToast } from "@/components/Toast"
+import { useClientResource } from "@/hooks/useClientResource"
 import { formatTimestamp } from "@/lib/date"
 import type { AdminUserRow, AdminUsersPayload, Role } from "@/lib/types"
 
@@ -12,37 +13,35 @@ export function AdminUsersView() {
   const [payload, setPayload] = useState<AdminUsersPayload | null>(null)
   const [search, setSearch] = useState("")
   const [page, setPage] = useState(1)
-  const [loading, setLoading] = useState(true)
   const [selectedUser, setSelectedUser] = useState<AdminUserRow | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const { showToast } = useToast()
+  const { data, loading, refreshing } = useClientResource<AdminUsersPayload>({
+    key: `admin-users:${page}:${search}`,
+    loader: async () => {
+      const response = await fetch(
+        `/api/admin/users?page=${page}&search=${encodeURIComponent(search)}`,
+        {
+          cache: "no-store"
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error("Could not load users.")
+      }
+
+      return (await response.json()) as AdminUsersPayload
+    },
+    onError: () => {
+      showToast("Could not load users.", "error")
+    }
+  })
 
   useEffect(() => {
-    async function loadUsers() {
-      setLoading(true)
-
-      try {
-        const response = await fetch(
-          `/api/admin/users?page=${page}&search=${encodeURIComponent(search)}`,
-          {
-            cache: "no-store"
-          }
-        )
-
-        if (!response.ok) {
-          throw new Error("Could not load users.")
-        }
-
-        setPayload((await response.json()) as AdminUsersPayload)
-      } catch {
-        showToast("Could not load users.", "error")
-      } finally {
-        setLoading(false)
-      }
+    if (data) {
+      setPayload(data)
     }
-
-    void loadUsers()
-  }, [page, search, showToast])
+  }, [data])
 
   async function handleRoleChange(user: AdminUserRow, nextRole: Role) {
     if (user.role === nextRole) {
@@ -189,7 +188,7 @@ export function AdminUsersView() {
         {loading || !payload ? (
           <div className="skeleton h-80 rounded-[1.75rem]" />
         ) : (
-          <>
+          <div className={`transition-opacity ${refreshing ? "opacity-70" : "opacity-100"}`}>
             <div className="space-y-3 md:hidden">
               {payload.items.map((user) => (
                 <article key={user.id} className="rounded-card border border-separator bg-bg-primary p-4">
@@ -329,7 +328,7 @@ export function AdminUsersView() {
                 </button>
               </div>
             </div>
-          </>
+          </div>
         )}
       </AdminTable>
 

@@ -145,7 +145,7 @@ export function QuizCard({
         </p>
       </div>
 
-      <div className="mt-6 grid gap-3 md:grid-cols-2">
+      <div className="mt-6 grid grid-cols-2 gap-2 md:gap-3">
         <div className="space-y-3">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-quiet">Russian</p>
           {leftItems.map((item) => (
@@ -154,7 +154,7 @@ export function QuizCard({
               type="button"
               onClick={() => handleSelectLeft(item.id)}
               disabled={resolving || solvedLeftIds.includes(item.id)}
-              className={`min-h-[72px] w-full rounded-[1.5rem] border px-4 py-4 text-left text-sm font-medium transition ${getItemClassName(item.id, "left")}`}
+              className={`min-h-[68px] w-full rounded-[1.25rem] border px-3 py-3 text-center text-sm font-medium leading-5 transition md:min-h-[72px] md:rounded-[1.5rem] md:px-4 md:py-4 ${getItemClassName(item.id, "left")}`}
             >
               {item.text}
             </button>
@@ -169,7 +169,7 @@ export function QuizCard({
               type="button"
               onClick={() => handleSelectRight(item.id)}
               disabled={resolving || solvedRightIds.includes(item.id)}
-              className={`min-h-[72px] w-full rounded-[1.5rem] border px-4 py-4 text-left text-sm font-medium transition ${getItemClassName(item.id, "right")}`}
+              className={`min-h-[68px] w-full rounded-[1.25rem] border px-3 py-3 text-center text-sm font-medium leading-5 transition md:min-h-[72px] md:rounded-[1.5rem] md:px-4 md:py-4 ${getItemClassName(item.id, "right")}`}
             >
               {item.text}
             </button>

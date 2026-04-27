@@ -444,7 +444,7 @@ export function ReviewSession() {
 
   if (sessionStatus === "saving" || sessionStatus === "save-error") {
     return (
-      <section className={`panel mx-auto max-w-3xl p-6 text-center ${outfit.className}`}>
+      <section className={`panel mx-auto max-w-5xl p-6 text-center ${outfit.className}`}>
         <p className="text-xs font-semibold uppercase tracking-[0.28em] text-quiet">
           {sessionStatus === "saving" ? "Saving" : "Save error"}
         </p>
@@ -490,7 +490,7 @@ export function ReviewSession() {
 
   if (sessionStatus === "success") {
     return (
-      <section className={`panel mx-auto max-w-3xl p-6 text-center ${outfit.className}`}>
+      <section className={`panel mx-auto max-w-5xl p-6 text-center ${outfit.className}`}>
         <p className="text-xs font-semibold uppercase tracking-[0.28em] text-quiet">
           Session complete
         </p>
@@ -529,7 +529,7 @@ export function ReviewSession() {
   const progress = getActiveStageProgress()
 
   return (
-    <div className={`mx-auto max-w-4xl space-y-5 ${outfit.className}`}>
+    <div className={`mx-auto w-full max-w-5xl space-y-5 ${outfit.className}`}>
         <div className={`panel p-5 ${styles.activeHeader}`}>
         <div className={styles.activeHeaderTop}>
           <div className="min-w-0 flex-1">

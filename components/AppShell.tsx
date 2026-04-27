@@ -31,7 +31,17 @@ export function AppShell({ user, children }: AppShellProps) {
   }, [pathname])
 
   useEffect(() => {
-    router.prefetch("/login")
+    const appRoutes = ["/", "/dashboard", "/practice", "/review", "/profile", "/stats", "/login"]
+
+    appRoutes.forEach((href) => {
+      router.prefetch(href)
+    })
+
+    if (user?.role === "ADMIN") {
+      ;["/admin", "/admin/users", "/admin/cards", "/admin/analytics"].forEach((href) => {
+        router.prefetch(href)
+      })
+    }
   }, [router])
 
   async function handleExit() {

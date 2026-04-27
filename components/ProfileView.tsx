@@ -6,30 +6,57 @@ import { useRouter } from "next/navigation"
 import { ArrowRight, Heart, LogOut, Shield } from "lucide-react"
 
 import { useToast } from "@/components/Toast"
+import { useClientResource } from "@/hooks/useClientResource"
 import { DEFAULT_GUEST_REVIEW_LIVES, clearGuestSession, isGuestSessionActive } from "@/lib/guest"
 import { getRoleLabel } from "@/lib/roles"
+import { buildEmptyProfileActivity } from "@/lib/server-data"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
 import type { AppUserRecord, ProfileActivityPayload } from "@/lib/types"
 
 interface ProfileViewProps {
   user: AppUserRecord | null
-  activity: ProfileActivityPayload
 }
 
-export function ProfileView({ user, activity }: ProfileViewProps) {
+export function ProfileView({ user }: ProfileViewProps) {
   const router = useRouter()
   const { showToast } = useToast()
   const [guestActive, setGuestActive] = useState(false)
+  const [profileUser, setProfileUser] = useState(user)
   const [reviewLives, setReviewLives] = useState(user?.reviewLives ?? DEFAULT_GUEST_REVIEW_LIVES)
   const [savingLives, setSavingLives] = useState(false)
+  const fallbackActivity = useMemo(() => buildEmptyProfileActivity(), [])
+  const {
+    data: activity,
+    loading: activityLoading,
+    refreshing: activityRefreshing
+  } = useClientResource<ProfileActivityPayload>({
+    key: guestActive || !profileUser ? "profile-activity:guest" : `profile-activity:${profileUser.id}`,
+    enabled: true,
+    initialData: guestActive || !profileUser ? fallbackActivity : null,
+    loader: async () => {
+      const response = await fetch("/api/profile/activity", {
+        cache: "no-store"
+      })
+
+      if (!response.ok) {
+        throw new Error("Could not load activity.")
+      }
+
+      return (await response.json()) as ProfileActivityPayload
+    },
+    onError: () => {
+      showToast("Could not load profile activity.", "error")
+    }
+  })
 
   useEffect(() => {
     setGuestActive(isGuestSessionActive())
   }, [])
 
   useEffect(() => {
+    setProfileUser(user)
     setReviewLives(user?.reviewLives ?? DEFAULT_GUEST_REVIEW_LIVES)
-  }, [user?.reviewLives])
+  }, [user])
 
   async function handleExit() {
     if (guestActive) {
@@ -38,7 +65,7 @@ export function ProfileView({ user, activity }: ProfileViewProps) {
       return
     }
 
-    if (!user) {
+    if (!profileUser) {
       router.push("/login")
       return
     }
@@ -55,16 +82,17 @@ export function ProfileView({ user, activity }: ProfileViewProps) {
     router.refresh()
   }
 
-  const name = guestActive ? "Guest explorer" : user?.name || user?.email || "Wlingo user"
+  const resolvedActivity = activity ?? fallbackActivity
+  const name = guestActive ? "Guest explorer" : profileUser?.name || profileUser?.email || "Wlingo user"
   const subtitle = guestActive
     ? "Guest mode"
-    : getRoleLabel(user?.role ?? null)
-  const heatmapDays = useMemo(() => activity.days, [activity.days])
+    : getRoleLabel(profileUser?.role ?? null)
+  const heatmapDays = useMemo(() => resolvedActivity.days, [resolvedActivity.days])
   const heatmapCellSize = 12
   const heatmapGap = 4
   const heatmapWeekCount = Math.max(
     1,
-    ...activity.months.map((month) => month.weekIndex + 1),
+    ...resolvedActivity.months.map((month) => month.weekIndex + 1),
     Math.ceil(heatmapDays.length / 7)
   )
   const heatmapWidth =
@@ -73,7 +101,7 @@ export function ProfileView({ user, activity }: ProfileViewProps) {
     const minLabelSpacing = 28
     let lastLeft = -Infinity
 
-    return activity.months.filter((month) => {
+    return resolvedActivity.months.filter((month) => {
       const left = month.weekIndex * (heatmapCellSize + heatmapGap)
 
       if (left - lastLeft < minLabelSpacing) {
@@ -83,10 +111,10 @@ export function ProfileView({ user, activity }: ProfileViewProps) {
       lastLeft = left
       return true
     })
-  }, [activity.months, heatmapCellSize, heatmapGap])
+  }, [resolvedActivity.months, heatmapCellSize, heatmapGap])
 
   async function handleReviewLivesChange(nextLives: number) {
-    if (guestActive || !user || savingLives || nextLives === reviewLives) {
+    if (guestActive || !profileUser || savingLives || nextLives === reviewLives) {
       return
     }
 
@@ -107,8 +135,12 @@ export function ProfileView({ user, activity }: ProfileViewProps) {
         throw new Error("Could not update review lives.")
       }
 
-      setReviewLives(nextLives)
-      router.refresh()
+      const payload = (await response.json()) as {
+        user: AppUserRecord
+      }
+
+      setProfileUser(payload.user)
+      setReviewLives(payload.user.reviewLives)
       showToast("Review lives updated.", "success")
     } catch (error) {
       showToast(
@@ -132,13 +164,13 @@ export function ProfileView({ user, activity }: ProfileViewProps) {
         <div className="divide-y divide-separator">
           <div className="flex min-h-[52px] items-center justify-between py-1">
             <span className="text-[17px] font-semibold text-text-primary">Email</span>
-            <span className="text-[15px] text-text-tertiary">{user?.email || "Guest session"}</span>
+            <span className="text-[15px] text-text-tertiary">{profileUser?.email || "Guest session"}</span>
           </div>
           <div className="flex min-h-[52px] items-center justify-between py-1">
             <span className="text-[17px] font-semibold text-text-primary">Role</span>
             <span className="text-[15px] text-text-tertiary">{subtitle}</span>
           </div>
-          {user?.role === "ADMIN" ? (
+          {profileUser?.role === "ADMIN" ? (
             <Link href="/admin" prefetch className="flex min-h-[52px] items-center justify-between py-1">
               <span className="inline-flex items-center gap-2 text-[17px] font-semibold text-text-primary">
                 <Shield size={18} />
@@ -196,12 +228,12 @@ export function ProfileView({ user, activity }: ProfileViewProps) {
           <div>
             <p className="section-label">Activity</p>
             <h2 className="mt-2 text-[22px] font-bold tracking-[-0.5px] text-text-primary">
-              {activity.activeDaysLastYear} active days this year
+              {resolvedActivity.activeDaysLastYear} active days this year
             </h2>
             <p className="mt-1 text-[15px] text-text-secondary">
               {guestActive
                 ? "Guest mode does not keep a year-to-date activity history yet."
-                : `${activity.totalReviewsLastYear} review attempts recorded since January 1.`}
+                : `${resolvedActivity.totalReviewsLastYear} review attempts recorded since January 1.`}
             </p>
           </div>
           <div className="flex items-center gap-2 text-[13px] text-text-tertiary">
@@ -213,7 +245,15 @@ export function ProfileView({ user, activity }: ProfileViewProps) {
           </div>
         </div>
 
-        <div className="mt-5 overflow-x-auto pb-1 hide-scrollbar native-scroll">
+        {activityLoading ? (
+          <div className="mt-5 skeleton h-[240px] rounded-[1.5rem]" />
+        ) : null}
+
+        <div
+          className={`mt-5 overflow-x-auto pb-1 hide-scrollbar native-scroll transition-opacity ${
+            activityLoading ? "hidden" : activityRefreshing ? "opacity-70" : "opacity-100"
+          }`}
+        >
           <div className="min-w-[760px]">
             <div
               className="relative ml-12 h-6 text-[12px] leading-none text-text-tertiary"
@@ -262,7 +302,7 @@ export function ProfileView({ user, activity }: ProfileViewProps) {
 
       <button type="button" onClick={handleExit} className="button-secondary w-full">
         <LogOut size={18} />
-        {guestActive ? "Exit guest mode" : user ? "Sign out" : "Open login"}
+        {guestActive ? "Exit guest mode" : profileUser ? "Sign out" : "Open login"}
       </button>
     </div>
   )
