@@ -2,7 +2,8 @@ import { NextResponse } from "next/server"
 
 import { getOptionalAuthUser } from "@/lib/auth"
 import { isGuestModeEnabled } from "@/lib/config"
-import { buildEmptyProfileActivity, buildProfileActivity } from "@/lib/server-data"
+import { buildEmptyProfileActivity } from "@/lib/profile-data"
+import { buildProfileActivity } from "@/lib/server-data"
 
 export async function GET() {
   const user = await getOptionalAuthUser()

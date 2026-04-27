@@ -104,21 +104,6 @@ function buildActivitySkeleton(endDateKey = getTodayDateKey()) {
   }
 }
 
-export function buildEmptyProfileActivity(endDateKey = getTodayDateKey()): ProfileActivityPayload {
-  const skeleton = buildActivitySkeleton(endDateKey)
-
-  return {
-    activeDaysLastYear: 0,
-    totalReviewsLastYear: 0,
-    days: skeleton.days.map((day) => ({
-      date: day.date,
-      count: 0,
-      level: 0
-    })),
-    months: skeleton.months
-  }
-}
-
 function getLongestStreak(dateKeys: string[]) {
   if (!dateKeys.length) {
     return 0

@@ -10,7 +10,7 @@ import { useToast } from "@/components/Toast"
 import { useClientResource } from "@/hooks/useClientResource"
 import { DEFAULT_GUEST_REVIEW_LIVES, clearGuestSession, isGuestSessionActive } from "@/lib/guest"
 import { getRoleLabel } from "@/lib/roles"
-import { buildEmptyProfileActivity } from "@/lib/server-data"
+import { buildEmptyProfileActivity } from "@/lib/profile-data"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
 import type { AppUserRecord, CefrLevel, ProfileActivityPayload } from "@/lib/types"
 
