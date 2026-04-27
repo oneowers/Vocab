@@ -43,6 +43,8 @@ interface CardListProps {
   cards: CardRecord[]
   selectedStatus: CardStatusFilter
   onSelectStatus: (status: CardStatusFilter) => void
+  selectedLevel: CefrLevel | "All"
+  onSelectLevel: (level: CefrLevel | "All") => void
   search: string
   onSearchChange: (value: string) => void
   onExport: () => void
@@ -58,6 +60,8 @@ export function CardList({
   cards,
   selectedStatus,
   onSelectStatus,
+  selectedLevel,
+  onSelectLevel,
   search,
   onSearchChange,
   onExport,
@@ -95,22 +99,37 @@ export function CardList({
       </div>
 
       <div className="mt-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-wrap gap-2">
-          {(["All", "known", "unknown"] as CardStatusFilter[]).map((status) => (
-            <button
-              key={status}
-              type="button"
-              onClick={() => onSelectStatus(status)}
-              className="chip-button"
-              data-active={selectedStatus === status}
-            >
-              {status === "All"
-                ? "All"
-                : status === "known"
-                  ? "Known"
-                  : "Unknown"}
-            </button>
-          ))}
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap gap-2">
+            {(["All", "known", "unknown"] as CardStatusFilter[]).map((status) => (
+              <button
+                key={status}
+                type="button"
+                onClick={() => onSelectStatus(status)}
+                className="chip-button"
+                data-active={selectedStatus === status}
+              >
+                {status === "All"
+                  ? "All"
+                  : status === "known"
+                    ? "Known"
+                    : "Unknown"}
+              </button>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {(["All", "A1", "A2", "B1", "B2", "C1", "C2"] as const).map((level) => (
+              <button
+                key={level}
+                type="button"
+                onClick={() => onSelectLevel(level)}
+                className="chip-button"
+                data-active={selectedLevel === level}
+              >
+                {level}
+              </button>
+            ))}
+          </div>
         </div>
         <input
           value={search}

@@ -9,7 +9,7 @@ import { useToast } from "@/components/Toast"
 import { getTodayDateKey } from "@/lib/date"
 import { getGuestCards, isGuestSessionActive } from "@/lib/guest"
 import { matchesCardStatus, sortDueCards } from "@/lib/spaced-repetition"
-import type { CardRecord, CardsResponse, CardStatusFilter, DailyCatalogStatus, DailyClaimResponse } from "@/lib/types"
+import type { CardRecord, CardsResponse, CardStatusFilter, CefrLevel, DailyCatalogStatus, DailyClaimResponse } from "@/lib/types"
 
 export function CardsPageView() {
   const [guestMode, setGuestMode] = useState(false)
@@ -17,6 +17,7 @@ export function CardsPageView() {
   const [cards, setCards] = useState<CardRecord[]>([])
   const [dailyCatalog, setDailyCatalog] = useState<DailyCatalogStatus | null>(null)
   const [selectedStatus, setSelectedStatus] = useState<CardStatusFilter>("All")
+  const [selectedLevel, setSelectedLevel] = useState<CefrLevel | "All">("All")
   const [search, setSearch] = useState("")
   const [cardToDelete, setCardToDelete] = useState<CardRecord | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -60,12 +61,13 @@ export function CardsPageView() {
 
   const visibleCards = cards.filter((card) => {
     const matchesStatus = matchesCardStatus(card, selectedStatus)
+    const matchesLevel = selectedLevel === "All" || card.cefrLevel === selectedLevel
     const matchesSearch =
       !search.trim() ||
       card.original.toLowerCase().includes(search.trim().toLowerCase()) ||
       card.translation.toLowerCase().includes(search.trim().toLowerCase())
 
-    return matchesStatus && matchesSearch
+    return matchesStatus && matchesLevel && matchesSearch
   })
   const dueCount = cards.filter((card) => card.nextReviewDate <= getTodayDateKey()).length
 
@@ -232,21 +234,7 @@ export function CardsPageView() {
       />
 
       <div className="space-y-4">
-        <section className="panel flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="section-label">Cards</p>
-            <h1 className="mt-2 text-[22px] font-bold tracking-[-0.5px] text-text-primary">
-              All saved cards
-            </h1>
-            <p className="mt-2 text-[15px] text-text-secondary">
-              {dueCount} card{dueCount === 1 ? "" : "s"} ready for review.
-            </p>
-            {!guestMode && dailyCatalog ? (
-              <p className="mt-2 text-[14px] text-text-tertiary">
-                Level {dailyCatalog.cefrLevel}. {dailyCatalog.claimedToday} of {dailyCatalog.dailyLimit} daily words claimed.
-              </p>
-            ) : null}
-          </div>
+        <section className=" flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap gap-2">
             {!guestMode ? (
               <button
@@ -258,9 +246,6 @@ export function CardsPageView() {
                 {claiming ? "Adding..." : "Get today's words"}
               </button>
             ) : null}
-            <Link href="/practice" className="button-primary inline-flex px-5 py-3 text-sm font-medium">
-              Open practice
-            </Link>
           </div>
         </section>
 
@@ -271,6 +256,8 @@ export function CardsPageView() {
             cards={visibleCards}
             selectedStatus={selectedStatus}
             onSelectStatus={setSelectedStatus}
+            selectedLevel={selectedLevel}
+            onSelectLevel={setSelectedLevel}
             search={search}
             onSearchChange={setSearch}
             onExport={handleExport}
