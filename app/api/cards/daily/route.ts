@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { getOptionalAuthUser } from "@/lib/auth"
-import { getOrCreateAppSettings } from "@/lib/catalog"
+import { ensureCatalogWordLocalized, getOrCreateAppSettings } from "@/lib/catalog"
 import { getTodayDateKey } from "@/lib/date"
 import { getPrisma } from "@/lib/prisma"
 import { serializeCard } from "@/lib/serializers"
@@ -81,27 +81,35 @@ export async function POST() {
     })
   }
 
+  const localizedWords = await Promise.all(
+    nextWords.map((word) => ensureCatalogWordLocalized(prisma, word.id))
+  )
+  const readyWords = localizedWords.filter((word): word is NonNullable<typeof word> => Boolean(word))
+
   const createdCards = await prisma.$transaction(async (transaction) => {
     await transaction.userCatalogWord.createMany({
-      data: nextWords.map((word) => ({
+      data: readyWords.map((word) => ({
         userId: user.id,
         wordCatalogId: word.id
       }))
     })
 
     const cards = await Promise.all(
-      nextWords.map((word) =>
+      readyWords.map((word) =>
         transaction.card.create({
           data: {
             userId: user.id,
             catalogWordId: word.id,
-            original: word.word,
-            translation: word.translation,
+            original: null,
+            translation: null,
             direction: "en-ru",
-            example: word.example,
-            phonetic: word.phonetic,
+            example: null,
+            phonetic: null,
             nextReviewDate: today,
             lastReviewResult: "unknown"
+          },
+          include: {
+            catalogWord: true
           }
         })
       )

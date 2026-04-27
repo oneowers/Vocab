@@ -23,17 +23,30 @@ export function serializeCard(
     user?: {
       email: string
     }
+    catalogWord?: WordCatalog | null
   }
 ): CardRecord {
+  const resolvedOriginal = card.catalogWord?.word ?? card.original ?? ""
+  const resolvedTranslation = card.catalogWord?.translation ?? card.translation ?? ""
+  const resolvedExample =
+    card.catalogWord?.example?.trim()
+      ? card.catalogWord.example
+      : card.example ?? null
+  const resolvedPhonetic =
+    card.catalogWord?.phonetic?.trim()
+      ? card.catalogWord.phonetic
+      : card.phonetic ?? null
+
   return {
     id: card.id,
     userId: card.userId,
     catalogWordId: card.catalogWordId ?? null,
-    original: card.original,
-    translation: card.translation,
+    isCatalogLinked: Boolean(card.catalogWordId),
+    original: resolvedOriginal,
+    translation: resolvedTranslation,
     direction: card.direction as CardRecord["direction"],
-    example: card.example ?? null,
-    phonetic: card.phonetic ?? null,
+    example: resolvedExample,
+    phonetic: resolvedPhonetic,
     dateAdded: card.dateAdded.toISOString(),
     nextReviewDate: card.nextReviewDate,
     lastReviewResult: card.lastReviewResult as CardRecord["lastReviewResult"],
@@ -49,6 +62,7 @@ export function serializeWordCatalog(word: WordCatalog): WordCatalogRecord {
     id: word.id,
     word: word.word,
     translation: word.translation,
+    translationAlternatives: word.translationAlternatives,
     cefrLevel: word.cefrLevel,
     partOfSpeech: word.partOfSpeech,
     topic: word.topic,
@@ -56,6 +70,12 @@ export function serializeWordCatalog(word: WordCatalog): WordCatalogRecord {
     phonetic: word.phonetic,
     priority: word.priority,
     isPublished: word.isPublished,
+    source: word.source,
+    sourceRef: word.sourceRef,
+    enrichmentStatus: word.enrichmentStatus,
+    reviewStatus: word.reviewStatus,
+    lastEnrichedAt: word.lastEnrichedAt?.toISOString() ?? null,
+    enrichmentError: word.enrichmentError ?? null,
     createdAt: word.createdAt.toISOString(),
     updatedAt: word.updatedAt.toISOString()
   }

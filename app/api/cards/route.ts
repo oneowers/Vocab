@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 
 import { getOptionalAuthUser } from "@/lib/auth"
-import { getOrCreateAppSettings } from "@/lib/catalog"
+import {
+  ensureCatalogWordLocalized,
+  findCatalogWordByTranslation,
+  findCatalogWordByWord,
+  getOrCreateAppSettings
+} from "@/lib/catalog"
 import { getTodayDateKey, isDueDate } from "@/lib/date"
 import { getPrisma } from "@/lib/prisma"
 import { serializeCard } from "@/lib/serializers"
@@ -32,19 +37,35 @@ export async function GET(request: NextRequest) {
           : {}),
         ...(search
           ? {
-              OR: [
+            OR: [
                 { original: { contains: search, mode: "insensitive" } },
-                { translation: { contains: search, mode: "insensitive" } }
+                { translation: { contains: search, mode: "insensitive" } },
+                {
+                  catalogWord: {
+                    is: {
+                      OR: [
+                        { word: { contains: search, mode: "insensitive" } },
+                        { translation: { contains: search, mode: "insensitive" } }
+                      ]
+                    }
+                  }
+                }
               ]
             }
           : {}),
         ...(due === "today" ? { nextReviewDate: { lte: today } } : {})
+      },
+      include: {
+        catalogWord: true
       },
       orderBy: [{ nextReviewDate: "asc" }, { dateAdded: "desc" }]
     }),
     prisma.card.findMany({
       where: {
         userId: user.id
+      },
+      include: {
+        catalogWord: true
       },
       orderBy: [{ nextReviewDate: "asc" }, { dateAdded: "desc" }]
     }),
@@ -106,16 +127,37 @@ export async function POST(request: NextRequest) {
   }
 
   const prisma = getPrisma()
+  const matchingCatalogWord =
+    direction === "en-ru"
+      ? await findCatalogWordByWord(prisma, original)
+      : await findCatalogWordByWord(prisma, translation) ?? await findCatalogWordByTranslation(prisma, original)
+  const hydratedCatalogWord =
+    matchingCatalogWord ? await ensureCatalogWordLocalized(prisma, matchingCatalogWord.id) : null
   const card = await prisma.card.create({
-    data: {
-      userId: user.id,
-      original,
-      translation,
-      direction,
-      example: body.example?.trim() || null,
-      phonetic: body.phonetic?.trim() || null,
-      nextReviewDate: getTodayDateKey(),
-      lastReviewResult: "unknown"
+    data: hydratedCatalogWord
+      ? {
+          userId: user.id,
+          catalogWordId: hydratedCatalogWord.id,
+          original: null,
+          translation: null,
+          direction,
+          example: null,
+          phonetic: null,
+          nextReviewDate: getTodayDateKey(),
+          lastReviewResult: "unknown"
+        }
+      : {
+          userId: user.id,
+          original,
+          translation,
+          direction,
+          example: body.example?.trim() || null,
+          phonetic: body.phonetic?.trim() || null,
+          nextReviewDate: getTodayDateKey(),
+          lastReviewResult: "unknown"
+        },
+    include: {
+      catalogWord: true
     }
   })
 

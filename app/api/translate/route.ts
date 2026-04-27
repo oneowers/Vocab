@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
 
+import type { CefrLevel } from "@prisma/client"
+
 import { getOptionalAuthUser } from "@/lib/auth"
-import { resolveTranslation } from "@/lib/catalog"
+import {
+  ensureCatalogWordLocalized,
+  findCatalogWordByTranslation,
+  findCatalogWordByWord,
+  resolveTranslationDetails
+} from "@/lib/catalog"
 import { isGuestModeEnabled } from "@/lib/config"
 import { getPrisma } from "@/lib/prisma"
 import { isRateLimited } from "@/lib/throttle"
@@ -57,21 +64,69 @@ export async function GET(request: NextRequest) {
   }
 
   const { sourceLang, targetLang } = parsedLangpair
-  const translation = await resolveTranslation({
-    prisma: getPrisma(),
-    query,
-    sourceLang,
-    targetLang
-  })
+  const prisma = getPrisma()
+  const directCatalogWord =
+    sourceLang === "EN" && targetLang === "RU"
+      ? await findCatalogWordByWord(prisma, query)
+      : sourceLang === "RU" && targetLang === "EN"
+        ? await findCatalogWordByTranslation(prisma, query)
+        : null
+  const localizedDirectCatalogWord =
+    directCatalogWord && sourceLang === "EN" && targetLang === "RU"
+      ? await ensureCatalogWordLocalized(prisma, directCatalogWord.id)
+      : directCatalogWord
+  const directCatalogTranslation =
+    localizedDirectCatalogWord
+      ? sourceLang === "EN" && targetLang === "RU"
+        ? localizedDirectCatalogWord.translation.trim()
+        : localizedDirectCatalogWord.word.trim()
+      : null
+  const resolved =
+    directCatalogTranslation
+      ? {
+          translation: directCatalogTranslation,
+          translationAlternatives:
+            sourceLang === "EN" && targetLang === "RU"
+              ? localizedDirectCatalogWord?.translationAlternatives
+                    .map((item) => item.trim())
+                    .filter(Boolean) ?? []
+              : []
+        }
+      : await resolveTranslationDetails({
+          prisma,
+          query,
+          sourceLang,
+          targetLang
+        })
 
-  if (!translation) {
+  if (!resolved?.translation) {
     return NextResponse.json(
       { error: "Translation service is unavailable." },
       { status: 502 }
     )
   }
 
+  let cefrLevel: CefrLevel | null = localizedDirectCatalogWord?.cefrLevel ?? null
+
+  if (!cefrLevel && sourceLang === "RU" && targetLang === "EN") {
+    const resolvedEnglishCatalogWord = await findCatalogWordByWord(
+      prisma,
+      resolved.translation
+    )
+
+    if (resolvedEnglishCatalogWord) {
+      const hydratedCatalogWord = await ensureCatalogWordLocalized(
+        prisma,
+        resolvedEnglishCatalogWord.id
+      )
+
+      cefrLevel = hydratedCatalogWord?.cefrLevel ?? resolvedEnglishCatalogWord.cefrLevel
+    }
+  }
+
   return NextResponse.json({
-    translation
+    translation: resolved.translation,
+    translationAlternatives: resolved.translationAlternatives,
+    cefrLevel
   })
 }

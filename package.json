@@ -9,7 +9,10 @@
     "start": "next start",
     "lint": "tsc --noEmit",
     "db:generate": "prisma generate",
-    "db:push": "prisma db push"
+    "db:push": "prisma db push",
+    "seed:cefr:import": "node --experimental-strip-types ./scripts/seed-cefr-import.mjs",
+    "seed:cefr:enrich": "node --experimental-strip-types ./scripts/seed-cefr-enrich.mjs",
+    "seed:cefr:report": "node --experimental-strip-types ./scripts/seed-cefr-report.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.7.0",

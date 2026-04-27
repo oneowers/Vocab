@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
+import type { Prisma } from "@prisma/client"
 
 import { getOptionalAuthUser } from "@/lib/auth"
-import { isCefrLevel, resolveTranslation } from "@/lib/catalog"
+import { isCefrLevel, resolveTranslationDetails } from "@/lib/catalog"
+import { canPublishCatalogWord, getCatalogReviewStatus } from "@/lib/cefr-seed"
 import { getPrisma } from "@/lib/prisma"
 import { serializeWordCatalog } from "@/lib/serializers"
 
@@ -37,10 +39,18 @@ export async function GET(request: NextRequest) {
   const cefrLevel = request.nextUrl.searchParams.get("cefrLevel")?.trim().toUpperCase()
   const topic = request.nextUrl.searchParams.get("topic")?.trim()
   const published = request.nextUrl.searchParams.get("published")?.trim()
+  const enrichmentStatus = request.nextUrl.searchParams.get("enrichmentStatus")?.trim()
+  const reviewStatus = request.nextUrl.searchParams.get("reviewStatus")?.trim()
   const pageSize = 50
   const prisma = getPrisma()
+  const normalizedEnrichmentStatus =
+    enrichmentStatus === "pending" || enrichmentStatus === "completed" || enrichmentStatus === "failed"
+      ? enrichmentStatus
+      : undefined
+  const normalizedReviewStatus =
+    reviewStatus === "draft" || reviewStatus === "approved" ? reviewStatus : undefined
 
-  const where = {
+  const where: Prisma.WordCatalogWhereInput = {
     ...(search
       ? {
           OR: [
@@ -57,7 +67,9 @@ export async function GET(request: NextRequest) {
       ? { isPublished: true }
       : published === "draft"
         ? { isPublished: false }
-        : {})
+        : {}),
+    ...(normalizedEnrichmentStatus ? { enrichmentStatus: normalizedEnrichmentStatus } : {}),
+    ...(normalizedReviewStatus ? { reviewStatus: normalizedReviewStatus } : {})
   }
 
   const [totalItems, items] = await Promise.all([
@@ -104,16 +116,16 @@ export async function POST(request: NextRequest) {
   const topic = body.topic?.trim()
   const example = body.example?.trim()
   const phonetic = body.phonetic?.trim()
-  const translation =
-    body.translation?.trim() ||
-    (word
-      ? await resolveTranslation({
+  const resolvedTranslation =
+    !body.translation?.trim() && word
+      ? await resolveTranslationDetails({
           prisma,
           query: word,
           sourceLang: "EN",
           targetLang: "RU"
         })
-      : null)
+      : null
+  const translation = body.translation?.trim() || resolvedTranslation?.translation || null
   const priority =
     typeof body.priority === "number" && Number.isInteger(body.priority) ? body.priority : 0
 
@@ -146,17 +158,37 @@ export async function POST(request: NextRequest) {
     )
   }
 
+  const completedEntry = {
+    translation,
+    example,
+    phonetic,
+    enrichmentStatus: "completed" as const
+  }
+  const canPublish = canPublishCatalogWord(completedEntry)
+
+  if (body.isPublished === true && !canPublish) {
+    return NextResponse.json(
+      { error: "This word is missing required details and cannot be published yet." },
+      { status: 400 }
+    )
+  }
+
   const created = await prisma.wordCatalog.create({
     data: {
       word,
       translation,
+      translationAlternatives: resolvedTranslation?.translationAlternatives ?? [],
       cefrLevel,
       partOfSpeech,
       topic,
       example,
       phonetic,
       priority,
-      isPublished: body.isPublished === true
+      isPublished: body.isPublished === true,
+      enrichmentStatus: "completed",
+      reviewStatus: getCatalogReviewStatus(body.isPublished === true),
+      lastEnrichedAt: new Date(),
+      enrichmentError: null
     }
   })
 

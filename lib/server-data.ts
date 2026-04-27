@@ -1,4 +1,5 @@
 import { getPrisma } from "@/lib/prisma"
+import { buildSeedReport } from "@/lib/cefr-seed"
 import {
   addDaysToDateKey,
   formatDateLabel,
@@ -164,7 +165,10 @@ export async function buildUserStats(userId: string): Promise<StatsPayload> {
     }),
     prisma.card.findMany({
       where: { userId },
-      orderBy: { wrongCount: "desc" }
+      orderBy: { wrongCount: "desc" },
+      include: {
+        catalogWord: true
+      }
     }),
     prisma.reviewLog.findMany({
       where: { userId },
@@ -262,7 +266,8 @@ export async function buildAdminAnalytics(): Promise<AdminAnalyticsPayload> {
     totalCards,
     reviewLogs,
     recentLogs,
-    cards
+    cards,
+    seedCatalog
   ] =
     await Promise.all([
       prisma.appAnalytics.findMany({
@@ -305,13 +310,19 @@ export async function buildAdminAnalytics(): Promise<AdminAnalyticsPayload> {
       prisma.card.findMany({
         select: {
           id: true,
-          original: true
+          original: true,
+          catalogWord: {
+            select: {
+              word: true
+            }
+          }
         }
-      })
+      }),
+      buildSeedReport(prisma)
     ])
 
   const analyticsByDate = new Map(analyticsRows.map((row) => [row.date, row]))
-  const cardMap = new Map(cards.map((card) => [card.id, card.original]))
+  const cardMap = new Map(cards.map((card) => [card.id, card.catalogWord?.word ?? card.original ?? "Card removed"]))
 
   return {
     days: last30.map((date) => {
@@ -337,6 +348,7 @@ export async function buildAdminAnalytics(): Promise<AdminAnalyticsPayload> {
           .map((log) => log.userId)
       ).size
     },
+    seedCatalog,
     recentActivity: recentLogs.map((log) => ({
       id: log.id,
       email: log.user.email,

@@ -45,6 +45,9 @@ export async function POST(request: NextRequest) {
       id: {
         in: dedupedReviews.map((review) => review.cardId)
       }
+    },
+    include: {
+      catalogWord: true
     }
   })
 
@@ -76,6 +79,9 @@ export async function POST(request: NextRequest) {
       prisma.card.update({
         where: {
           id: card.id
+        },
+        include: {
+          catalogWord: true
         },
         data: {
           nextReviewDate: outcome.nextReviewDate,
@@ -134,7 +140,7 @@ export async function POST(request: NextRequest) {
   ])
 
   const updatedCards = transactionResult.filter(
-    (item): item is (typeof cards)[number] => "original" in item && "translation" in item
+    (item): item is (typeof cards)[number] => "nextReviewDate" in item && "direction" in item
   )
 
   return NextResponse.json({

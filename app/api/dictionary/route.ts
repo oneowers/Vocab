@@ -2,17 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 
 import { getOptionalAuthUser } from "@/lib/auth"
 import { isGuestModeEnabled } from "@/lib/config"
+import { fetchDictionaryDetails } from "@/lib/dictionary"
 import { isRateLimited } from "@/lib/throttle"
-
-interface DictionaryEntry {
-  phonetic?: string
-  phonetics?: Array<{ text?: string }>
-  meanings?: Array<{
-    definitions?: Array<{
-      example?: string
-    }>
-  }>
-}
 
 function getThrottleKey(request: NextRequest, userId: string | null) {
   const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
@@ -36,34 +27,5 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Slow down a little." }, { status: 429 })
   }
 
-  const response = await fetch(
-    `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`,
-    {
-      cache: "no-store"
-    }
-  )
-
-  if (!response.ok) {
-    return NextResponse.json({
-      example: null,
-      phonetic: null
-    })
-  }
-
-  const payload = (await response.json()) as DictionaryEntry[]
-  const firstEntry = payload[0]
-  const example =
-    firstEntry?.meanings
-      ?.flatMap((meaning) => meaning.definitions ?? [])
-      .find((definition) => typeof definition.example === "string")?.example ?? null
-  const phonetic =
-    firstEntry?.phonetic ||
-    firstEntry?.phonetics?.find((item) => typeof item.text === "string")?.text ||
-    null
-
-  return NextResponse.json({
-    example,
-    phonetic
-  })
+  return NextResponse.json(await fetchDictionaryDetails(word))
 }
-

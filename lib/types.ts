@@ -5,6 +5,8 @@ export type Direction = "en-ru" | "ru-en"
 export type ReviewResult = "known" | "unknown"
 export type CardStatusFilter = "All" | "known" | "unknown"
 export type CefrLevel = "A1" | "A2" | "B1" | "B2" | "C1" | "C2"
+export type CatalogEnrichmentStatus = "pending" | "completed" | "failed"
+export type CatalogReviewStatus = "draft" | "approved"
 
 export interface NavItem {
   href: string
@@ -17,6 +19,7 @@ export interface CardRecord {
   id: string
   userId: string
   catalogWordId?: string | null
+  isCatalogLinked?: boolean
   original: string
   translation: string
   direction: Direction
@@ -49,6 +52,7 @@ export interface WordCatalogRecord {
   id: string
   word: string
   translation: string
+  translationAlternatives: string[]
   cefrLevel: CefrLevel
   partOfSpeech: string
   topic: string
@@ -56,6 +60,12 @@ export interface WordCatalogRecord {
   phonetic: string
   priority: number
   isPublished: boolean
+  source: string | null
+  sourceRef: string | null
+  enrichmentStatus: CatalogEnrichmentStatus
+  reviewStatus: CatalogReviewStatus
+  lastEnrichedAt: string | null
+  enrichmentError: string | null
   createdAt: string
   updatedAt: string
 }
@@ -154,6 +164,23 @@ export interface AdminCatalogPayload {
   totalItems: number
 }
 
+export interface ImportedDatasetWord {
+  sourceId: string
+  word: string
+  cefrLevel: CefrLevel
+  partOfSpeech: string
+  priority: number
+}
+
+export interface EnrichmentResult {
+  translation: string
+  translationAlternatives: string[]
+  example: string
+  phonetic: string
+  status: CatalogEnrichmentStatus
+  error: string | null
+}
+
 export interface AdminSettingsPayload {
   settings: AppSettingsRecord
 }
@@ -194,11 +221,20 @@ export interface AdminAnalyticsPayload {
     reviewsToday: number
     activeUsersLast7Days: number
   }
+  seedCatalog: {
+    imported: number
+    enriched: number
+    failed: number
+    published: number
+    byLevel: Record<CefrLevel, number>
+  }
   recentActivity: RecentActivity[]
 }
 
 export interface TranslationPayload {
   translation: string
+  translationAlternatives: string[]
+  cefrLevel: CefrLevel | null
 }
 
 export interface DictionaryPayload {

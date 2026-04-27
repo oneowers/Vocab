@@ -39,14 +39,25 @@ enum CefrLevel {
   C2
 }
 
+enum CatalogEnrichmentStatus {
+  pending
+  completed
+  failed
+}
+
+enum CatalogReviewStatus {
+  draft
+  approved
+}
+
 model Card {
   id             String   @id @default(uuid())
   userId         String
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   catalogWordId  String?
   catalogWord    WordCatalog? @relation(fields: [catalogWordId], references: [id], onDelete: SetNull)
-  original       String
-  translation    String
+  original       String?
+  translation    String?
   direction      String
   example        String?
   phonetic       String?
@@ -82,6 +93,7 @@ model WordCatalog {
   id           String            @id @default(uuid())
   word         String            @unique
   translation  String
+  translationAlternatives String[] @default([])
   cefrLevel    CefrLevel
   partOfSpeech String
   topic        String
@@ -89,12 +101,19 @@ model WordCatalog {
   phonetic     String
   priority     Int               @default(0)
   isPublished  Boolean           @default(false)
+  source       String?
+  sourceRef    String?
+  enrichmentStatus CatalogEnrichmentStatus @default(completed)
+  reviewStatus CatalogReviewStatus @default(approved)
+  lastEnrichedAt DateTime?
+  enrichmentError String?
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
   cards        Card[]
   claims       UserCatalogWord[]
 
   @@index([cefrLevel, isPublished, priority])
+  @@index([source, sourceRef])
 }
 
 model UserCatalogWord {

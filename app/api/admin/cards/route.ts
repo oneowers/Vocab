@@ -56,6 +56,7 @@ export async function GET(request: NextRequest) {
       skip: (page - 1) * pageSize,
       take: pageSize,
       include: {
+        catalogWord: true,
         user: {
           select: {
             email: true
@@ -72,4 +73,3 @@ export async function GET(request: NextRequest) {
     totalItems
   })
 }
-

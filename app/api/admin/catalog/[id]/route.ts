@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 
 import { getOptionalAuthUser } from "@/lib/auth"
-import { isCefrLevel, resolveTranslation } from "@/lib/catalog"
+import { isCefrLevel, resolveTranslationDetails } from "@/lib/catalog"
+import { canPublishCatalogWord, getCatalogReviewStatus } from "@/lib/cefr-seed"
 import { getPrisma } from "@/lib/prisma"
 import { serializeWordCatalog } from "@/lib/serializers"
 
@@ -60,6 +61,8 @@ export async function PATCH(
     phonetic?: string
     priority?: number
     isPublished?: boolean
+    enrichmentStatus?: "pending" | "completed" | "failed"
+    reviewStatus?: "draft" | "approved"
   }
 
   const word = body.word?.trim() ?? existing.word
@@ -68,25 +71,50 @@ export async function PATCH(
   const topic = body.topic?.trim() ?? existing.topic
   const example = body.example?.trim() ?? existing.example
   const phonetic = body.phonetic?.trim() ?? existing.phonetic
-  const translation =
-    body.translation !== undefined
-      ? body.translation.trim() ||
-        (await resolveTranslation({
+  const resolvedTranslation =
+    body.translation !== undefined && !body.translation.trim()
+      ? await resolveTranslationDetails({
           prisma,
           query: word,
           sourceLang: "EN",
           targetLang: "RU"
-        }))
+        })
+      : null
+  const translation =
+    body.translation !== undefined
+      ? body.translation.trim() || resolvedTranslation?.translation
       : existing.translation
+  const translationForSave = translation ?? existing.translation ?? ""
+  const exampleForSave = example ?? ""
+  const phoneticForSave = phonetic ?? ""
   const priority =
     typeof body.priority === "number" && Number.isInteger(body.priority)
       ? body.priority
       : existing.priority
-  const isPublished =
+  const enrichmentStatus =
+    body.enrichmentStatus === "pending" || body.enrichmentStatus === "completed" || body.enrichmentStatus === "failed"
+      ? body.enrichmentStatus
+      : existing.enrichmentStatus
+  const requestedPublished =
     typeof body.isPublished === "boolean" ? body.isPublished : existing.isPublished
 
-  if (!word || !translation || !partOfSpeech || !topic || !example || !phonetic || !isCefrLevel(cefrLevel)) {
+  if (!word || !partOfSpeech || !topic || !isCefrLevel(cefrLevel)) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+  }
+
+  if (
+    requestedPublished &&
+    !canPublishCatalogWord({
+      translation: translationForSave,
+      example: exampleForSave,
+      phonetic: phoneticForSave,
+      enrichmentStatus
+    })
+  ) {
+    return NextResponse.json(
+      { error: "Only completed words with translation, example, and phonetic can be published." },
+      { status: 400 }
+    )
   }
 
   const duplicate = await prisma.wordCatalog.findFirst({
@@ -114,14 +142,27 @@ export async function PATCH(
     },
     data: {
       word,
-      translation,
+      translation: translationForSave,
+      translationAlternatives:
+        resolvedTranslation?.translationAlternatives ?? existing.translationAlternatives,
       cefrLevel,
       partOfSpeech,
       topic,
-      example,
-      phonetic,
+      example: exampleForSave,
+      phonetic: phoneticForSave,
       priority,
-      isPublished
+      isPublished: requestedPublished,
+      enrichmentStatus,
+      reviewStatus:
+        body.reviewStatus === "draft" || body.reviewStatus === "approved"
+          ? body.reviewStatus
+          : getCatalogReviewStatus(requestedPublished),
+      enrichmentError:
+        enrichmentStatus === "failed"
+          ? existing.enrichmentError || "Requires manual completion."
+          : null,
+      lastEnrichedAt:
+        enrichmentStatus === "completed" ? existing.lastEnrichedAt ?? new Date() : existing.lastEnrichedAt
     }
   })
 

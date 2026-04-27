@@ -10,6 +10,8 @@ import { formatTimestamp } from "@/lib/date"
 import type {
   AdminCatalogPayload,
   AdminSettingsPayload,
+  CatalogEnrichmentStatus,
+  CatalogReviewStatus,
   CefrLevel,
   DictionaryPayload,
   TranslationPayload,
@@ -47,6 +49,8 @@ export function AdminCatalogView() {
   const [topicFilter, setTopicFilter] = useState("")
   const [cefrFilter, setCefrFilter] = useState<"" | CefrLevel>("")
   const [publishedFilter, setPublishedFilter] = useState<"all" | "published" | "draft">("all")
+  const [enrichmentFilter, setEnrichmentFilter] = useState<"all" | CatalogEnrichmentStatus>("all")
+  const [reviewFilter, setReviewFilter] = useState<"all" | CatalogReviewStatus>("all")
   const [page, setPage] = useState(1)
   const [form, setForm] = useState<CatalogFormState>(emptyForm)
   const [editingItemId, setEditingItemId] = useState<string | null>(null)
@@ -58,14 +62,16 @@ export function AdminCatalogView() {
     catalog: AdminCatalogPayload
     settings: AdminSettingsPayload
   }>({
-    key: `admin-catalog:${page}:${search}:${topicFilter}:${cefrFilter}:${publishedFilter}`,
+    key: `admin-catalog:${page}:${search}:${topicFilter}:${cefrFilter}:${publishedFilter}:${enrichmentFilter}:${reviewFilter}`,
     loader: async () => {
       const catalogUrl =
         `/api/admin/catalog?page=${page}` +
         `&search=${encodeURIComponent(search)}` +
         `&topic=${encodeURIComponent(topicFilter)}` +
         `&cefrLevel=${encodeURIComponent(cefrFilter)}` +
-        `&published=${encodeURIComponent(publishedFilter)}`
+        `&published=${encodeURIComponent(publishedFilter)}` +
+        `&enrichmentStatus=${encodeURIComponent(enrichmentFilter)}` +
+        `&reviewStatus=${encodeURIComponent(reviewFilter)}`
 
       const [catalogResponse, settingsResponse] = await Promise.all([
         fetch(catalogUrl, {
@@ -247,8 +253,11 @@ export function AdminCatalogView() {
           : current
       )
       showToast(payload.item.isPublished ? "Word published." : "Word moved to draft.", "success")
-    } catch {
-      showToast("Could not update publish status.", "error")
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : "Could not update publish status.",
+        "error"
+      )
     }
   }
 
@@ -278,6 +287,21 @@ export function AdminCatalogView() {
     } finally {
       setSavingLimit(false)
     }
+  }
+
+  function startEditing(item: WordCatalogRecord) {
+    setEditingItemId(item.id)
+    setForm({
+      word: item.word,
+      translation: item.translation,
+      cefrLevel: item.cefrLevel,
+      partOfSpeech: item.partOfSpeech,
+      topic: item.topic,
+      example: item.example,
+      phonetic: item.phonetic,
+      priority: String(item.priority),
+      isPublished: item.isPublished
+    })
   }
 
   return (
@@ -421,7 +445,7 @@ export function AdminCatalogView() {
         title="Catalog words"
         subtitle="Search, filter, and publish the shared bank."
         actions={
-          <div className="grid w-full gap-2 md:w-auto md:grid-cols-4">
+          <div className="grid w-full gap-2 md:w-auto md:grid-cols-6">
             <input
               value={search}
               onChange={(event) => {
@@ -467,6 +491,31 @@ export function AdminCatalogView() {
               <option value="published">Published</option>
               <option value="draft">Drafts</option>
             </select>
+            <select
+              value={enrichmentFilter}
+              onChange={(event) => {
+                setEnrichmentFilter(event.target.value as "all" | CatalogEnrichmentStatus)
+                setPage(1)
+              }}
+              className="input-field"
+            >
+              <option value="all">All enrichments</option>
+              <option value="pending">Pending</option>
+              <option value="completed">Completed</option>
+              <option value="failed">Failed</option>
+            </select>
+            <select
+              value={reviewFilter}
+              onChange={(event) => {
+                setReviewFilter(event.target.value as "all" | CatalogReviewStatus)
+                setPage(1)
+              }}
+              className="input-field"
+            >
+              <option value="all">All reviews</option>
+              <option value="draft">Draft</option>
+              <option value="approved">Approved</option>
+            </select>
           </div>
         }
       >
@@ -480,36 +529,28 @@ export function AdminCatalogView() {
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-[17px] font-semibold text-text-primary">{item.word}</p>
-                      <p className="text-[15px] text-text-secondary">{item.translation}</p>
+                      <p className="text-[15px] text-text-secondary">{item.translation || "—"}</p>
                     </div>
                     <span className="rounded-full bg-bg-secondary px-3 py-1 text-xs font-semibold text-text-secondary">
                       {item.cefrLevel}
                     </span>
                   </div>
-                  <p className="mt-3 text-sm text-text-secondary">{item.example}</p>
+                  <p className="mt-3 text-sm text-text-secondary">{item.example || "No example yet"}</p>
                   <div className="mt-4 grid grid-cols-2 gap-3 text-[13px] text-text-tertiary">
                     <div>Topic: {item.topic}</div>
                     <div>POS: {item.partOfSpeech}</div>
                     <div>Priority: {item.priority}</div>
                     <div>Status: {item.isPublished ? "Published" : "Draft"}</div>
+                    <div>Enrichment: {item.enrichmentStatus}</div>
+                    <div>Review: {item.reviewStatus}</div>
                   </div>
+                  {item.enrichmentError ? (
+                    <p className="mt-3 text-xs text-dangerText">{item.enrichmentError}</p>
+                  ) : null}
                   <div className="mt-4 flex gap-2">
                     <button
                       type="button"
-                      onClick={() => {
-                        setEditingItemId(item.id)
-                        setForm({
-                          word: item.word,
-                          translation: item.translation,
-                          cefrLevel: item.cefrLevel,
-                          partOfSpeech: item.partOfSpeech,
-                          topic: item.topic,
-                          example: item.example,
-                          phonetic: item.phonetic,
-                          priority: String(item.priority),
-                          isPublished: item.isPublished
-                        })
-                      }}
+                      onClick={() => startEditing(item)}
                       className="button-secondary flex-1"
                     >
                       Edit
@@ -529,7 +570,7 @@ export function AdminCatalogView() {
             <table className="hidden min-w-full text-left text-sm md:table">
               <thead className="text-quiet">
                 <tr>
-                  {["Word", "Translation", "Level", "Topic", "Priority", "Status", "Updated", "Actions"].map((heading) => (
+                  {["Word", "Translation", "Level", "Topic", "Priority", "Enrichment", "Review", "Status", "Updated", "Actions"].map((heading) => (
                     <th key={heading} className="px-3 py-3 font-medium">
                       {heading}
                     </th>
@@ -540,30 +581,19 @@ export function AdminCatalogView() {
                 {payload.items.map((item) => (
                   <tr key={item.id} className="border-t border-line">
                     <td className="px-3 py-4 font-medium text-ink">{item.word}</td>
-                    <td className="px-3 py-4 text-muted">{item.translation}</td>
+                    <td className="px-3 py-4 text-muted">{item.translation || "—"}</td>
                     <td className="px-3 py-4 text-muted">{item.cefrLevel}</td>
                     <td className="px-3 py-4 text-muted">{item.topic}</td>
                     <td className="px-3 py-4 text-muted">{item.priority}</td>
+                    <td className="px-3 py-4 text-muted">{item.enrichmentStatus}</td>
+                    <td className="px-3 py-4 text-muted">{item.reviewStatus}</td>
                     <td className="px-3 py-4 text-muted">{item.isPublished ? "Published" : "Draft"}</td>
                     <td className="px-3 py-4 text-muted">{formatTimestamp(item.updatedAt)}</td>
                     <td className="px-3 py-4">
                       <div className="flex gap-2">
                         <button
                           type="button"
-                          onClick={() => {
-                            setEditingItemId(item.id)
-                            setForm({
-                              word: item.word,
-                              translation: item.translation,
-                              cefrLevel: item.cefrLevel,
-                              partOfSpeech: item.partOfSpeech,
-                              topic: item.topic,
-                              example: item.example,
-                              phonetic: item.phonetic,
-                              priority: String(item.priority),
-                              isPublished: item.isPublished
-                            })
-                          }}
+                          onClick={() => startEditing(item)}
                           className="button-secondary px-3 py-2 text-xs font-medium"
                         >
                           Edit

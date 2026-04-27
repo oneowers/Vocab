@@ -49,6 +49,43 @@ export function AdminOverviewView() {
         ))}
       </section>
 
+      <section className="panel-admin rounded-[2rem] p-5">
+        <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-ink">Seed catalog</h2>
+            <p className="mt-1 text-sm text-muted">
+              Imported CEFR dataset progress for the shared word bank.
+            </p>
+          </div>
+          <p className="text-sm text-muted">
+            Imported: {data.seedCatalog.imported} • Enriched: {data.seedCatalog.enriched} • Failed: {data.seedCatalog.failed}
+          </p>
+        </div>
+
+        <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {[
+            { label: "Imported", value: data.seedCatalog.imported },
+            { label: "Enriched", value: data.seedCatalog.enriched },
+            { label: "Failed", value: data.seedCatalog.failed },
+            { label: "Published", value: data.seedCatalog.published }
+          ].map((item) => (
+            <article key={item.label} className="rounded-[1.5rem] border border-separator bg-bg-primary px-4 py-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-quiet">{item.label}</p>
+              <p className="mt-3 text-3xl font-semibold text-ink">{item.value}</p>
+            </article>
+          ))}
+        </div>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-3 xl:grid-cols-6">
+          {Object.entries(data.seedCatalog.byLevel).map(([level, value]) => (
+            <article key={level} className="rounded-[1.25rem] border border-separator bg-bg-primary px-4 py-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-quiet">{level}</p>
+              <p className="mt-2 text-2xl font-semibold text-ink">{value}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
       <div className="grid gap-5 xl:grid-cols-2">
         <CSSBarChart
           title="New users per day"

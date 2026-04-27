@@ -23,6 +23,9 @@ export async function PATCH(
     where: {
       id: context.params.id,
       userId: user.id
+    },
+    include: {
+      catalogWord: true
     }
   })
 
@@ -41,6 +44,9 @@ export async function PATCH(
   const card = await prisma.card.update({
     where: {
       id: existing.id
+    },
+    include: {
+      catalogWord: true
     },
     data: {
       nextReviewDate: body.nextReviewDate ?? existing.nextReviewDate,
@@ -74,6 +80,9 @@ export async function DELETE(
     where: {
       id: context.params.id,
       userId: user.id
+    },
+    include: {
+      catalogWord: true
     }
   })
 

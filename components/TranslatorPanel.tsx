@@ -6,11 +6,44 @@ import { ArrowLeftRight, Languages, Volume2 } from "lucide-react"
 import { useToast } from "@/components/Toast"
 import { getTooltipMessage } from "@/lib/config"
 import { speakText, canSpeak } from "@/lib/tts"
-import type { CardRecord, Direction, DictionaryPayload, TranslationPayload } from "@/lib/types"
+import type { CardRecord, CefrLevel, Direction, DictionaryPayload, TranslationPayload } from "@/lib/types"
 
 interface TranslatorPanelProps {
   guestMode: boolean
   onAddCard: (card: CardRecord) => void
+}
+
+const CEFR_STYLES: Record<CefrLevel, { badge: string; dot: string; label: string }> = {
+  A1: {
+    badge: "border-emerald-200 bg-emerald-500/10 text-emerald-700",
+    dot: "bg-emerald-500",
+    label: "Beginner"
+  },
+  A2: {
+    badge: "border-lime-200 bg-lime-500/10 text-lime-700",
+    dot: "bg-lime-500",
+    label: "Elementary"
+  },
+  B1: {
+    badge: "border-sky-200 bg-sky-500/10 text-sky-700",
+    dot: "bg-sky-500",
+    label: "Intermediate"
+  },
+  B2: {
+    badge: "border-indigo-200 bg-indigo-500/10 text-indigo-700",
+    dot: "bg-indigo-500",
+    label: "Upper-intermediate"
+  },
+  C1: {
+    badge: "border-fuchsia-200 bg-fuchsia-500/10 text-fuchsia-700",
+    dot: "bg-fuchsia-500",
+    label: "Advanced"
+  },
+  C2: {
+    badge: "border-rose-200 bg-rose-500/10 text-rose-700",
+    dot: "bg-rose-500",
+    label: "Mastery"
+  }
 }
 
 export function TranslatorPanel({
@@ -20,6 +53,8 @@ export function TranslatorPanel({
   const [query, setQuery] = useState("")
   const [direction, setDirection] = useState<Direction>("en-ru")
   const [translation, setTranslation] = useState("")
+  const [translationAlternatives, setTranslationAlternatives] = useState<string[]>([])
+  const [cefrLevel, setCefrLevel] = useState<CefrLevel | null>(null)
   const [example, setExample] = useState<string | null>(null)
   const [phonetic, setPhonetic] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -33,6 +68,8 @@ export function TranslatorPanel({
     }
 
     setLoading(true)
+    setTranslationAlternatives([])
+    setCefrLevel(null)
 
     try {
       const languagePair = direction === "en-ru" ? "en|ru" : "ru|en"
@@ -51,6 +88,8 @@ export function TranslatorPanel({
         (await translationResponse.json()) as TranslationPayload
       const translated = translationPayload.translation
       setTranslation(translated)
+      setTranslationAlternatives(translationPayload.translationAlternatives)
+      setCefrLevel(translationPayload.cefrLevel)
 
       const dictionaryWord = direction === "en-ru" ? query.trim() : translated
       if (dictionaryWord) {
@@ -120,6 +159,8 @@ export function TranslatorPanel({
     setDirection((current) => (current === "en-ru" ? "ru-en" : "en-ru"))
     setQuery(translation || query)
     setTranslation(query)
+    setTranslationAlternatives([])
+    setCefrLevel(null)
   }
 
   const ttsLanguage = direction === "en-ru" ? "en-US" : "ru-RU"
@@ -234,7 +275,33 @@ export function TranslatorPanel({
                   {translation}
                 </p>
                 {phonetic ? <p className="text-[13px] text-text-tertiary">{phonetic}</p> : null}
+                {cefrLevel ? (
+                  <div className="pt-1">
+                    <span
+                      className={`inline-flex items-center rounded-full border px-3 py-1 text-[12px] font-semibold ${CEFR_STYLES[cefrLevel].badge}`}
+                    >
+                      {cefrLevel} · {CEFR_STYLES[cefrLevel].label}
+                    </span>
+                  </div>
+                ) : null}
               </div>
+              {translationAlternatives.length ? (
+                <div className="rounded-[16px] bg-bg-primary px-4 py-3">
+                  <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-text-tertiary">
+                    Alternative translations
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {translationAlternatives.map((item) => (
+                      <span
+                        key={item}
+                        className="rounded-full bg-bg-secondary px-3 py-1 text-[13px] text-text-secondary"
+                      >
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
               {example ? (
                 <p className="rounded-[16px] bg-bg-primary px-4 py-3 text-[15px] leading-6 text-text-secondary">
                   {example}
@@ -242,6 +309,22 @@ export function TranslatorPanel({
               ) : (
                 <div className="min-h-[84px] rounded-[16px] bg-bg-primary/70 md:min-h-[120px]" />
               )}
+              <div className="rounded-[16px] bg-bg-primary px-4 py-3">
+                <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-text-tertiary">
+                  CEFR color guide
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {Object.entries(CEFR_STYLES).map(([level, config]) => (
+                    <span
+                      key={level}
+                      className="inline-flex items-center gap-2 rounded-full bg-bg-secondary px-3 py-1 text-[13px] text-text-secondary"
+                    >
+                      <span className={`h-2.5 w-2.5 rounded-full ${config.dot}`} />
+                      {level}: {config.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
             </div>
           ) : (
             <div className="mt-4 flex min-h-[132px] items-center rounded-[16px] bg-bg-primary/70 px-5 md:min-h-[220px]">

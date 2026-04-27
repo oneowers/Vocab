@@ -27,6 +27,9 @@ export async function POST(request: NextRequest) {
     where: {
       id: body.cardId,
       userId: user.id
+    },
+    include: {
+      catalogWord: true
     }
   })
 
@@ -49,6 +52,9 @@ export async function POST(request: NextRequest) {
     prisma.card.update({
       where: {
         id: card.id
+      },
+      include: {
+        catalogWord: true
       },
       data: {
         nextReviewDate: outcome.nextReviewDate,
