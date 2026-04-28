@@ -89,6 +89,8 @@ export function serializeAppSettings(settings: AppSettings): AppSettingsRecord {
   return {
     id: settings.id,
     dailyNewCardsLimit: settings.dailyNewCardsLimit,
+    reviewLives: settings.reviewLives,
+    translationProvider: settings.translationProvider as AppSettingsRecord["translationProvider"],
     updatedAt: settings.updatedAt.toISOString()
   }
 }

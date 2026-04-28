@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
   const summary = buildDashboardSummary(
     allCards.map((card) => serializeCard(card)),
     user.streak,
-    user.reviewLives
+    settings.reviewLives
   )
 
   return NextResponse.json({

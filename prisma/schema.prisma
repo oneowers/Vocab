@@ -132,5 +132,7 @@ model UserCatalogWord {
 model AppSettings {
   id                 String   @id @default("app")
   dailyNewCardsLimit Int      @default(5)
+  reviewLives        Int      @default(3)
+  translationProvider String  @default("auto")
   updatedAt          DateTime @updatedAt
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 
 import { getOptionalAuthUser } from "@/lib/auth"
-import { getOrCreateAppSettings } from "@/lib/catalog"
+import { getOrCreateAppSettings, isTranslationProvider } from "@/lib/catalog"
 import { getPrisma } from "@/lib/prisma"
 import { serializeAppSettings } from "@/lib/serializers"
 
@@ -48,6 +48,8 @@ export async function PATCH(request: NextRequest) {
 
   const body = (await request.json()) as {
     dailyNewCardsLimit?: number
+    reviewLives?: number
+    translationProvider?: string
   }
 
   if (
@@ -59,16 +61,36 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 })
   }
 
+  if (
+    typeof body.reviewLives !== "number" ||
+    !Number.isInteger(body.reviewLives) ||
+    body.reviewLives < 1 ||
+    body.reviewLives > 7
+  ) {
+    return NextResponse.json({ error: "Invalid payload" }, { status: 400 })
+  }
+
+  if (
+    typeof body.translationProvider !== "string" ||
+    !isTranslationProvider(body.translationProvider)
+  ) {
+    return NextResponse.json({ error: "Invalid payload" }, { status: 400 })
+  }
+
   const settings = await getPrisma().appSettings.upsert({
     where: {
       id: "app"
     },
     update: {
-      dailyNewCardsLimit: body.dailyNewCardsLimit
+      dailyNewCardsLimit: body.dailyNewCardsLimit,
+      reviewLives: body.reviewLives,
+      translationProvider: body.translationProvider
     },
     create: {
       id: "app",
-      dailyNewCardsLimit: body.dailyNewCardsLimit
+      dailyNewCardsLimit: body.dailyNewCardsLimit,
+      reviewLives: body.reviewLives,
+      translationProvider: body.translationProvider
     }
   })
 

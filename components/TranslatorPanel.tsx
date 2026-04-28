@@ -65,24 +65,6 @@ function mergeTranslationAlternatives(terms: string[], excludedTerms: string[]) 
     })
 }
 
-type EnglishSynonym = DictionaryPayload["synonyms"][number]
-
-function mergeEnglishSynonyms(synonyms: EnglishSynonym[], excludedTerms: string[]) {
-  const excluded = new Set(excludedTerms.map((term) => term.trim().toLowerCase()).filter(Boolean))
-  const seen = new Set<string>()
-
-  return synonyms.filter((synonym) => {
-    const key = synonym.word.trim().toLowerCase()
-
-    if (!key || excluded.has(key) || seen.has(key)) {
-      return false
-    }
-
-    seen.add(key)
-    return true
-  })
-}
-
 export function TranslatorPanel({
   guestMode,
   onAddCard
@@ -91,7 +73,6 @@ export function TranslatorPanel({
   const [direction, setDirection] = useState<Direction>("en-ru")
   const [translation, setTranslation] = useState("")
   const [translationAlternatives, setTranslationAlternatives] = useState<string[]>([])
-  const [englishSynonyms, setEnglishSynonyms] = useState<EnglishSynonym[]>([])
   const [cefrLevel, setCefrLevel] = useState<CefrLevel | null>(null)
   const [example, setExample] = useState<string | null>(null)
   const [phonetic, setPhonetic] = useState<string | null>(null)
@@ -108,7 +89,6 @@ export function TranslatorPanel({
 
     setLoading(true)
     setTranslationAlternatives([])
-    setEnglishSynonyms([])
     setCefrLevel(null)
 
     try {
@@ -149,16 +129,9 @@ export function TranslatorPanel({
             (await dictionaryResponse.json()) as DictionaryPayload
           setExample(dictionaryPayload.example)
           setPhonetic(dictionaryPayload.phonetic)
-          setEnglishSynonyms(
-            mergeEnglishSynonyms(
-              dictionaryPayload.synonyms,
-              [translated, query.trim()]
-            )
-          )
         } else {
           setExample(null)
           setPhonetic(null)
-          setEnglishSynonyms([])
         }
       }
     } catch {
@@ -185,7 +158,7 @@ export function TranslatorPanel({
           original: query.trim(),
           translation: translation.trim(),
           translationAlternatives: mergeTranslationAlternatives(
-            [...translationAlternatives, ...englishSynonyms.map((synonym) => synonym.word)],
+            translationAlternatives,
             [translation.trim(), query.trim()]
           ),
           direction,
@@ -243,7 +216,6 @@ export function TranslatorPanel({
       setQuery(nextQuery)
       setTranslation(nextTranslation)
       setTranslationAlternatives([])
-      setEnglishSynonyms([])
       setCefrLevel(null)
       setExample(null)
       setPhonetic(null)
@@ -258,29 +230,6 @@ export function TranslatorPanel({
   const translatedLanguage = direction === "en-ru" ? "ru-RU" : "en-US"
   const sourceLabel = direction === "en-ru" ? "English" : "Russian"
   const targetLabel = direction === "en-ru" ? "Russian" : "English"
-  const englishSynonymsBlock = englishSynonyms.length > 0 ? (
-    <div className="mt-4">
-      <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-text-tertiary">
-        Synonyms
-      </p>
-      <div className="flex flex-wrap gap-1.5">
-        {englishSynonyms.map((item, index) => (
-          <span
-            key={item.word}
-            className="translate-chip-enter inline-flex items-center gap-1.5 rounded-full bg-white/[0.06] px-2.5 py-1 text-[13px] font-medium text-text-secondary"
-            style={{ animationDelay: `${70 + index * 36}ms` }}
-          >
-            {item.word}
-            {item.cefrLevel && (
-              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${CEFR_STYLES[item.cefrLevel].badge}`}>
-                {item.cefrLevel}
-              </span>
-            )}
-          </span>
-        ))}
-      </div>
-    </div>
-  ) : null
 
   return (
     <section className="translate-phone-surface space-y-5">
@@ -383,8 +332,6 @@ export function TranslatorPanel({
             ) : direction === "en-ru" && phonetic ? (
               <p className="mt-2 text-[15px] font-medium text-white/48">{phonetic}</p>
             ) : null}
-            {direction === "en-ru" && englishSynonymsBlock}
-
             <div className="mt-4 flex items-center justify-between gap-3">
               <div>
                 {canSpeak() && (
@@ -450,8 +397,6 @@ export function TranslatorPanel({
                 {direction === "ru-en" && phonetic && (
                   <p className="mt-2 text-[15px] font-medium text-white/50">{phonetic}</p>
                 )}
-                {direction === "ru-en" && englishSynonymsBlock}
-
                 <div className="mt-6 space-y-5">
                   {translationAlternatives.length > 0 && (
                     <div>

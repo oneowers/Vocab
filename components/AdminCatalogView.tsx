@@ -11,7 +11,6 @@ import { CEFR_LEVELS } from "@/lib/catalog"
 import { formatTimestamp } from "@/lib/date"
 import type {
   AdminCatalogPayload,
-  AdminSettingsPayload,
   CatalogEnrichmentStatus,
   CatalogReviewStatus,
   CefrLevel,
@@ -62,7 +61,6 @@ function getStylesForCEFRLevel(level: CefrLevel) {
 
 export function AdminCatalogView() {
   const [payload, setPayload] = useState<AdminCatalogPayload | null>(null)
-  const [settingsLimit, setSettingsLimit] = useState("5")
   const [search, setSearch] = useState("")
   const [cefrFilter, setCefrFilter] = useState<"" | CefrLevel>("")
   const [publishedFilter, setPublishedFilter] = useState<"all" | "published" | "draft">("all")
@@ -70,14 +68,10 @@ export function AdminCatalogView() {
   const [form, setForm] = useState<CatalogFormState>(emptyForm)
   const [editingItemId, setEditingItemId] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
-  const [savingLimit, setSavingLimit] = useState(false)
   const [autofilling, setAutofilling] = useState<string | null>(null)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const { showToast } = useToast()
-  const { data, loading, refreshing } = useClientResource<{
-    catalog: AdminCatalogPayload
-    settings: AdminSettingsPayload
-  }>({
+  const { data, loading, refreshing } = useClientResource<AdminCatalogPayload>({
     key: `admin-catalog:${page}:${search}:${cefrFilter}:${publishedFilter}`,
     loader: async () => {
       const catalogUrl =
@@ -86,23 +80,15 @@ export function AdminCatalogView() {
         `&cefrLevel=${encodeURIComponent(cefrFilter)}` +
         `&published=${encodeURIComponent(publishedFilter)}`
 
-      const [catalogResponse, settingsResponse] = await Promise.all([
-        fetch(catalogUrl, {
-          cache: "no-store"
-        }),
-        fetch("/api/admin/settings", {
-          cache: "no-store"
-        })
-      ])
+      const catalogResponse = await fetch(catalogUrl, {
+        cache: "no-store"
+      })
 
-      if (!catalogResponse.ok || !settingsResponse.ok) {
+      if (!catalogResponse.ok) {
         throw new Error("Could not load the catalog.")
       }
 
-      return {
-        catalog: (await catalogResponse.json()) as AdminCatalogPayload,
-        settings: (await settingsResponse.json()) as AdminSettingsPayload
-      }
+      return (await catalogResponse.json()) as AdminCatalogPayload
     },
     onError: () => {
       showToast("Could not load the catalog.", "error")
@@ -114,8 +100,7 @@ export function AdminCatalogView() {
       return
     }
 
-    setPayload(data.catalog)
-    setSettingsLimit(String(data.settings.settings.dailyNewCardsLimit))
+    setPayload(data)
   }, [data])
 
   function resetForm() {
@@ -285,34 +270,6 @@ export function AdminCatalogView() {
     }
   }
 
-  async function handleSaveLimit() {
-    setSavingLimit(true)
-
-    try {
-      const response = await fetch("/api/admin/settings", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          dailyNewCardsLimit: Number(settingsLimit)
-        })
-      })
-
-      if (!response.ok) {
-        throw new Error("Could not save the daily limit.")
-      }
-
-      const payload = (await response.json()) as AdminSettingsPayload
-      setSettingsLimit(String(payload.settings.dailyNewCardsLimit))
-      showToast("Daily limit updated.", "success")
-    } catch {
-      showToast("Could not save the daily limit.", "error")
-    } finally {
-      setSavingLimit(false)
-    }
-  }
-
   function startEditing(item: WordCatalogRecord) {
     setEditingItemId(item.id)
     setForm({
@@ -403,42 +360,17 @@ export function AdminCatalogView() {
   return (
     <div className="space-y-4">
       <section className="panel-admin rounded-[2rem] p-5">
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
-          <div className="space-y-4">
-            <div>
-              <p className="section-label">Word catalog</p>
-              <h1 className="mt-2 text-[26px] font-bold tracking-[-0.5px] text-ink">
-                Build the shared word bank
-              </h1>
-              <p className="mt-2 text-sm text-muted">
-                Add curated words once, then let learners claim them manually by CEFR level.
-              </p>
-            </div>
-          </div>
-
-          <div className="rounded-[1.25rem] border border-separator bg-bg-secondary p-6">
-            <p className="section-label">Daily limit</p>
-            <p className="mt-1 text-[15px] text-muted">
-              Limit for learners to claim new words per day.
+        <div className="space-y-4">
+          <div>
+            <p className="section-label">Word catalog</p>
+            <h1 className="mt-2 text-[26px] font-bold tracking-[-0.5px] text-ink">
+              Build the shared word bank
+            </h1>
+            <p className="mt-2 text-sm text-muted">
+              Add curated words once, then let learners claim them manually by CEFR level.
             </p>
-            <div className="mt-4 flex items-center gap-3">
-              <input
-                value={settingsLimit}
-                onChange={(event) => setSettingsLimit(event.target.value)}
-                className="input-field w-20 border-separator"
-                inputMode="numeric"
-                type="number"
-              />
-              <button
-                type="button"
-                onClick={() => void handleSaveLimit()}
-                disabled={savingLimit}
-                className="button-primary whitespace-nowrap"
-              >
-                {savingLimit ? "Saving..." : "Update limit"}
-              </button>
-            </div>
           </div>
+        </div>
 
           <Modal
             open={isFormOpen}
@@ -581,7 +513,6 @@ export function AdminCatalogView() {
               </div>
             </div>
           </Modal>
-        </div>
       </section>
 
       <AdminTable

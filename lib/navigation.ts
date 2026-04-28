@@ -97,6 +97,12 @@ export const adminNavItems: NavItem[] = [
     match: (pathname) => pathname.startsWith("/admin/catalog")
   },
   {
+    href: "/admin/settings",
+    label: "Settings",
+    icon: Cog,
+    match: (pathname) => pathname.startsWith("/admin/settings")
+  },
+  {
     href: "/admin/cards",
     label: "Cards",
     icon: Library,

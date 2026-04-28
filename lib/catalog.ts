@@ -1,8 +1,11 @@
 import type { CefrLevel, PrismaClient } from "@prisma/client"
 import { fetchDictionaryDetails } from "@/lib/dictionary"
+import type { TranslationProvider } from "@/lib/types"
 
 const APP_SETTINGS_ID = "app"
 export const DEFAULT_DAILY_NEW_CARDS_LIMIT = 5
+export const DEFAULT_REVIEW_LIVES = 3
+export const DEFAULT_TRANSLATION_PROVIDER: TranslationProvider = "auto"
 export const CEFR_LEVELS: CefrLevel[] = ["A1", "A2", "B1", "B2", "C1", "C2"]
 
 interface ResolveTranslationOptions {
@@ -33,9 +36,15 @@ export async function getOrCreateAppSettings(prisma: PrismaClient) {
     update: {},
     create: {
       id: APP_SETTINGS_ID,
-      dailyNewCardsLimit: DEFAULT_DAILY_NEW_CARDS_LIMIT
+      dailyNewCardsLimit: DEFAULT_DAILY_NEW_CARDS_LIMIT,
+      reviewLives: DEFAULT_REVIEW_LIVES,
+      translationProvider: DEFAULT_TRANSLATION_PROVIDER
     }
   })
+}
+
+export function isTranslationProvider(value: string): value is TranslationProvider {
+  return value === "auto" || value === "catalog-only" || value === "deepl-only"
 }
 
 export function isCefrLevel(value: string): value is CefrLevel {
@@ -206,10 +215,21 @@ export async function translateWithDeepL({
 }
 
 export async function resolveTranslationDetails(options: ResolveTranslationOptions) {
-  const catalogTranslation = await findCatalogTranslation(options)
+  const settings = await getOrCreateAppSettings(options.prisma)
+  const provider = isTranslationProvider(settings.translationProvider)
+    ? settings.translationProvider
+    : DEFAULT_TRANSLATION_PROVIDER
 
-  if (catalogTranslation) {
-    return catalogTranslation
+  if (provider !== "deepl-only") {
+    const catalogTranslation = await findCatalogTranslation(options)
+
+    if (catalogTranslation) {
+      return catalogTranslation
+    }
+  }
+
+  if (provider === "catalog-only") {
+    return null
   }
 
   return translateWithDeepL(options)
@@ -251,7 +271,8 @@ export async function ensureCatalogWordLocalized(
           translation: currentTranslation,
           translationAlternatives: currentTranslationAlternatives
         })
-      : translateWithDeepL({
+      : resolveTranslationDetails({
+          prisma,
           query: word.word,
           sourceLang: "EN",
           targetLang: "RU"

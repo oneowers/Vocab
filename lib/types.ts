@@ -7,6 +7,7 @@ export type CardStatusFilter = "All" | "known" | "unknown"
 export type CefrLevel = "A1" | "A2" | "B1" | "B2" | "C1" | "C2"
 export type CatalogEnrichmentStatus = "pending" | "completed" | "failed"
 export type CatalogReviewStatus = "draft" | "approved"
+export type TranslationProvider = "auto" | "catalog-only" | "deepl-only"
 
 export interface NavItem {
   href: string
@@ -75,6 +76,8 @@ export interface WordCatalogRecord {
 export interface AppSettingsRecord {
   id: string
   dailyNewCardsLimit: number
+  reviewLives: number
+  translationProvider: TranslationProvider
   updatedAt: string
 }
 

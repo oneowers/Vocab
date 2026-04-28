@@ -21,7 +21,7 @@ export function AdminShell({ user, children }: AdminShellProps) {
   const router = useRouter()
 
   useEffect(() => {
-    ;["/admin", "/admin/catalog", "/admin/users", "/admin/cards", "/admin/analytics", "/", "/dashboard", "/profile"].forEach(
+    ;["/admin", "/admin/catalog", "/admin/settings", "/admin/users", "/admin/cards", "/admin/analytics", "/", "/dashboard", "/profile"].forEach(
       (href) => {
         router.prefetch(href)
       }
