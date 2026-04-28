@@ -23,12 +23,13 @@ export async function GET(request: NextRequest) {
   const status = request.nextUrl.searchParams.get("status")
   const search = request.nextUrl.searchParams.get("search")?.trim()
   const due = request.nextUrl.searchParams.get("due")
+  const hasCardFilters = status === "known" || status === "unknown" || Boolean(search) || due === "today"
   const today = getTodayDateKey()
   const todayStart = new Date(`${today}T00:00:00.000Z`)
   const tomorrowStart = new Date(todayStart)
   tomorrowStart.setUTCDate(tomorrowStart.getUTCDate() + 1)
 
-  const [cards, allCards, settings, claimedToday] = await Promise.all([
+  const [cards, allCardsMaybeFiltered, settings, claimedToday] = await Promise.all([
     prisma.card.findMany({
       where: {
         userId: user.id,
@@ -60,15 +61,17 @@ export async function GET(request: NextRequest) {
       },
       orderBy: [{ nextReviewDate: "asc" }, { dateAdded: "desc" }]
     }),
-    prisma.card.findMany({
-      where: {
-        userId: user.id
-      },
-      include: {
-        catalogWord: true
-      },
-      orderBy: [{ nextReviewDate: "asc" }, { dateAdded: "desc" }]
-    }),
+    hasCardFilters
+      ? prisma.card.findMany({
+          where: {
+            userId: user.id
+          },
+          include: {
+            catalogWord: true
+          },
+          orderBy: [{ nextReviewDate: "asc" }, { dateAdded: "desc" }]
+        })
+      : Promise.resolve(null),
     getOrCreateAppSettings(prisma),
     prisma.userCatalogWord.count({
       where: {
@@ -80,6 +83,7 @@ export async function GET(request: NextRequest) {
       }
     })
   ])
+  const allCards = allCardsMaybeFiltered ?? cards
 
   const serializedCards = cards.map((card) => serializeCard(card))
   const summary = buildDashboardSummary(

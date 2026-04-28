@@ -38,6 +38,7 @@ const CEFR_STYLES: Record<CefrLevel, { badge: string; dot: string }> = {
 
 interface CardListProps {
   cards: CardRecord[]
+  refreshing?: boolean
   selectedStatus: CardStatusFilter
   onSelectStatus: (status: CardStatusFilter) => void
   selectedLevel: CefrLevel | "All"
@@ -55,6 +56,7 @@ interface CardListProps {
 
 export function CardList({
   cards,
+  refreshing = false,
   selectedStatus,
   onSelectStatus,
   selectedLevel,
@@ -158,6 +160,20 @@ export function CardList({
       </div>
 
       <div className="translate-card p-3 md:p-4">
+        <AnimatePresence initial={false}>
+          {refreshing ? (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.16 }}
+              className="mb-3 flex items-center gap-2 rounded-[16px] bg-white/[0.05] px-3 py-2 text-[12px] font-semibold text-text-secondary"
+            >
+              <span className="h-2 w-2 rounded-full bg-blue-400 animate-pulse" />
+              Updating cards...
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="relative w-full max-w-sm">
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">

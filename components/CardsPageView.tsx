@@ -5,13 +5,13 @@ import { useEffect, useRef, useState, type ChangeEvent } from "react"
 import { CardList } from "@/components/CardList"
 import { ConfirmModal } from "@/components/ConfirmModal"
 import { useToast } from "@/components/Toast"
+import { useClientResource } from "@/hooks/useClientResource"
 import { getGuestCards, isGuestSessionActive } from "@/lib/guest"
 import { matchesCardStatus, sortDueCards } from "@/lib/spaced-repetition"
 import type { CardRecord, CardsResponse, CardStatusFilter, CefrLevel } from "@/lib/types"
 
 export function CardsPageView() {
   const [guestMode, setGuestMode] = useState(false)
-  const [loading, setLoading] = useState(true)
   const [cards, setCards] = useState<CardRecord[]>([])
   const [selectedStatus, setSelectedStatus] = useState<CardStatusFilter>("All")
   const [selectedLevel, setSelectedLevel] = useState<CefrLevel | "All">("All")
@@ -20,38 +20,45 @@ export function CardsPageView() {
   const [deleting, setDeleting] = useState(false)
   const importRef = useRef<HTMLInputElement | null>(null)
   const { showToast } = useToast()
+  const {
+    data: cardsPayload,
+    loading,
+    refreshing,
+    revalidate
+  } = useClientResource<CardsResponse>({
+    key: "cards:collection",
+    enabled: !guestMode,
+    revalidateOnMount: true,
+    loader: async () => {
+      const response = await fetch("/api/cards")
+
+      if (!response.ok) {
+        throw new Error("Could not load cards.")
+      }
+
+      return (await response.json()) as CardsResponse
+    },
+    onError: () => {
+      showToast("Could not load your deck.", "error")
+    }
+  })
 
   useEffect(() => {
-    async function loadCards() {
-      const guestActive = isGuestSessionActive()
-      setGuestMode(guestActive)
+    const guestActive = isGuestSessionActive()
+    setGuestMode(guestActive)
 
-      if (guestActive) {
-        setCards(sortDueCards(getGuestCards()))
-        setLoading(false)
-        return
-      }
+    if (guestActive) {
+      setCards(sortDueCards(getGuestCards()))
+    }
+  }, [])
 
-      try {
-        const response = await fetch("/api/cards", {
-          cache: "no-store"
-        })
-
-        if (!response.ok) {
-          throw new Error("Could not load cards.")
-        }
-
-        const payload = (await response.json()) as CardsResponse
-        setCards(sortDueCards(payload.cards))
-      } catch {
-        showToast("Could not load your deck.", "error")
-      } finally {
-        setLoading(false)
-      }
+  useEffect(() => {
+    if (guestMode || !cardsPayload) {
+      return
     }
 
-    void loadCards()
-  }, [showToast])
+    setCards(sortDueCards(cardsPayload.cards))
+  }, [cardsPayload, guestMode])
 
   const visibleCards = cards.filter((card) => {
     const matchesStatus = matchesCardStatus(card, selectedStatus)
@@ -70,18 +77,8 @@ export function CardsPageView() {
       return
     }
 
-    const response = await fetch("/api/cards", {
-      cache: "no-store"
-    })
-
-    if (!response.ok) {
-      throw new Error("Refresh failed.")
-    }
-
-    const payload = (await response.json()) as CardsResponse
-    setCards(sortDueCards(payload.cards))
+    await revalidate()
   }
-
 
   async function handleDeleteConfirmed() {
     if (!cardToDelete) {
@@ -224,6 +221,7 @@ export function CardsPageView() {
         ) : (
           <CardList
             cards={visibleCards}
+            refreshing={refreshing}
             selectedStatus={selectedStatus}
             onSelectStatus={setSelectedStatus}
             selectedLevel={selectedLevel}

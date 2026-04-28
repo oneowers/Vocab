@@ -13,6 +13,7 @@ interface UseClientResourceOptions<T> {
   initialData?: T | null
   enabled?: boolean
   keepPreviousData?: boolean
+  revalidateOnMount?: boolean
   onError?: (error: unknown) => void
 }
 
@@ -24,9 +25,28 @@ interface UseClientResourceResult<T> {
 }
 
 const resourceCache = new Map<string, ClientResourceCacheEntry<unknown>>()
+const inflightRequests = new Map<string, Promise<unknown>>()
 const CACHE_TTL_MS = 45_000
 
-function getCachedValue<T>(key: string) {
+export function setClientResourceData<T>(key: string, data: T) {
+  resourceCache.set(key, {
+    data,
+    updatedAt: Date.now()
+  })
+}
+
+export function updateClientResourceData<T>(key: string, updater: (current: T | null) => T | null) {
+  const nextData = updater(getCachedValue<T>(key))
+
+  if (nextData === null) {
+    resourceCache.delete(key)
+    return
+  }
+
+  setClientResourceData(key, nextData)
+}
+
+function getCachedEntry<T>(key: string) {
   const cached = resourceCache.get(key) as ClientResourceCacheEntry<T> | undefined
 
   if (!cached) {
@@ -38,7 +58,11 @@ function getCachedValue<T>(key: string) {
     return null
   }
 
-  return cached.data
+  return cached
+}
+
+function getCachedValue<T>(key: string) {
+  return getCachedEntry<T>(key)?.data ?? null
 }
 
 export function useClientResource<T>({
@@ -47,6 +71,7 @@ export function useClientResource<T>({
   initialData = null,
   enabled = true,
   keepPreviousData = true,
+  revalidateOnMount = true,
   onError
 }: UseClientResourceOptions<T>): UseClientResourceResult<T> {
   const cachedData = useMemo(() => getCachedValue<T>(key), [key])
@@ -100,7 +125,14 @@ export function useClientResource<T>({
       }
 
       try {
-        const nextData = await loaderRef.current()
+        let pendingRequest = inflightRequests.get(key) as Promise<T> | undefined
+
+        if (!pendingRequest) {
+          pendingRequest = loaderRef.current()
+          inflightRequests.set(key, pendingRequest)
+        }
+
+        const nextData = await pendingRequest
         resourceCache.set(key, {
           data: nextData,
           updatedAt: Date.now()
@@ -109,6 +141,7 @@ export function useClientResource<T>({
       } catch (error) {
         onErrorRef.current?.(error)
       } finally {
+        inflightRequests.delete(key)
         setLoading(false)
         setRefreshing(false)
       }
@@ -117,8 +150,20 @@ export function useClientResource<T>({
   )
 
   useEffect(() => {
+    if (!enabled) {
+      setLoading(false)
+      return
+    }
+
+    const hasFreshCache = getCachedEntry<T>(key) !== null
+
+    if (!revalidateOnMount && (initialData !== null || hasFreshCache)) {
+      setLoading(false)
+      return
+    }
+
     void load()
-  }, [load])
+  }, [enabled, initialData, key, load, revalidateOnMount])
 
   const revalidate = useCallback(async () => {
     await load(true)

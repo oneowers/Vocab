@@ -13,6 +13,7 @@ import { WriteCard } from "@/components/WriteCard"
 import { PracticeBackground } from "@/components/PracticeBackground"
 import styles from "@/components/review-session.module.css"
 import { useToast } from "@/components/Toast"
+import { useClientResource } from "@/hooks/useClientResource"
 import { getTodayDateKey } from "@/lib/date"
 import {
   DEFAULT_GUEST_REVIEW_LIVES,
@@ -159,7 +160,6 @@ function SkeletonPractice() {
 
 export function ReviewSession() {
   const [guestMode, setGuestMode] = useState(false)
-  const [loading, setLoading] = useState(true)
   const [allCards, setAllCards] = useState<CardRecord[]>([])
   const [dueCards, setDueCards] = useState<CardRecord[]>([])
   const [streak, setStreak] = useState(0)
@@ -183,48 +183,55 @@ export function ReviewSession() {
   const [dailyCatalog, setDailyCatalog] = useState<DailyCatalogStatus | null>(null)
   const [lastActionStatus, setLastActionStatus] = useState<"idle" | "correct" | "incorrect" | "active">("idle")
   const { showToast } = useToast()
+  const {
+    data: cardsPayload,
+    loading,
+    revalidate
+  } = useClientResource<CardsResponse>({
+    key: "cards:collection",
+    enabled: !guestMode,
+    revalidateOnMount: false,
+    loader: async () => {
+      const response = await fetch("/api/cards")
+
+      if (!response.ok) {
+        throw new Error("Could not load cards.")
+      }
+
+      return (await response.json()) as CardsResponse
+    },
+    onError: () => {
+      showToast("Could not load review cards.", "error")
+    }
+  })
 
   useEffect(() => {
-    async function loadSession() {
-      const guestActive = isGuestSessionActive()
-      setGuestMode(guestActive)
+    const guestActive = isGuestSessionActive()
+    setGuestMode(guestActive)
 
-      if (guestActive) {
-        const cards = sortDueCards(getGuestCards())
-        setAllCards(cards)
-        setDueCards(cards.filter((card) => card.nextReviewDate <= getTodayDateKey()))
-        setStreak(getGuestStreak())
-        setReviewLives(DEFAULT_GUEST_REVIEW_LIVES)
-        setTimeout(() => setLoading(false), 600)
-
-        return
-      }
-
-      try {
-        const response = await fetch("/api/cards", {
-          cache: "no-store"
-        })
-
-        if (!response.ok) {
-          throw new Error("Could not load cards.")
-        }
-
-        const payload = (await response.json()) as CardsResponse
-        const sortedCards = sortDueCards(payload.cards)
-        setAllCards(sortedCards)
-        setDueCards(sortedCards.filter((card) => card.nextReviewDate <= getTodayDateKey()))
-        setStreak(payload.summary.streak)
-        setReviewLives(payload.summary.reviewLives)
-        setDailyCatalog(payload.dailyCatalog)
-      } catch {
-        showToast("Could not load review cards.", "error")
-      } finally {
-        setTimeout(() => setLoading(false), 600)
-      }
+    if (!guestActive) {
+      return
     }
 
-    void loadSession()
-  }, [showToast])
+    const cards = sortDueCards(getGuestCards())
+    setAllCards(cards)
+    setDueCards(cards.filter((card) => card.nextReviewDate <= getTodayDateKey()))
+    setStreak(getGuestStreak())
+    setReviewLives(DEFAULT_GUEST_REVIEW_LIVES)
+  }, [])
+
+  useEffect(() => {
+    if (guestMode || !cardsPayload) {
+      return
+    }
+
+    const sortedCards = sortDueCards(cardsPayload.cards)
+    setAllCards(sortedCards)
+    setDueCards(sortedCards.filter((card) => card.nextReviewDate <= getTodayDateKey()))
+    setStreak(cardsPayload.summary.streak)
+    setReviewLives(cardsPayload.summary.reviewLives)
+    setDailyCatalog(cardsPayload.dailyCatalog)
+  }, [cardsPayload, guestMode])
 
   const availableCards = dueCards.filter((card) => matchesCardStatus(card, selectedStatus))
   const allAvailableCards = allCards.filter((card) => matchesCardStatus(card, selectedStatus))
@@ -241,6 +248,7 @@ export function ReviewSession() {
     const sortedCards = sortDueCards(nextCards)
     setAllCards(sortedCards)
     setDueCards(sortedCards.filter((card) => card.nextReviewDate <= getTodayDateKey()))
+    void revalidate()
   }
 
   async function handleClaimDailyWords() {

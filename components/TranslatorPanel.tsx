@@ -4,9 +4,10 @@ import { useState } from "react"
 import { ArrowLeftRight, SlidersHorizontal, Volume2 } from "lucide-react"
 
 import { useToast } from "@/components/Toast"
+import { updateClientResourceData } from "@/hooks/useClientResource"
 import { getTooltipMessage } from "@/lib/config"
 import { speakText, canSpeak } from "@/lib/tts"
-import type { CardRecord, CefrLevel, Direction, DictionaryPayload, TranslationPayload } from "@/lib/types"
+import type { CardRecord, CardsResponse, CefrLevel, Direction, DictionaryPayload, TranslationPayload } from "@/lib/types"
 
 interface TranslatorPanelProps {
   guestMode: boolean
@@ -200,6 +201,23 @@ export function TranslatorPanel({
       const payload = (await response.json()) as {
         card: CardRecord
       }
+      updateClientResourceData<CardsResponse>("cards:collection", (current) => {
+        if (!current) {
+          return null
+        }
+
+        const nextCards = [payload.card, ...current.cards.filter((card) => card.id !== payload.card.id)]
+
+        return {
+          ...current,
+          cards: nextCards,
+          summary: {
+            ...current.summary,
+            totalCards: nextCards.length,
+            dueToday: nextCards.filter((card) => card.nextReviewDate <= new Date().toISOString().slice(0, 10)).length
+          }
+        }
+      })
       onAddCard(payload.card)
       showToast("Card added to your deck.", "success")
     } catch {
