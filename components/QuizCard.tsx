@@ -16,6 +16,7 @@ interface QuizCardProps {
   rightItems: QuizMatchItem[]
   batchIndex: number
   totalBatches: number
+  targetCount: number
   onLifeLost: () => void
   onBatchCompleted: () => void
   onProgressChange: (count: number) => void
@@ -26,6 +27,7 @@ export function QuizCard({
   rightItems,
   batchIndex,
   totalBatches,
+  targetCount,
   onLifeLost,
   onBatchCompleted,
   onProgressChange
@@ -65,7 +67,7 @@ export function QuizCard({
       setSelectedRightId(null)
       onProgressChange(nextSolvedCount)
 
-      if (nextSolvedCount === leftItems.length) {
+      if (nextSolvedCount === targetCount) {
         window.setTimeout(() => {
           onBatchCompleted()
         }, 300)
@@ -126,7 +128,9 @@ export function QuizCard({
       <div className="relative z-10 flex items-center justify-between mb-8">
         <div>
           <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/30">Match the pairs</p>
-          <h2 className="mt-1 text-[20px] font-black text-white leading-tight">Find 4 translations</h2>
+          <h2 className="mt-1 text-[20px] font-black text-white leading-tight">
+            Find {targetCount} translation{targetCount === 1 ? "" : "s"}
+          </h2>
         </div>
         <div className="rounded-2xl border border-white/[0.08] bg-white/[0.07] px-4 py-1.5 text-[10px] font-black text-white/55">
           Batch {batchIndex + 1} of {totalBatches}

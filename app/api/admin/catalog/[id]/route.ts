@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { revalidateTag } from "next/cache"
 
 import { getOptionalAuthUser } from "@/lib/auth"
-import { isCefrLevel, resolveTranslationDetails } from "@/lib/catalog"
+import { ensureCatalogWordLocalized, isCefrLevel, resolveTranslationDetails } from "@/lib/catalog"
 import { canPublishCatalogWord, getCatalogReviewStatus } from "@/lib/cefr-seed"
 import { getPrisma } from "@/lib/prisma"
 import { adminCacheTag } from "@/lib/server-cache"
@@ -26,6 +26,28 @@ async function requireAdminUser() {
   return {
     user
   }
+}
+
+function getMissingPublishFields(word: {
+  word: string
+  translation: string
+  partOfSpeech: string
+  topic: string
+  example: string
+  phonetic: string
+  enrichmentStatus: string
+}) {
+  const missingFields: string[] = []
+
+  if (!word.word.trim()) missingFields.push("word")
+  if (!word.translation.trim()) missingFields.push("translation")
+  if (!word.partOfSpeech.trim()) missingFields.push("partOfSpeech")
+  if (!word.topic.trim()) missingFields.push("topic")
+  if (!word.example.trim()) missingFields.push("example")
+  if (!word.phonetic.trim()) missingFields.push("phonetic")
+  if (word.enrichmentStatus !== "completed") missingFields.push("enrichmentStatus")
+
+  return missingFields
 }
 
 export async function PATCH(
@@ -64,15 +86,22 @@ export async function PATCH(
     priority?: number
     isPublished?: boolean
     enrichmentStatus?: "pending" | "completed" | "failed"
+    enrichmentError?: string | null
     reviewStatus?: "draft" | "approved"
   }
 
-  const word = body.word?.trim() ?? existing.word
+  const wantsToPublish = body.isPublished === true && !existing.isPublished
+  const enrichedExisting = wantsToPublish
+    ? await ensureCatalogWordLocalized(prisma, existing.id)
+    : existing
+  const sourceWord = enrichedExisting ?? existing
+
+  const word = body.word?.trim() ?? sourceWord.word
   const cefrLevel = body.cefrLevel?.trim().toUpperCase() ?? existing.cefrLevel
-  const partOfSpeech = body.partOfSpeech?.trim() ?? existing.partOfSpeech
-  const topic = body.topic?.trim() ?? existing.topic
-  const example = body.example?.trim() ?? existing.example
-  const phonetic = body.phonetic?.trim() ?? existing.phonetic
+  const partOfSpeech = body.partOfSpeech?.trim() ?? sourceWord.partOfSpeech
+  const topic = body.topic?.trim() ?? sourceWord.topic
+  const example = body.example?.trim() ?? sourceWord.example
+  const phonetic = body.phonetic?.trim() ?? sourceWord.phonetic
   const resolvedTranslation =
     body.translation !== undefined && !body.translation.trim()
       ? await resolveTranslationDetails({
@@ -85,23 +114,55 @@ export async function PATCH(
   const translation =
     body.translation !== undefined
       ? body.translation.trim() || resolvedTranslation?.translation
-      : existing.translation
-  const translationForSave = translation ?? existing.translation ?? ""
+      : sourceWord.translation
+  const translationForSave = translation ?? sourceWord.translation ?? ""
   const exampleForSave = example ?? ""
   const phoneticForSave = phonetic ?? ""
   const priority =
     typeof body.priority === "number" && Number.isInteger(body.priority)
       ? body.priority
-      : existing.priority
+      : sourceWord.priority
   const enrichmentStatus =
     body.enrichmentStatus === "pending" || body.enrichmentStatus === "completed" || body.enrichmentStatus === "failed"
       ? body.enrichmentStatus
-      : existing.enrichmentStatus
+      : sourceWord.enrichmentStatus
   const requestedPublished =
     typeof body.isPublished === "boolean" ? body.isPublished : existing.isPublished
 
-  if (!word || !partOfSpeech || !topic || !isCefrLevel(cefrLevel)) {
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+  if (!isCefrLevel(cefrLevel)) {
+    return NextResponse.json({ error: "Missing fields: cefrLevel" }, { status: 400 })
+  }
+
+  const missingPublishFields = requestedPublished
+    ? getMissingPublishFields({
+        word,
+        translation: translationForSave,
+        partOfSpeech,
+        topic,
+        example: exampleForSave,
+        phonetic: phoneticForSave,
+        enrichmentStatus
+      })
+    : []
+
+  if (!requestedPublished && (!word || !partOfSpeech || !topic)) {
+    const missingFields = [
+      !word ? "word" : null,
+      !partOfSpeech ? "partOfSpeech" : null,
+      !topic ? "topic" : null
+    ].filter(Boolean)
+
+    return NextResponse.json(
+      { error: `Missing fields: ${missingFields.join(", ")}` },
+      { status: 400 }
+    )
+  }
+
+  if (requestedPublished && missingPublishFields.length) {
+    return NextResponse.json(
+      { error: `Missing fields: ${missingPublishFields.join(", ")}` },
+      { status: 400 }
+    )
   }
 
   if (
@@ -145,8 +206,6 @@ export async function PATCH(
     data: {
       word,
       translation: translationForSave,
-      translationAlternatives:
-        resolvedTranslation?.translationAlternatives ?? existing.translationAlternatives,
       cefrLevel,
       partOfSpeech,
       topic,
@@ -159,12 +218,14 @@ export async function PATCH(
         body.reviewStatus === "draft" || body.reviewStatus === "approved"
           ? body.reviewStatus
           : getCatalogReviewStatus(requestedPublished),
+      translationAlternatives:
+        resolvedTranslation?.translationAlternatives ?? sourceWord.translationAlternatives,
       enrichmentError:
         enrichmentStatus === "failed"
-          ? existing.enrichmentError || "Requires manual completion."
+          ? body.enrichmentError?.trim() || sourceWord.enrichmentError || "Requires manual completion."
           : null,
       lastEnrichedAt:
-        enrichmentStatus === "completed" ? existing.lastEnrichedAt ?? new Date() : existing.lastEnrichedAt
+        enrichmentStatus === "completed" ? sourceWord.lastEnrichedAt ?? new Date() : sourceWord.lastEnrichedAt
     }
   })
 

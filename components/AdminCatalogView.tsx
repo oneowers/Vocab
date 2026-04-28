@@ -246,7 +246,8 @@ export function AdminCatalogView() {
       })
 
       if (!response.ok) {
-        throw new Error("Could not update publish status.")
+        const payload = (await response.json().catch(() => null)) as { error?: string } | null
+        throw new Error(payload?.error || "Could not update publish status.")
       }
 
       const payload = (await response.json()) as {
@@ -330,7 +331,14 @@ export function AdminCatalogView() {
           translation: nextTranslation,
           example: nextExample,
           phonetic: nextPhonetic,
-          enrichmentStatus: "completed"
+          enrichmentStatus:
+            nextTranslation.trim() && nextExample.trim() && nextPhonetic.trim()
+              ? "completed"
+              : "failed",
+          enrichmentError:
+            nextTranslation.trim() && nextExample.trim() && nextPhonetic.trim()
+              ? null
+              : "Missing translation, example, or phonetic after auto-fill."
         })
       })
 

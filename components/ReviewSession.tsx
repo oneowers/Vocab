@@ -33,14 +33,30 @@ interface QuizBatch {
   id: string
   leftItems: QuizMatchItem[]
   rightItems: QuizMatchItem[]
+  targetCount: number
 }
 
 const QUIZ_BATCH_SIZE = 4
+const PRACTICE_SESSION_LIMIT = 20
 const REVIEW_STEPS: Array<{ value: ReviewStage; label: string }> = [
   { value: "flip", label: "Flip" },
   { value: "quiz", label: "Quiz" },
   { value: "write", label: "Write" }
 ]
+
+interface SavedPracticeSession {
+  id: string
+  cardIds: string[]
+  completedStages: ReviewStage[]
+  activeStage: ReviewStage
+  selectedStatus: CardStatusFilter
+  flow: ReviewFlow
+  state: {
+    mistakes?: number
+    stageAttempt?: number
+  }
+  updatedAt: string
+}
 
 function shuffleItems<T>(items: T[]) {
   const nextItems = [...items]
@@ -96,25 +112,19 @@ function buildQuizBatches(cards: CardRecord[]) {
 
   for (let batchIndex = 0; batchIndex < cards.length; batchIndex += QUIZ_BATCH_SIZE) {
     const batchCards = cards.slice(batchIndex, batchIndex + QUIZ_BATCH_SIZE)
-    const filledCards = [...batchCards]
-    let fillerIndex = 0
-
-    while (filledCards.length < QUIZ_BATCH_SIZE) {
-      filledCards.push(cards[fillerIndex % cards.length])
-      fillerIndex += 1
-    }
 
     batches.push({
       id: `quiz-batch-${batchIndex / QUIZ_BATCH_SIZE}`,
+      targetCount: batchCards.length,
       leftItems: shuffleItems(
-        filledCards.map((card, index) => ({
+        batchCards.map((card, index) => ({
           id: `left-${batchIndex}-${index}-${card.id}`,
           sourceCardId: card.id,
           text: getRussianPrompt(card)
         }))
       ),
       rightItems: shuffleItems(
-        filledCards.map((card, index) => ({
+        batchCards.map((card, index) => ({
           id: `right-${batchIndex}-${index}-${card.id}`,
           sourceCardId: card.id,
           text: getEnglishAnswer(card),
@@ -160,6 +170,7 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
   const [dailyCatalog, setDailyCatalog] = useState<DailyCatalogStatus | null>(null)
   const [dailyModalOpen, setDailyModalOpen] = useState(false)
   const [lastActionStatus, setLastActionStatus] = useState<"idle" | "correct" | "incorrect" | "active">("idle")
+  const [savedPracticeSession, setSavedPracticeSession] = useState<SavedPracticeSession | null>(null)
   const { showToast } = useToast()
   const todayKey = getTodayDateKey()
   const {
@@ -213,6 +224,45 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
     setDailyCatalog(cardsPayload.dailyCatalog)
   }, [cardsPayload, guestMode, todayKey])
 
+  useEffect(() => {
+    if (guestMode) {
+      setSavedPracticeSession(null)
+      return
+    }
+
+    let canceled = false
+
+    async function loadSavedPracticeSession() {
+      try {
+        const response = await fetch("/api/practice/session", {
+          cache: "no-store"
+        })
+
+        if (!response.ok) {
+          return
+        }
+
+        const payload = (await response.json()) as {
+          session: SavedPracticeSession | null
+        }
+
+        if (!canceled) {
+          setSavedPracticeSession(payload.session)
+        }
+      } catch {
+        if (!canceled) {
+          setSavedPracticeSession(null)
+        }
+      }
+    }
+
+    void loadSavedPracticeSession()
+
+    return () => {
+      canceled = true
+    }
+  }, [guestMode])
+
   const availableCards = useMemo(
     () => dueCards.filter((card) => matchesCardStatus(card, selectedStatus)),
     [dueCards, selectedStatus]
@@ -232,6 +282,24 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
     [activeStage, flipIndex, sessionCards, writeIndex]
   )
   const currentQuizBatch = quizBatches[quizBatchIndex]
+  const resumableCards = useMemo(() => {
+    if (!savedPracticeSession) {
+      return []
+    }
+
+    const cardsById = new Map(allCards.map((card) => [card.id, card]))
+    return savedPracticeSession.cardIds
+      .map((cardId) => cardsById.get(cardId))
+      .filter((card): card is CardRecord => Boolean(card))
+  }, [allCards, savedPracticeSession])
+  const resumableSession =
+    savedPracticeSession && resumableCards.length
+      ? {
+          wordCount: resumableCards.length,
+          activeStage: savedPracticeSession.activeStage,
+          completedStages: savedPracticeSession.completedStages
+        }
+      : null
 
   function refreshCardCollections(nextCards: CardRecord[], shouldRevalidate = true) {
     const sortedCards = sortDueCards(nextCards)
@@ -272,22 +340,129 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
     setDailyModalOpen(true)
   }
 
-  function startSession(cards: CardRecord[], startStage: ReviewStage = "flip", flow: ReviewFlow = "linked") {
+  async function clearSavedPracticeSession() {
+    setSavedPracticeSession(null)
+
+    if (guestMode) {
+      return
+    }
+
+    try {
+      await fetch("/api/practice/session", {
+        method: "DELETE"
+      })
+    } catch {
+      // A stale resume card is harmless; the next successful save will replace it.
+    }
+  }
+
+  async function savePracticeProgress({
+    cardIds = sessionCards.map((card) => card.id),
+    stages = completedStages,
+    stage = activeStage,
+    flow = sessionFlow
+  }: {
+    cardIds?: string[]
+    stages?: ReviewStage[]
+    stage?: ReviewStage
+    flow?: ReviewFlow
+  } = {}) {
+    if (guestMode || !cardIds.length) {
+      return
+    }
+
+    try {
+      const response = await fetch("/api/practice/session", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          cardIds,
+          completedStages: stages,
+          activeStage: stage,
+          selectedStatus,
+          flow,
+          state: {
+            mistakes,
+            stageAttempt
+          }
+        })
+      })
+
+      if (!response.ok) {
+        return
+      }
+
+      const payload = (await response.json()) as {
+        session: SavedPracticeSession
+      }
+      setSavedPracticeSession(payload.session)
+    } catch {
+      // Practice should remain playable even when background progress sync fails.
+    }
+  }
+
+  function startSession(
+    cards: CardRecord[],
+    startStage: ReviewStage = "flip",
+    flow: ReviewFlow = "linked",
+    options: {
+      completed?: ReviewStage[]
+      preserveOrder?: boolean
+      restoreState?: SavedPracticeSession["state"]
+    } = {}
+  ) {
     const startIndex = REVIEW_STEPS.findIndex((item) => item.value === startStage)
-    setSessionCards(cards)
-    setQuizBatches(buildQuizBatches(cards))
+    const sessionDeck = (options.preserveOrder ? cards : shuffleItems(cards)).slice(0, PRACTICE_SESSION_LIMIT)
+
+    setSessionCards(sessionDeck)
+    setQuizBatches(buildQuizBatches(sessionDeck))
     setActiveStageIndex(startIndex >= 0 ? startIndex : 0)
-    setCompletedStages([])
+    setCompletedStages(options.completed ?? [])
     setLivesRemaining(reviewLives)
     setFlipIndex(0)
     setQuizBatchIndex(0)
     setQuizSolvedPairs(0)
     setWriteIndex(0)
-    setMistakes(0)
-    setStageAttempt(0)
+    setMistakes(options.restoreState?.mistakes ?? 0)
+    setStageAttempt(options.restoreState?.stageAttempt ?? 0)
     setSessionFlow(flow)
     setSessionStatus("active")
     setLastActionStatus("active")
+  }
+
+  function startNewSession(cards: CardRecord[], startStage: ReviewStage = "flip", flow: ReviewFlow = "linked") {
+    void clearSavedPracticeSession()
+    startSession(cards, startStage, flow)
+  }
+
+  function resumeSavedSession() {
+    if (!savedPracticeSession || !resumableCards.length) {
+      showToast("Saved practice session is no longer available.", "error")
+      void clearSavedPracticeSession()
+      return
+    }
+
+    setSelectedStatus(savedPracticeSession.selectedStatus)
+    startSession(resumableCards, savedPracticeSession.activeStage, savedPracticeSession.flow, {
+      completed: savedPracticeSession.completedStages,
+      preserveOrder: true,
+      restoreState: savedPracticeSession.state
+    })
+  }
+
+  function restartSavedSession() {
+    if (!savedPracticeSession || !resumableCards.length) {
+      void clearSavedPracticeSession()
+      return
+    }
+
+    setSelectedStatus(savedPracticeSession.selectedStatus)
+    startSession(resumableCards, "flip", savedPracticeSession.flow, {
+      preserveOrder: true
+    })
+    void clearSavedPracticeSession()
   }
 
   function restartActiveStage() {
@@ -310,6 +485,9 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
     }
 
     showToast(`${getStageLabel(stage)} restarted. Lives refilled.`, "error")
+    void savePracticeProgress({
+      stage
+    })
   }
 
   function spendLife() {
@@ -326,9 +504,11 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
   }
 
   function advanceToNextStage(stage: ReviewStage) {
-    setCompletedStages((current) =>
-      current.includes(stage) ? current : [...current, stage]
-    )
+    const nextCompletedStages = completedStages.includes(stage)
+      ? completedStages
+      : [...completedStages, stage]
+
+    setCompletedStages(nextCompletedStages)
     setLivesRemaining(reviewLives)
     setStageAttempt((current) => current + 1)
     setQuizSolvedPairs(0)
@@ -336,13 +516,29 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
     if (stage === "flip") {
       setActiveStageIndex(1)
       setQuizBatchIndex(0)
+      void savePracticeProgress({
+        stages: nextCompletedStages,
+        stage: "quiz"
+      })
       return
     }
 
     if (stage === "quiz") {
       setActiveStageIndex(2)
       setWriteIndex(0)
+      void savePracticeProgress({
+        stages: nextCompletedStages,
+        stage: "write"
+      })
     }
+  }
+
+  function handleExitSession() {
+    if (sessionCards.length) {
+      void savePracticeProgress()
+    }
+
+    setSessionStatus("idle")
   }
 
   async function commitSession() {
@@ -399,6 +595,7 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
       setCompletedStages((current) =>
         current.includes("write") ? current : [...current, "write"]
       )
+      void clearSavedPracticeSession()
       setSessionStatus("success")
     } catch {
       setSessionStatus("save-error")
@@ -467,20 +664,19 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
     }
 
     if (activeStage === "flip") {
-      return Math.round(((flipIndex + 1) / sessionCards.length) * 100)
+      return Math.round((flipIndex / sessionCards.length) * 100)
     }
 
     if (activeStage === "write") {
-      return Math.round(((writeIndex + 1) / sessionCards.length) * 100)
+      return Math.round((writeIndex / sessionCards.length) * 100)
     }
 
-    const totalPairs = Math.max(quizBatches.length * QUIZ_BATCH_SIZE, 1)
-    const currentPair = Math.min(
-      quizBatchIndex * QUIZ_BATCH_SIZE + quizSolvedPairs + 1,
-      totalPairs
-    )
+    const completedPairs = quizBatches
+      .slice(0, quizBatchIndex)
+      .reduce((total, batch) => total + batch.targetCount, 0)
+    const currentPair = Math.min(completedPairs + quizSolvedPairs, sessionCards.length)
 
-    return Math.round((currentPair / totalPairs) * 100)
+    return Math.round((currentPair / sessionCards.length) * 100)
   }
 
   function getStageCounterLabel() {
@@ -492,9 +688,12 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
       return `Card ${Math.min(writeIndex + 1, sessionCards.length)} of ${sessionCards.length}`
     }
 
-    const totalPairs = quizBatches.length * QUIZ_BATCH_SIZE
+    const totalPairs = sessionCards.length
+    const completedPairs = quizBatches
+      .slice(0, quizBatchIndex)
+      .reduce((total, batch) => total + batch.targetCount, 0)
     const currentPair = Math.min(
-      quizBatchIndex * QUIZ_BATCH_SIZE + quizSolvedPairs + 1,
+      completedPairs + quizSolvedPairs + 1,
       totalPairs
     )
 
@@ -505,7 +704,7 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
     activeStage,
     flipIndex,
     quizBatchIndex,
-    quizBatches.length,
+    quizBatches,
     quizSolvedPairs,
     sessionCards.length,
     writeIndex
@@ -514,7 +713,7 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
     activeStage,
     flipIndex,
     quizBatchIndex,
-    quizBatches.length,
+    quizBatches,
     quizSolvedPairs,
     sessionCards.length,
     writeIndex
@@ -535,11 +734,15 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
           guestMode={guestMode}
           claiming={claiming}
           dailyCatalog={dailyCatalog}
+          sessionLimit={PRACTICE_SESSION_LIMIT}
+          resumableSession={resumableSession}
           onSelectStatus={setSelectedStatus}
           onSelectPracticeStage={setPracticeStage}
           onClaimDailyWords={handleClaimDailyWords}
-          onStartDue={() => startSession(availableCards, "flip", "linked")}
-          onStartPractice={() => startSession(allAvailableCards, practiceStage, "single")}
+          onStartDue={() => startNewSession(availableCards, "flip", "linked")}
+          onStartPractice={() => startNewSession(allAvailableCards, practiceStage, "single")}
+          onResumeSession={resumeSavedSession}
+          onRestartSession={restartSavedSession}
         />
         <DailyWordsModal
           open={dailyModalOpen}
@@ -663,7 +866,7 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
       >
         <div className="flex items-center gap-3">
           <button 
-            onClick={() => setSessionStatus("idle")}
+            onClick={handleExitSession}
             className={styles.sessionBackButton}
           >
             <ArrowLeft size={16} />
@@ -728,6 +931,7 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
                 rightItems={currentQuizBatch.rightItems}
                 batchIndex={quizBatchIndex}
                 totalBatches={quizBatches.length}
+                targetCount={currentQuizBatch.targetCount}
                 onLifeLost={handleQuizLifeLost}
                 onBatchCompleted={handleQuizBatchCompleted}
                 onProgressChange={setQuizSolvedPairs}
