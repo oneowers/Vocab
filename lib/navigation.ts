@@ -65,12 +65,7 @@ export function getAppMobileNavItems(role: Role | null): NavItem[] {
       icon: Sparkles,
       match: (pathname) => pathname === "/practice" || pathname === "/review"
     },
-    aiNavItem,
-    {
-      href: "/profile",
-      label: "Profile",
-      icon: UserRound
-    }
+    aiNavItem
   ]
 }
 

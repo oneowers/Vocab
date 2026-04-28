@@ -1,7 +1,8 @@
 "use client"
 
+import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
-import { ArrowUp, MessageCircle, Sparkles } from "lucide-react"
+import { ArrowUp, MessageCircle, Sparkles, UserRound } from "lucide-react"
 
 import { useToast } from "@/components/Toast"
 
@@ -107,7 +108,7 @@ export function AiCoachView() {
     <div className="translate-page-shell -mx-4 -my-4 px-4 py-4 pb-[calc(92px+env(safe-area-inset-bottom))] md:-mx-8 md:-my-8 md:px-8 md:py-8 md:pb-8">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
         <div className="fixed left-1/2 top-3 z-30 w-[calc(100%-2rem)] max-w-[38rem] -translate-x-1/2 md:top-6">
-          <div className="relative flex justify-center">
+          <div className="relative flex items-center justify-center gap-3">
             <div className="relative flex rounded-full border border-white/[0.06] bg-white/[0.03] p-1 shadow-[0_4px_20px_rgba(0,0,0,0.2)]">
               <div
                 className={`absolute bottom-1 top-1 rounded-full border border-white/[0.1] bg-white/[0.08] shadow-[0_2px_8px_rgba(0,0,0,0.1)] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
@@ -137,6 +138,13 @@ export function AiCoachView() {
                 Prompts
               </button>
             </div>
+            <Link
+              href="/profile"
+              aria-label="Open profile"
+              className="flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-full border border-white/[0.06] bg-white/[0.03] text-white/74 shadow-[0_4px_20px_rgba(0,0,0,0.2)] transition hover:bg-white/[0.06] hover:text-white"
+            >
+              <UserRound size={20} />
+            </Link>
             <div
               className="pointer-events-none absolute inset-x-[-1rem] top-full h-24 bg-gradient-to-b from-black via-black/35 to-transparent md:inset-x-[-2rem]"
               aria-hidden="true"
