@@ -7,6 +7,7 @@ import {
   ensureCatalogWordLocalized,
   findCatalogWordByTranslation,
   findCatalogWordByWord,
+  getOrCreateAppSettings,
   resolveTranslationDetails
 } from "@/lib/catalog"
 import { isGuestModeEnabled } from "@/lib/config"
@@ -65,6 +66,7 @@ export async function GET(request: NextRequest) {
 
   const { sourceLang, targetLang } = parsedLangpair
   const prisma = getPrisma()
+  const settings = await getOrCreateAppSettings(prisma)
   const directCatalogWord =
     sourceLang === "EN" && targetLang === "RU"
       ? await findCatalogWordByWord(prisma, query)
@@ -118,6 +120,7 @@ export async function GET(request: NextRequest) {
     translation: resolved.translation,
     translationAlternatives: resolved.translationAlternatives,
     cefrLevel,
-    source: resolved.source
+    source: resolved.source,
+    cefrProfilerEnabled: settings.cefrProfilerEnabled
   })
 }

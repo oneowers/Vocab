@@ -49,6 +49,7 @@ export async function PATCH(request: NextRequest) {
   const body = (await request.json()) as {
     dailyNewCardsLimit?: number
     reviewLives?: number
+    cefrProfilerEnabled?: boolean
     translationPriority?: string[]
   }
 
@@ -62,6 +63,10 @@ export async function PATCH(request: NextRequest) {
     typeof body.reviewLives === "number"
       ? body.reviewLives
       : currentSettings.reviewLives
+  const nextCefrProfilerEnabled =
+    typeof body.cefrProfilerEnabled === "boolean"
+      ? body.cefrProfilerEnabled
+      : currentSettings.cefrProfilerEnabled
   const nextTranslationPriority = Array.isArray(body.translationPriority)
     ? body.translationPriority
     : currentSettings.translationPriority
@@ -104,6 +109,7 @@ export async function PATCH(request: NextRequest) {
     update: {
       dailyNewCardsLimit: nextDailyNewCardsLimit,
       reviewLives: nextReviewLives,
+      cefrProfilerEnabled: nextCefrProfilerEnabled,
       translationProvider: nextTranslationProvider,
       translationPriority: normalizedPriority
     },
@@ -111,6 +117,7 @@ export async function PATCH(request: NextRequest) {
       id: "app",
       dailyNewCardsLimit: nextDailyNewCardsLimit,
       reviewLives: nextReviewLives,
+      cefrProfilerEnabled: nextCefrProfilerEnabled,
       translationProvider: nextTranslationProvider,
       translationPriority: normalizedPriority
     }

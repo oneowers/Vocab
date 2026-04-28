@@ -90,6 +90,7 @@ export function serializeAppSettings(settings: AppSettings): AppSettingsRecord {
     id: settings.id,
     dailyNewCardsLimit: settings.dailyNewCardsLimit,
     reviewLives: settings.reviewLives,
+    cefrProfilerEnabled: settings.cefrProfilerEnabled,
     translationProvider: settings.translationProvider as AppSettingsRecord["translationProvider"],
     translationPriority: (settings.translationPriority as AppSettingsRecord["translationPriority"]) ?? ["catalog", "deepl", "langeek"],
     updatedAt: settings.updatedAt.toISOString()

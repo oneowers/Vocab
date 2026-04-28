@@ -81,6 +81,7 @@ export interface AppSettingsRecord {
   id: string
   dailyNewCardsLimit: number
   reviewLives: number
+  cefrProfilerEnabled: boolean
   translationProvider: TranslationProvider
   translationPriority: TranslationEngine[]
   updatedAt: string
@@ -246,6 +247,31 @@ export interface TranslationPayload {
   translationAlternatives: string[]
   cefrLevel: CefrLevel | null
   source: TranslationSource
+  cefrProfilerEnabled: boolean
+}
+
+export type CefrProfileBand = "A1" | "A2" | "B1" | "B2" | "C1" | "C2" | "Off-List"
+
+export interface CefrProfileWord {
+  word: string
+  occurrences: number
+}
+
+export interface CefrProfileSegment {
+  text: string
+  level: CefrProfileBand | null
+}
+
+export interface CefrProfileBucket {
+  level: CefrProfileBand
+  percentage: number
+  words: CefrProfileWord[]
+}
+
+export interface CefrProfilePayload {
+  totalWordCount: number
+  segments: CefrProfileSegment[]
+  buckets: CefrProfileBucket[]
 }
 
 export interface DictionaryPayload {

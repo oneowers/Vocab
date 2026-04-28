@@ -5,6 +5,7 @@ import type { TranslationEngine, TranslationProvider, TranslationSource } from "
 const APP_SETTINGS_ID = "app"
 export const DEFAULT_DAILY_NEW_CARDS_LIMIT = 5
 export const DEFAULT_REVIEW_LIVES = 3
+export const DEFAULT_CEFR_PROFILER_ENABLED = true
 export const DEFAULT_TRANSLATION_PROVIDER: TranslationProvider = "auto"
 export const DEFAULT_TRANSLATION_PRIORITY: TranslationEngine[] = ["catalog", "deepl", "langeek"]
 export const CEFR_LEVELS: CefrLevel[] = ["A1", "A2", "B1", "B2", "C1", "C2"]
@@ -40,6 +41,7 @@ export async function getOrCreateAppSettings(prisma: PrismaClient) {
       id: APP_SETTINGS_ID,
       dailyNewCardsLimit: DEFAULT_DAILY_NEW_CARDS_LIMIT,
       reviewLives: DEFAULT_REVIEW_LIVES,
+      cefrProfilerEnabled: DEFAULT_CEFR_PROFILER_ENABLED,
       translationProvider: DEFAULT_TRANSLATION_PROVIDER,
       translationPriority: DEFAULT_TRANSLATION_PRIORITY
     }

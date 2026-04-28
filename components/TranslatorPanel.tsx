@@ -7,7 +7,7 @@ import { useToast } from "@/components/Toast"
 import { updateClientResourceData } from "@/hooks/useClientResource"
 import { getTooltipMessage } from "@/lib/config"
 import { speakText, canSpeak } from "@/lib/tts"
-import type { CardRecord, CardsResponse, CefrLevel, Direction, DictionaryPayload, TranslationPayload } from "@/lib/types"
+import type { CardRecord, CardsResponse, CefrLevel, CefrProfilePayload, Direction, DictionaryPayload, TranslationPayload } from "@/lib/types"
 
 interface TranslatorPanelProps {
   guestMode: boolean
@@ -47,6 +47,16 @@ const CEFR_STYLES: Record<CefrLevel, { badge: string; dot: string; label: string
   }
 }
 
+const CEFR_PROFILE_TEXT_STYLES: Record<string, string> = {
+  A1: "text-emerald-300",
+  A2: "text-lime-300",
+  B1: "text-sky-300",
+  B2: "text-indigo-300",
+  C1: "text-fuchsia-300",
+  C2: "text-rose-300",
+  "Off-List": "text-amber-300"
+}
+
 function mergeTranslationAlternatives(terms: string[], excludedTerms: string[]) {
   const excluded = new Set(excludedTerms.map((term) => term.trim().toLowerCase()).filter(Boolean))
   const seen = new Set<string>()
@@ -75,6 +85,12 @@ export function TranslatorPanel({
   const [translationAlternatives, setTranslationAlternatives] = useState<string[]>([])
   const [translationSource, setTranslationSource] = useState<TranslationPayload["source"] | null>(null)
   const [cefrLevel, setCefrLevel] = useState<CefrLevel | null>(null)
+  const [cefrProfilerEnabled, setCefrProfilerEnabled] = useState(false)
+  const [cefrProfile, setCefrProfile] = useState<CefrProfilePayload | null>(null)
+  const [selectedCefrWord, setSelectedCefrWord] = useState<{
+    text: string
+    level: string
+  } | null>(null)
   const [example, setExample] = useState<string | null>(null)
   const [phonetic, setPhonetic] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -92,6 +108,8 @@ export function TranslatorPanel({
     setTranslationAlternatives([])
     setTranslationSource(null)
     setCefrLevel(null)
+    setCefrProfile(null)
+    setSelectedCefrWord(null)
 
     try {
       const languagePair = direction === "en-ru" ? "en|ru" : "ru|en"
@@ -117,6 +135,28 @@ export function TranslatorPanel({
       setTranslationAlternatives(nextTranslationAlternatives)
       setTranslationSource(translationPayload.source)
       setCefrLevel(translationPayload.cefrLevel)
+      setCefrProfilerEnabled(translationPayload.cefrProfilerEnabled)
+
+      const englishText =
+        direction === "en-ru" ? query.trim() : translated.trim()
+
+      if (translationPayload.cefrProfilerEnabled && englishText) {
+        const cefrProfileResponse = await fetch("/api/cefr-profile", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            text: englishText
+          })
+        })
+
+        if (cefrProfileResponse.ok) {
+          const cefrProfilePayload =
+            (await cefrProfileResponse.json()) as CefrProfilePayload
+          setCefrProfile(cefrProfilePayload)
+        }
+      }
 
       const dictionaryWord = direction === "en-ru" ? query.trim() : translated
       if (dictionaryWord) {
@@ -221,6 +261,9 @@ export function TranslatorPanel({
       setTranslationAlternatives([])
       setTranslationSource(null)
       setCefrLevel(null)
+      setCefrProfilerEnabled(false)
+      setCefrProfile(null)
+      setSelectedCefrWord(null)
       setExample(null)
       setPhonetic(null)
     }, 190)
@@ -242,6 +285,11 @@ export function TranslatorPanel({
         : translationSource === "langeek"
           ? "LanGeek"
           : null
+  const shouldShowColoredSourceText =
+    Boolean(translation) &&
+    cefrProfilerEnabled &&
+    Boolean(cefrProfile?.segments.length) &&
+    ((direction === "en-ru" && query.trim()) || (direction === "ru-en" && translation.trim()))
 
   return (
     <section className="translate-phone-surface space-y-5">
@@ -314,23 +362,64 @@ export function TranslatorPanel({
             </div>
 
             <div className="flex items-start justify-between gap-3">
-              <textarea
-                id="translation-query"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void handleTranslate() } }}
-                autoCapitalize="none"
-                autoCorrect="off"
-                autoComplete="off"
-                spellCheck={false}
-                placeholder={direction === "en-ru" ? "Enter text" : "Введите текст"}
-                rows={translation ? 1 : 3}
-                className={`w-full resize-none border-0 bg-transparent p-0 font-black tracking-tight text-white outline-none placeholder:text-white/24 ${
-                  translation
-                    ? "min-h-[42px] text-[26px] md:text-[32px]"
-                    : "min-h-[110px] flex-1 text-[26px] md:text-[32px]"
-                }`}
-              />
+              <div className="w-full">
+                <textarea
+                  id="translation-query"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void handleTranslate() } }}
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  autoComplete="off"
+                  spellCheck={false}
+                  placeholder={direction === "en-ru" ? "Enter text" : "Введите текст"}
+                  rows={translation ? 1 : 3}
+                  className={`w-full resize-none border-0 bg-transparent p-0 font-black tracking-tight text-white outline-none placeholder:text-white/24 ${
+                    translation
+                      ? "min-h-[42px] text-[26px] md:text-[32px]"
+                      : "min-h-[110px] flex-1 text-[26px] md:text-[32px]"
+                  }`}
+                />
+                {shouldShowColoredSourceText && cefrProfile && (
+                  <div className="relative mt-3">
+                    <div className="text-[18px] font-bold leading-relaxed tracking-tight md:text-[22px]">
+                    {cefrProfile.segments.map((segment, index) => (
+                        segment.level ? (
+                          <button
+                            key={`${segment.text}-${index}`}
+                            type="button"
+                            onClick={() =>
+                              setSelectedCefrWord(
+                                selectedCefrWord?.text === segment.text && selectedCefrWord.level === segment.level
+                                  ? null
+                                  : { text: segment.text.trim(), level: segment.level as string }
+                              )
+                            }
+                            className={`inline rounded-sm transition hover:opacity-85 ${CEFR_PROFILE_TEXT_STYLES[segment.level] ?? "text-white/78"}`}
+                          >
+                            {segment.text}
+                          </button>
+                        ) : (
+                          <span
+                            key={`${segment.text}-${index}`}
+                            className="text-white/30"
+                          >
+                            {segment.text}
+                          </span>
+                        )
+                      ))}
+                    </div>
+                    {selectedCefrWord && (
+                      <div className="mt-3 inline-flex items-center gap-2 rounded-2xl border border-white/[0.08] bg-[#202028] px-3 py-2 text-[13px] font-medium text-white/78 shadow-[0_12px_30px_rgba(0,0,0,0.24)]">
+                        <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${CEFR_STYLES[selectedCefrWord.level as CefrLevel]?.badge ?? "bg-amber-500/10 text-amber-300"}`}>
+                          {selectedCefrWord.level}
+                        </span>
+                        <span>{selectedCefrWord.text}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
               {direction === "en-ru" && cefrLevel && (
                 <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[13px] font-bold ${CEFR_STYLES[cefrLevel].badge}`}>
                   <span className={`h-1.5 w-1.5 rounded-full ${CEFR_STYLES[cefrLevel].dot}`} />

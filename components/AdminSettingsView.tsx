@@ -36,6 +36,7 @@ export function AdminSettingsView() {
   const { showToast } = useToast()
   const [settingsLimit, setSettingsLimit] = useState("5")
   const [reviewLives, setReviewLives] = useState("3")
+  const [cefrProfilerEnabled, setCefrProfilerEnabled] = useState("enabled")
   const [translationPriority, setTranslationPriority] = useState<TranslationEngine[]>(["catalog", "deepl", "langeek"])
   const [draggedEngine, setDraggedEngine] = useState<TranslationEngine | null>(null)
   const [floatingTop, setFloatingTop] = useState<number | null>(null)
@@ -66,6 +67,7 @@ export function AdminSettingsView() {
 
     setSettingsLimit(String(data.settings.dailyNewCardsLimit))
     setReviewLives(String(data.settings.reviewLives))
+    setCefrProfilerEnabled(data.settings.cefrProfilerEnabled ? "enabled" : "disabled")
     setTranslationPriority(data.settings.translationPriority)
   }, [data])
 
@@ -186,6 +188,7 @@ export function AdminSettingsView() {
         body: JSON.stringify({
           dailyNewCardsLimit: Number(settingsLimit),
           reviewLives: Number(reviewLives),
+          cefrProfilerEnabled: cefrProfilerEnabled === "enabled",
           translationPriority
         })
       })
@@ -198,6 +201,7 @@ export function AdminSettingsView() {
       const payload = (await response.json()) as AdminSettingsPayload
       setSettingsLimit(String(payload.settings.dailyNewCardsLimit))
       setReviewLives(String(payload.settings.reviewLives))
+      setCefrProfilerEnabled(payload.settings.cefrProfilerEnabled ? "enabled" : "disabled")
       setTranslationPriority(payload.settings.translationPriority)
       showToast("Settings updated.", "success")
     } catch (error) {
@@ -264,7 +268,22 @@ export function AdminSettingsView() {
             </select>
           </div>
 
-          <div className="border-t border-separator px-5 py-4">
+          <div className="flex items-center justify-between gap-4 border-b border-separator px-5 py-4">
+            <div>
+              <p className="font-semibold text-ink">CEFR text profiler</p>
+              <p className="text-sm text-muted">Show A1-C2 and Off-list breakdown in Translate.</p>
+            </div>
+            <select
+              value={cefrProfilerEnabled}
+              onChange={(event) => setCefrProfilerEnabled(event.target.value)}
+              className="input-field w-32"
+            >
+              <option value="enabled">Enabled</option>
+              <option value="disabled">Disabled</option>
+            </select>
+          </div>
+
+          <div className="px-5 py-4">
             <div className="mb-3">
               <p className="font-semibold text-ink">Translator priority</p>
               <p className="text-sm text-muted">Drag to reorder priority. Uncheck to disable any source.</p>

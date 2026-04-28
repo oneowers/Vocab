@@ -133,6 +133,7 @@ model AppSettings {
   id                 String   @id @default("app")
   dailyNewCardsLimit Int      @default(5)
   reviewLives        Int      @default(3)
+  cefrProfilerEnabled Boolean @default(true)
   translationProvider String  @default("auto")
   translationPriority String[] @default(["catalog", "deepl", "langeek"])
   updatedAt          DateTime @updatedAt
