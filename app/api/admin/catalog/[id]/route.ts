@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
+import { revalidateTag } from "next/cache"
 
 import { getOptionalAuthUser } from "@/lib/auth"
 import { isCefrLevel, resolveTranslationDetails } from "@/lib/catalog"
 import { canPublishCatalogWord, getCatalogReviewStatus } from "@/lib/cefr-seed"
 import { getPrisma } from "@/lib/prisma"
+import { adminCacheTag } from "@/lib/server-cache"
 import { serializeWordCatalog } from "@/lib/serializers"
 
 async function requireAdminUser() {
@@ -165,6 +167,8 @@ export async function PATCH(
         enrichmentStatus === "completed" ? existing.lastEnrichedAt ?? new Date() : existing.lastEnrichedAt
     }
   })
+
+  revalidateTag(adminCacheTag.catalog)
 
   return NextResponse.json({ item: serializeWordCatalog(updated) })
 }

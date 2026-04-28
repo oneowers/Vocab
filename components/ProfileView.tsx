@@ -16,9 +16,10 @@ import type { AppUserRecord, CefrLevel, ProfileActivityPayload } from "@/lib/typ
 
 interface ProfileViewProps {
   user: AppUserRecord | null
+  initialActivity?: ProfileActivityPayload | null
 }
 
-export function ProfileView({ user }: ProfileViewProps) {
+export function ProfileView({ user, initialActivity = null }: ProfileViewProps) {
   const router = useRouter()
   const { showToast } = useToast()
   const [guestActive, setGuestActive] = useState(false)
@@ -33,7 +34,8 @@ export function ProfileView({ user }: ProfileViewProps) {
   } = useClientResource<ProfileActivityPayload>({
     key: guestActive || !profileUser ? "profile-activity:guest" : `profile-activity:${profileUser.id}`,
     enabled: !guestActive && Boolean(profileUser),
-    initialData: guestActive || !profileUser ? fallbackActivity : null,
+    initialData: guestActive || !profileUser ? fallbackActivity : initialActivity,
+    revalidateOnMount: initialActivity === null,
     loader: async () => {
       const response = await fetch("/api/profile/activity", {
         cache: "no-store"
@@ -83,7 +85,7 @@ export function ProfileView({ user }: ProfileViewProps) {
     router.refresh()
   }
 
-  const resolvedActivity = activity ?? fallbackActivity
+  const resolvedActivity = activity ?? initialActivity ?? fallbackActivity
   const name = guestActive ? "Guest explorer" : profileUser?.name || profileUser?.email || "Wlingo user"
   const subtitle = guestActive
     ? "Guest mode"

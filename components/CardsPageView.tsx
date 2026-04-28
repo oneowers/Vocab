@@ -10,7 +10,11 @@ import { getGuestCards, isGuestSessionActive } from "@/lib/guest"
 import { matchesCardStatus, sortDueCards } from "@/lib/spaced-repetition"
 import type { CardRecord, CardsResponse, CardStatusFilter, CefrLevel } from "@/lib/types"
 
-export function CardsPageView() {
+interface CardsPageViewProps {
+  initialData?: CardsResponse | null
+}
+
+export function CardsPageView({ initialData = null }: CardsPageViewProps) {
   const [guestMode, setGuestMode] = useState(false)
   const [cards, setCards] = useState<CardRecord[]>([])
   const [selectedStatus, setSelectedStatus] = useState<CardStatusFilter>("All")
@@ -28,7 +32,8 @@ export function CardsPageView() {
   } = useClientResource<CardsResponse>({
     key: "cards:collection",
     enabled: !guestMode,
-    revalidateOnMount: true,
+    initialData,
+    revalidateOnMount: initialData === null,
     loader: async () => {
       const response = await fetch("/api/cards")
 

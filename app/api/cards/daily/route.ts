@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server"
+import { revalidateTag } from "next/cache"
 
 import { getOptionalAuthUser } from "@/lib/auth"
 import { ensureCatalogWordLocalized, getOrCreateAppSettings } from "@/lib/catalog"
+import { serializedCardSelect } from "@/lib/db-selects"
 import { getTodayDateKey } from "@/lib/date"
 import { getPrisma } from "@/lib/prisma"
+import { adminCacheTag, userCacheTag } from "@/lib/server-cache"
 import { serializeCard } from "@/lib/serializers"
 
 export async function POST() {
@@ -108,9 +111,7 @@ export async function POST() {
             nextReviewDate: today,
             lastReviewResult: "unknown"
           },
-          include: {
-            catalogWord: true
-          }
+          select: serializedCardSelect
         })
       )
     )
@@ -136,6 +137,13 @@ export async function POST() {
   })
 
   const nextClaimedToday = claimedToday + createdCards.length
+
+  if (createdCards.length) {
+    revalidateTag(userCacheTag.cards(user.id))
+    revalidateTag(userCacheTag.review(user.id))
+    revalidateTag(userCacheTag.stats(user.id))
+    revalidateTag(adminCacheTag.analytics)
+  }
 
   return NextResponse.json({
     cards: createdCards.map((card) => serializeCard(card)),

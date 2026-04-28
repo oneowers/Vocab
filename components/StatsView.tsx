@@ -88,13 +88,18 @@ function computeGuestStats(cards: CardRecord[], logs: GuestReviewLog[]): StatsPa
   }
 }
 
-export function StatsView() {
+interface StatsViewProps {
+  initialData?: StatsPayload | null
+}
+
+export function StatsView({ initialData = null }: StatsViewProps) {
   const { showToast } = useToast()
   const guestMode = isGuestSessionActive()
-  const guestStats = guestMode ? computeGuestStats(getGuestCards(), getGuestReviewLogs()) : null
+  const guestStats = guestMode ? computeGuestStats(getGuestCards(), getGuestReviewLogs()) : initialData
   const { data: stats, loading } = useClientResource<StatsPayload>({
     key: guestMode ? "stats:guest" : "stats:user",
     initialData: guestStats,
+    revalidateOnMount: guestStats === null,
     loader: async () => {
       const response = await fetch("/api/stats", {
         cache: "no-store"

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 
 import { getOptionalAuthUser } from "@/lib/auth"
+import { serializedAdminCardSelect } from "@/lib/db-selects"
 import { getPrisma } from "@/lib/prisma"
 import { serializeCard } from "@/lib/serializers"
 
@@ -55,14 +56,7 @@ export async function GET(request: NextRequest) {
       },
       skip: (page - 1) * pageSize,
       take: pageSize,
-      include: {
-        catalogWord: true,
-        user: {
-          select: {
-            email: true
-          }
-        }
-      }
+      select: serializedAdminCardSelect
     })
   ])
 

@@ -1,19 +1,28 @@
-import { getPrisma } from "@/lib/prisma"
+import { Prisma } from "@prisma/client"
+
+import { getOrCreateAppSettings } from "@/lib/catalog"
 import { buildSeedReport } from "@/lib/cefr-seed"
+import { serializedAdminCardSelect, serializedCardSelect } from "@/lib/db-selects"
 import {
   addDaysToDateKey,
   formatDateLabel,
   getTodayDateKey,
-  isDueDate,
   listRecentDateKeys,
   listUpcomingDateKeys,
   parseDateKey
 } from "@/lib/date"
-import { isMastered } from "@/lib/spaced-repetition"
+import { getPrisma } from "@/lib/prisma"
+import {
+  adminCacheTag,
+  cacheAdminResource,
+  cacheUserResource,
+  sharedCacheTag,
+  userCacheTag
+} from "@/lib/server-cache"
 import { serializeCard } from "@/lib/serializers"
 import type {
   AdminAnalyticsPayload,
-  CardRecord,
+  CardsResponse,
   ProfileActivityDay,
   ProfileActivityMonthLabel,
   ProfileActivityPayload,
@@ -130,70 +139,196 @@ function getLongestStreak(dateKeys: string[]) {
   return longest
 }
 
-export function buildDashboardSummary(cards: CardRecord[], streak: number, reviewLives = 3) {
+function toCountMap(rows: Array<{ date: string; value: bigint | number }>) {
+  return rows.reduce<Record<string, number>>((accumulator, row) => {
+    accumulator[row.date] = Number(row.value)
+    return accumulator
+  }, {})
+}
+
+function toChartPoints(dates: string[], counts: Record<string, number>) {
+  return dates.map((date) => ({
+    date,
+    label: formatDateLabel(date),
+    value: counts[date] ?? 0
+  }))
+}
+
+async function buildCardsPageData(userId: string): Promise<CardsResponse> {
+  const prisma = getPrisma()
   const today = getTodayDateKey()
+  const todayStart = new Date(`${today}T00:00:00.000Z`)
+  const tomorrowStart = new Date(todayStart)
+  tomorrowStart.setUTCDate(tomorrowStart.getUTCDate() + 1)
+
+  const [cards, totalCards, dueToday, settings, user, claimedToday] = await Promise.all([
+    prisma.card.findMany({
+      where: {
+        userId
+      },
+      orderBy: [{ nextReviewDate: "asc" }, { dateAdded: "desc" }],
+      select: serializedCardSelect
+    }),
+    prisma.card.count({
+      where: {
+        userId
+      }
+    }),
+    prisma.card.count({
+      where: {
+        userId,
+        nextReviewDate: {
+          lte: today
+        }
+      }
+    }),
+    getOrCreateAppSettings(prisma),
+    prisma.user.findUniqueOrThrow({
+      where: {
+        id: userId
+      },
+      select: {
+        streak: true,
+        cefrLevel: true
+      }
+    }),
+    prisma.userCatalogWord.count({
+      where: {
+        userId,
+        createdAt: {
+          gte: todayStart,
+          lt: tomorrowStart
+        }
+      }
+    })
+  ])
+
+  const serializedCards = cards.map((card) => serializeCard(card))
 
   return {
-    streak,
-    reviewLives,
-    totalCards: cards.length,
-    dueToday: cards.filter((card) => isDueDate(card.nextReviewDate, today)).length,
-    mastered: cards.filter((card) => isMastered(card.reviewCount)).length
+    cards: serializedCards,
+    summary: {
+      streak: user.streak,
+      reviewLives: settings.reviewLives,
+      totalCards,
+      dueToday,
+      mastered: serializedCards.filter((card) => card.reviewCount >= 3).length
+    },
+    dailyCatalog: {
+      claimedToday,
+      dailyLimit: settings.dailyNewCardsLimit,
+      remainingToday: Math.max(settings.dailyNewCardsLimit - claimedToday, 0),
+      cefrLevel: user.cefrLevel
+    }
   }
+}
+
+export function getUserCardsPageData(userId: string): Promise<CardsResponse> {
+  return cacheUserResource(
+    [`cards-page:${userId}`],
+    [userCacheTag.cards(userId), userCacheTag.review(userId), sharedCacheTag.appSettings],
+    () => buildCardsPageData(userId)
+  )
+}
+
+export function getUserReviewData(userId: string): Promise<CardsResponse> {
+  return cacheUserResource(
+    [`review-page:${userId}`],
+    [userCacheTag.cards(userId), userCacheTag.review(userId), sharedCacheTag.appSettings],
+    () => buildCardsPageData(userId)
+  )
 }
 
 export async function buildUserStats(userId: string): Promise<StatsPayload> {
   const prisma = getPrisma()
-  const [user, cards, reviewLogs] = await Promise.all([
-    prisma.user.findUniqueOrThrow({
-      where: { id: userId }
-    }),
-    prisma.card.findMany({
-      where: { userId },
-      orderBy: { wrongCount: "desc" },
-      include: {
-        catalogWord: true
-      }
-    }),
-    prisma.reviewLog.findMany({
-      where: { userId },
-      orderBy: { createdAt: "desc" }
-    })
-  ])
-
   const today = getTodayDateKey()
   const last7 = listRecentDateKeys(7, today)
   const upcoming = listUpcomingDateKeys(7, today)
-  const serializedCards = cards.map((card) => serializeCard(card))
-  const reviewDates = reviewLogs.map((log) => log.createdAt.toISOString().slice(0, 10))
-  const addedDates = cards.map((card) => card.dateAdded.toISOString().slice(0, 10))
-  const correct = cards.reduce((total, card) => total + card.correctCount, 0)
-  const wrong = cards.reduce((total, card) => total + card.wrongCount, 0)
+  const last7Start = parseDateKey(last7[0])
+
+  const [user, totals, hardestCards, dueCounts, reviewDateCounts, addedDateCounts] =
+    await Promise.all([
+      prisma.user.findUniqueOrThrow({
+        where: { id: userId },
+        select: { streak: true }
+      }),
+      prisma.card.aggregate({
+        where: { userId },
+        _sum: {
+          correctCount: true,
+          wrongCount: true
+        }
+      }),
+      prisma.card.findMany({
+        where: {
+          userId,
+          wrongCount: {
+            gt: 0
+          }
+        },
+        orderBy: { wrongCount: "desc" },
+        take: 5,
+        select: serializedCardSelect
+      }),
+      prisma.card.groupBy({
+        by: ["nextReviewDate"],
+        where: {
+          userId,
+          nextReviewDate: {
+            in: upcoming
+          }
+        },
+        _count: {
+          _all: true
+        }
+      }),
+      prisma.$queryRaw<Array<{ date: string; value: bigint }>>(Prisma.sql`
+        SELECT
+          TO_CHAR(DATE("createdAt" AT TIME ZONE 'UTC'), 'YYYY-MM-DD') AS date,
+          COUNT(*)::bigint AS value
+        FROM "ReviewLog"
+        WHERE "userId" = ${userId}
+        GROUP BY 1
+      `),
+      prisma.$queryRaw<Array<{ date: string; value: bigint }>>(Prisma.sql`
+        SELECT
+          TO_CHAR(DATE("dateAdded" AT TIME ZONE 'UTC'), 'YYYY-MM-DD') AS date,
+          COUNT(*)::bigint AS value
+        FROM "Card"
+        WHERE "userId" = ${userId}
+          AND "dateAdded" >= ${last7Start}
+        GROUP BY 1
+      `)
+    ])
+
+  const correct = totals._sum.correctCount ?? 0
+  const wrong = totals._sum.wrongCount ?? 0
   const totalReviewed = correct + wrong
+  const reviewCountsByDate = toCountMap(reviewDateCounts)
+  const reviewDates = Object.keys(reviewCountsByDate).filter((date) => reviewCountsByDate[date] > 0)
+  const addedCountsByDate = toCountMap(addedDateCounts)
+  const dueCountsByDate = dueCounts.reduce<Record<string, number>>((accumulator, row) => {
+    accumulator[row.nextReviewDate] = row._count._all
+    return accumulator
+  }, {})
 
   return {
     currentStreak: user.streak,
     longestStreak: getLongestStreak(reviewDates),
     accuracyRate: totalReviewed ? Math.round((correct / totalReviewed) * 100) : 0,
-    cardsAdded: last7.map((date) => ({
-      date,
-      label: formatDateLabel(date),
-      value: addedDates.filter((item) => item === date).length
-    })),
-    reviewsPerDay: last7.map((date) => ({
-      date,
-      label: formatDateLabel(date),
-      value: reviewDates.filter((item) => item === date).length
-    })),
-    hardestCards: serializedCards
-      .filter((card) => card.wrongCount > 0)
-      .slice(0, 5),
-    dueByDay: upcoming.map((date) => ({
-      date,
-      label: formatDateLabel(date),
-      value: serializedCards.filter((card) => card.nextReviewDate === date).length
-    }))
+    cardsAdded: toChartPoints(last7, addedCountsByDate),
+    reviewsPerDay: toChartPoints(last7, reviewCountsByDate),
+    hardestCards: hardestCards.map((card) => serializeCard(card)),
+    dueByDay: toChartPoints(upcoming, dueCountsByDate)
   }
+}
+
+export function getUserStatsData(userId: string): Promise<StatsPayload> {
+  return cacheUserResource(
+    [`user-stats:${userId}`],
+    [userCacheTag.stats(userId), userCacheTag.review(userId), userCacheTag.cards(userId)],
+    () => buildUserStats(userId)
+  )
 }
 
 export async function buildProfileActivity(userId: string): Promise<ProfileActivityPayload> {
@@ -202,24 +337,18 @@ export async function buildProfileActivity(userId: string): Promise<ProfileActiv
   const skeleton = buildActivitySkeleton(today)
   const startDate = new Date(Date.UTC(parseDateKey(today).getUTCFullYear(), 0, 1))
   const endDate = new Date(`${today}T23:59:59.999Z`)
-  const reviewLogs = await prisma.reviewLog.findMany({
-    where: {
-      userId,
-      createdAt: {
-        gte: startDate,
-        lte: endDate
-      }
-    },
-    select: {
-      createdAt: true
-    }
-  })
+  const reviewDateCounts = await prisma.$queryRaw<Array<{ date: string; value: bigint }>>(Prisma.sql`
+    SELECT
+      TO_CHAR(DATE("createdAt" AT TIME ZONE 'UTC'), 'YYYY-MM-DD') AS date,
+      COUNT(*)::bigint AS value
+    FROM "ReviewLog"
+    WHERE "userId" = ${userId}
+      AND "createdAt" >= ${startDate}
+      AND "createdAt" <= ${endDate}
+    GROUP BY 1
+  `)
 
-  const countsByDate = reviewLogs.reduce<Record<string, number>>((accumulator, log) => {
-    const date = log.createdAt.toISOString().slice(0, 10)
-    accumulator[date] = (accumulator[date] ?? 0) + 1
-    return accumulator
-  }, {})
+  const countsByDate = toCountMap(reviewDateCounts)
 
   const days = skeleton.days.map((day) => {
     const count = countsByDate[day.date] ?? 0
@@ -233,81 +362,99 @@ export async function buildProfileActivity(userId: string): Promise<ProfileActiv
 
   return {
     activeDaysLastYear: Object.values(countsByDate).filter((count) => count > 0).length,
-    totalReviewsLastYear: reviewLogs.length,
+    totalReviewsLastYear: reviewDateCounts.reduce((total, row) => total + Number(row.value), 0),
     days,
     months: skeleton.months
   }
+}
+
+export function getUserProfileActivityData(userId: string): Promise<ProfileActivityPayload> {
+  return cacheUserResource(
+    [`profile-activity:${userId}`],
+    [userCacheTag.profile(userId), userCacheTag.review(userId)],
+    () => buildProfileActivity(userId)
+  )
 }
 
 export async function buildAdminAnalytics(): Promise<AdminAnalyticsPayload> {
   const prisma = getPrisma()
   const today = getTodayDateKey()
   const last30 = listRecentDateKeys(30, today)
-  const last7 = last30.slice(-7)
+  const last7Start = parseDateKey(addDaysToDateKey(today, -6))
   const [
     analyticsRows,
     totalsAggregate,
     totalUsers,
     totalCards,
-    reviewLogs,
+    activeUsersLast7Days,
     recentLogs,
-    cards,
     seedCatalog
-  ] =
-    await Promise.all([
-      prisma.appAnalytics.findMany({
+  ] = await Promise.all([
+    prisma.appAnalytics.findMany({
+      where: {
+        date: {
+          in: last30
+        }
+      },
+      orderBy: {
+        date: "asc"
+      }
+    }),
+    prisma.appAnalytics.aggregate({
+      _sum: {
+        totalReviews: true,
+        totalSessions: true
+      }
+    }),
+    prisma.user.count(),
+    prisma.card.count(),
+    prisma.reviewLog
+      .groupBy({
+        by: ["userId"],
         where: {
-          date: {
-            in: last30
+          createdAt: {
+            gte: last7Start
           }
-        },
-        orderBy: {
-          date: "asc"
         }
-      }),
-      prisma.appAnalytics.aggregate({
-        _sum: {
-          totalReviews: true,
-          totalSessions: true
+      })
+      .then((rows) => rows.length),
+    prisma.reviewLog.findMany({
+      orderBy: {
+        createdAt: "desc"
+      },
+      take: 20,
+      select: {
+        id: true,
+        cardId: true,
+        result: true,
+        createdAt: true,
+        user: {
+          select: {
+            email: true
+          }
         }
-      }),
-      prisma.user.count(),
-      prisma.card.count(),
-      prisma.reviewLog.findMany({
-        select: {
-          userId: true,
-          createdAt: true
-        }
-      }),
-      prisma.reviewLog.findMany({
-        orderBy: {
-          createdAt: "desc"
-        },
-        take: 20,
-        include: {
-          user: {
-            select: {
-              email: true
+      }
+    }),
+    buildSeedReport(prisma)
+  ])
+
+  const recentCardIds = Array.from(new Set(recentLogs.map((log) => log.cardId)))
+  const recentCards =
+    recentCardIds.length === 0
+      ? []
+      : await prisma.card.findMany({
+          where: {
+            id: {
+              in: recentCardIds
             }
-          }
-        }
-      }),
-      prisma.card.findMany({
-        select: {
-          id: true,
-          original: true,
-          catalogWord: {
-            select: {
-              word: true
-            }
-          }
-        }
-      }),
-      buildSeedReport(prisma)
-    ])
+          },
+          select: serializedAdminCardSelect
+        })
 
   const analyticsByDate = new Map(analyticsRows.map((row) => [row.date, row]))
-  const cardMap = new Map(cards.map((card) => [card.id, card.catalogWord?.word ?? card.original ?? "Card removed"]))
+  const cardMap = new Map(
+    recentCards.map((card) => [card.id, card.catalogWord?.word ?? card.original ?? "Card removed"])
+  )
 
   return {
     days: last30.map((date) => {
@@ -327,11 +474,7 @@ export async function buildAdminAnalytics(): Promise<AdminAnalyticsPayload> {
       totalReviews: totalsAggregate._sum.totalReviews ?? 0,
       totalSessions: totalsAggregate._sum.totalSessions ?? 0,
       reviewsToday: analyticsByDate.get(today)?.totalReviews ?? 0,
-      activeUsersLast7Days: new Set(
-        reviewLogs
-          .filter((log) => last7.includes(log.createdAt.toISOString().slice(0, 10)))
-          .map((log) => log.userId)
-      ).size
+      activeUsersLast7Days
     },
     seedCatalog,
     recentActivity: recentLogs.map((log) => ({
@@ -342,4 +485,12 @@ export async function buildAdminAnalytics(): Promise<AdminAnalyticsPayload> {
       createdAt: log.createdAt.toISOString()
     }))
   }
+}
+
+export function getAdminAnalyticsData(): Promise<AdminAnalyticsPayload> {
+  return cacheAdminResource(
+    ["admin-analytics"],
+    [adminCacheTag.analytics],
+    () => buildAdminAnalytics()
+  )
 }

@@ -2,6 +2,35 @@ import type { AppSettings, Card, User, WordCatalog } from "@prisma/client"
 
 import type { AppSettingsRecord, AppUserRecord, CardRecord, WordCatalogRecord } from "@/lib/types"
 
+type SerializableCatalogWord = Pick<
+  WordCatalog,
+  "word" | "translation" | "translationAlternatives" | "example" | "phonetic" | "cefrLevel"
+>
+
+export type SerializableCard = Pick<
+  Card,
+  | "id"
+  | "userId"
+  | "catalogWordId"
+  | "original"
+  | "translation"
+  | "translationAlternatives"
+  | "direction"
+  | "example"
+  | "phonetic"
+  | "dateAdded"
+  | "nextReviewDate"
+  | "lastReviewResult"
+  | "reviewCount"
+  | "correctCount"
+  | "wrongCount"
+> & {
+  user?: {
+    email: string
+  }
+  catalogWord?: SerializableCatalogWord | null
+}
+
 export function serializeUser(user: User): AppUserRecord {
   return {
     id: user.id,
@@ -19,12 +48,7 @@ export function serializeUser(user: User): AppUserRecord {
 }
 
 export function serializeCard(
-  card: Card & {
-    user?: {
-      email: string
-    }
-    catalogWord?: WordCatalog | null
-  }
+  card: SerializableCard
 ): CardRecord {
   const resolvedOriginal = card.catalogWord?.word ?? card.original ?? ""
   const resolvedTranslation = card.catalogWord?.translation ?? card.translation ?? ""

@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
+import { revalidateTag } from "next/cache"
 
 import { getOptionalAuthUser } from "@/lib/auth"
+import { serializedCardSelect } from "@/lib/db-selects"
 import { getTodayDateKey, getYesterdayDateKey } from "@/lib/date"
 import { getPrisma } from "@/lib/prisma"
+import { adminCacheTag, userCacheTag } from "@/lib/server-cache"
 import { serializeCard } from "@/lib/serializers"
 import { getReviewOutcome } from "@/lib/spaced-repetition"
 
@@ -28,9 +31,7 @@ export async function POST(request: NextRequest) {
       id: body.cardId,
       userId: user.id
     },
-    include: {
-      catalogWord: true
-    }
+    select: serializedCardSelect
   })
 
   if (!card) {
@@ -53,9 +54,7 @@ export async function POST(request: NextRequest) {
       where: {
         id: card.id
       },
-      include: {
-        catalogWord: true
-      },
+      select: serializedCardSelect,
       data: {
         nextReviewDate: outcome.nextReviewDate,
         lastReviewResult: outcome.lastReviewResult,
@@ -106,6 +105,12 @@ export async function POST(request: NextRequest) {
       }
     })
   ])
+
+  revalidateTag(userCacheTag.cards(user.id))
+  revalidateTag(userCacheTag.review(user.id))
+  revalidateTag(userCacheTag.stats(user.id))
+  revalidateTag(userCacheTag.profile(user.id))
+  revalidateTag(adminCacheTag.analytics)
 
   return NextResponse.json({
     card: serializeCard(updatedCard),

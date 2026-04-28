@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { revalidateTag } from "next/cache"
 
 import { getOptionalAuthUser } from "@/lib/auth"
 import {
@@ -7,10 +8,12 @@ import {
   findCatalogWordByWord,
   getOrCreateAppSettings
 } from "@/lib/catalog"
-import { getTodayDateKey, isDueDate } from "@/lib/date"
+import { serializedCardSelect } from "@/lib/db-selects"
+import { getTodayDateKey } from "@/lib/date"
 import { getPrisma } from "@/lib/prisma"
+import { userCacheTag, adminCacheTag } from "@/lib/server-cache"
 import { serializeCard } from "@/lib/serializers"
-import { buildDashboardSummary } from "@/lib/server-data"
+import { getUserCardsPageData } from "@/lib/server-data"
 
 export async function GET(request: NextRequest) {
   const user = await getOptionalAuthUser()
@@ -24,12 +27,17 @@ export async function GET(request: NextRequest) {
   const search = request.nextUrl.searchParams.get("search")?.trim()
   const due = request.nextUrl.searchParams.get("due")
   const hasCardFilters = status === "known" || status === "unknown" || Boolean(search) || due === "today"
+
+  if (!hasCardFilters) {
+    return NextResponse.json(await getUserCardsPageData(user.id))
+  }
+
   const today = getTodayDateKey()
   const todayStart = new Date(`${today}T00:00:00.000Z`)
   const tomorrowStart = new Date(todayStart)
   tomorrowStart.setUTCDate(tomorrowStart.getUTCDate() + 1)
 
-  const [cards, allCardsMaybeFiltered, settings, claimedToday] = await Promise.all([
+  const [cards, totalCards, dueToday, mastered, settings, claimedToday] = await Promise.all([
     prisma.card.findMany({
       where: {
         userId: user.id,
@@ -56,22 +64,30 @@ export async function GET(request: NextRequest) {
           : {}),
         ...(due === "today" ? { nextReviewDate: { lte: today } } : {})
       },
-      include: {
-        catalogWord: true
-      },
+      select: serializedCardSelect,
       orderBy: [{ nextReviewDate: "asc" }, { dateAdded: "desc" }]
     }),
-    hasCardFilters
-      ? prisma.card.findMany({
-          where: {
-            userId: user.id
-          },
-          include: {
-            catalogWord: true
-          },
-          orderBy: [{ nextReviewDate: "asc" }, { dateAdded: "desc" }]
-        })
-      : Promise.resolve(null),
+    prisma.card.count({
+      where: {
+        userId: user.id
+      }
+    }),
+    prisma.card.count({
+      where: {
+        userId: user.id,
+        nextReviewDate: {
+          lte: today
+        }
+      }
+    }),
+    prisma.card.count({
+      where: {
+        userId: user.id,
+        reviewCount: {
+          gte: 3
+        }
+      }
+    }),
     getOrCreateAppSettings(prisma),
     prisma.userCatalogWord.count({
       where: {
@@ -83,20 +99,17 @@ export async function GET(request: NextRequest) {
       }
     })
   ])
-  const allCards = allCardsMaybeFiltered ?? cards
 
   const serializedCards = cards.map((card) => serializeCard(card))
-  const summary = buildDashboardSummary(
-    allCards.map((card) => serializeCard(card)),
-    user.streak,
-    settings.reviewLives
-  )
 
   return NextResponse.json({
     cards: serializedCards,
     summary: {
-      ...summary,
-      dueToday: allCards.filter((card) => isDueDate(card.nextReviewDate, today)).length
+      streak: user.streak,
+      reviewLives: settings.reviewLives,
+      totalCards,
+      dueToday,
+      mastered
     },
     dailyCatalog: {
       claimedToday,
@@ -169,10 +182,13 @@ export async function POST(request: NextRequest) {
           nextReviewDate: getTodayDateKey(),
           lastReviewResult: "unknown"
         },
-    include: {
-      catalogWord: true
-    }
+    select: serializedCardSelect
   })
+
+  revalidateTag(userCacheTag.cards(user.id))
+  revalidateTag(userCacheTag.review(user.id))
+  revalidateTag(userCacheTag.stats(user.id))
+  revalidateTag(adminCacheTag.analytics)
 
   await prisma.appAnalytics.upsert({
     where: {

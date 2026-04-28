@@ -70,6 +70,8 @@ model Card {
   wrongCount     Int      @default(0)
 
   @@index([userId, catalogWordId])
+  @@index([userId, nextReviewDate, dateAdded(sort: Desc)], map: "idx_card_user_due_added")
+  @@index([userId, lastReviewResult, nextReviewDate], map: "idx_card_user_status_due")
 }
 
 model ReviewLog {
@@ -79,6 +81,9 @@ model ReviewLog {
   cardId    String
   result    String
   createdAt DateTime @default(now())
+
+  @@index([userId, createdAt(sort: Desc)], map: "idx_reviewlog_user_created_desc")
+  @@index([createdAt(sort: Desc), userId], map: "idx_reviewlog_created_user")
 }
 
 model AppAnalytics {
@@ -113,7 +118,8 @@ model WordCatalog {
   cards        Card[]
   claims       UserCatalogWord[]
 
-  @@index([cefrLevel, isPublished, priority])
+  @@index([isPublished, cefrLevel, priority(sort: Desc), createdAt], map: "idx_wordcatalog_pub_level_priority_created")
+  @@index([reviewStatus, enrichmentStatus], map: "idx_wordcatalog_review_enrichment")
   @@index([source, sourceRef])
 }
 

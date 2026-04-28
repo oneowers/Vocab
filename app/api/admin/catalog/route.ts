@@ -1,10 +1,12 @@
+import { Prisma } from "@prisma/client"
 import { NextRequest, NextResponse } from "next/server"
-import type { Prisma } from "@prisma/client"
+import { revalidateTag } from "next/cache"
 
 import { getOptionalAuthUser } from "@/lib/auth"
 import { isCefrLevel, resolveTranslationDetails } from "@/lib/catalog"
 import { canPublishCatalogWord, getCatalogReviewStatus } from "@/lib/cefr-seed"
 import { getPrisma } from "@/lib/prisma"
+import { adminCacheTag, cacheAdminResource } from "@/lib/server-cache"
 import { serializeWordCatalog } from "@/lib/serializers"
 
 async function requireAdminUser() {
@@ -27,6 +29,199 @@ async function requireAdminUser() {
   }
 }
 
+interface CatalogFilters {
+  page: number
+  pageSize: number
+  search?: string
+  cefrLevel?: string
+  topic?: string
+  published?: string
+  enrichmentStatus?: "pending" | "completed" | "failed"
+  reviewStatus?: "draft" | "approved"
+}
+
+function normalizeFilters(request: NextRequest): CatalogFilters {
+  const page = Math.max(Number(request.nextUrl.searchParams.get("page") || "1"), 1)
+  const search = request.nextUrl.searchParams.get("search")?.trim() || undefined
+  const cefrLevel = request.nextUrl.searchParams.get("cefrLevel")?.trim().toUpperCase() || undefined
+  const topic = request.nextUrl.searchParams.get("topic")?.trim() || undefined
+  const published = request.nextUrl.searchParams.get("published")?.trim() || undefined
+  const enrichmentStatus = request.nextUrl.searchParams.get("enrichmentStatus")?.trim()
+  const reviewStatus = request.nextUrl.searchParams.get("reviewStatus")?.trim()
+
+  return {
+    page,
+    pageSize: 50,
+    search,
+    cefrLevel,
+    topic,
+    published,
+    enrichmentStatus:
+      enrichmentStatus === "pending" || enrichmentStatus === "completed" || enrichmentStatus === "failed"
+        ? enrichmentStatus
+        : undefined,
+    reviewStatus:
+      reviewStatus === "draft" || reviewStatus === "approved" ? reviewStatus : undefined
+  }
+}
+
+function buildWhere(filters: CatalogFilters): Prisma.WordCatalogWhereInput {
+  return {
+    ...(filters.cefrLevel && isCefrLevel(filters.cefrLevel) ? { cefrLevel: filters.cefrLevel } : {}),
+    ...(filters.topic ? { topic: { contains: filters.topic, mode: "insensitive" as const } } : {}),
+    ...(filters.published === "published"
+      ? { isPublished: true }
+      : filters.published === "draft"
+        ? { isPublished: false }
+        : {}),
+    ...(filters.enrichmentStatus ? { enrichmentStatus: filters.enrichmentStatus } : {}),
+    ...(filters.reviewStatus ? { reviewStatus: filters.reviewStatus } : {})
+  }
+}
+
+type RawWordCatalogRow = {
+  id: string
+  word: string
+  translation: string
+  translationAlternatives: string[]
+  cefrLevel: string
+  partOfSpeech: string
+  topic: string
+  example: string
+  phonetic: string
+  priority: number
+  isPublished: boolean
+  source: string | null
+  sourceRef: string | null
+  enrichmentStatus: string
+  reviewStatus: string
+  lastEnrichedAt: Date | null
+  enrichmentError: string | null
+  createdAt: Date
+  updatedAt: Date
+}
+
+async function getCatalogPayload(filters: CatalogFilters) {
+  const prisma = getPrisma()
+  const where = buildWhere(filters)
+  const skip = (filters.page - 1) * filters.pageSize
+
+  if (!filters.search) {
+    const [totalItems, items] = await Promise.all([
+      prisma.wordCatalog.count({ where }),
+      prisma.wordCatalog.findMany({
+        where,
+        orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
+        skip,
+        take: filters.pageSize
+      })
+    ])
+
+    return {
+      items: items.map((item) => serializeWordCatalog(item)),
+      page: filters.page,
+      totalPages: Math.max(Math.ceil(totalItems / filters.pageSize), 1),
+      totalItems
+    }
+  }
+
+  const conditions: Prisma.Sql[] = [
+    Prisma.sql`"search_vector" @@ websearch_to_tsquery('simple', ${filters.search})`
+  ]
+
+  if (filters.cefrLevel && isCefrLevel(filters.cefrLevel)) {
+    conditions.push(Prisma.sql`"cefrLevel" = ${filters.cefrLevel}`)
+  }
+
+  if (filters.topic) {
+    conditions.push(Prisma.sql`"topic" ILIKE ${`%${filters.topic}%`}`)
+  }
+
+  if (filters.published === "published") {
+    conditions.push(Prisma.sql`"isPublished" = true`)
+  } else if (filters.published === "draft") {
+    conditions.push(Prisma.sql`"isPublished" = false`)
+  }
+
+  if (filters.enrichmentStatus) {
+    conditions.push(Prisma.sql`"enrichmentStatus" = ${filters.enrichmentStatus}`)
+  }
+
+  if (filters.reviewStatus) {
+    conditions.push(Prisma.sql`"reviewStatus" = ${filters.reviewStatus}`)
+  }
+
+  const whereClause = Prisma.sql`WHERE ${Prisma.join(conditions, " AND ")}`
+
+  const [countRows, items] = await Promise.all([
+    prisma.$queryRaw<Array<{ count: bigint }>>(Prisma.sql`
+      SELECT COUNT(*)::bigint AS count
+      FROM "WordCatalog"
+      ${whereClause}
+    `),
+    prisma.$queryRaw<RawWordCatalogRow[]>(Prisma.sql`
+      SELECT
+        "id",
+        "word",
+        "translation",
+        "translationAlternatives",
+        "cefrLevel",
+        "partOfSpeech",
+        "topic",
+        "example",
+        "phonetic",
+        "priority",
+        "isPublished",
+        "source",
+        "sourceRef",
+        "enrichmentStatus",
+        "reviewStatus",
+        "lastEnrichedAt",
+        "enrichmentError",
+        "createdAt",
+        "updatedAt"
+      FROM "WordCatalog"
+      ${whereClause}
+      ORDER BY "priority" DESC, "createdAt" ASC
+      OFFSET ${skip}
+      LIMIT ${filters.pageSize}
+    `)
+  ])
+
+  const totalItems = Number(countRows[0]?.count ?? 0n)
+
+  return {
+    items: items.map((item) =>
+      serializeWordCatalog({
+        ...item,
+        cefrLevel: item.cefrLevel as never,
+        enrichmentStatus: item.enrichmentStatus as never,
+        reviewStatus: item.reviewStatus as never
+      })
+    ),
+    page: filters.page,
+    totalPages: Math.max(Math.ceil(totalItems / filters.pageSize), 1),
+    totalItems
+  }
+}
+
+function getCachedCatalogPayload(filters: CatalogFilters) {
+  return cacheAdminResource(
+    [
+      "admin-catalog",
+      String(filters.page),
+      filters.search ?? "",
+      filters.cefrLevel ?? "",
+      filters.topic ?? "",
+      filters.published ?? "",
+      filters.enrichmentStatus ?? "",
+      filters.reviewStatus ?? ""
+    ],
+    [adminCacheTag.catalog],
+    () => getCatalogPayload(filters)
+  )
+}
+
 export async function GET(request: NextRequest) {
   const auth = await requireAdminUser()
 
@@ -34,60 +229,7 @@ export async function GET(request: NextRequest) {
     return auth.error
   }
 
-  const page = Math.max(Number(request.nextUrl.searchParams.get("page") || "1"), 1)
-  const search = request.nextUrl.searchParams.get("search")?.trim()
-  const cefrLevel = request.nextUrl.searchParams.get("cefrLevel")?.trim().toUpperCase()
-  const topic = request.nextUrl.searchParams.get("topic")?.trim()
-  const published = request.nextUrl.searchParams.get("published")?.trim()
-  const enrichmentStatus = request.nextUrl.searchParams.get("enrichmentStatus")?.trim()
-  const reviewStatus = request.nextUrl.searchParams.get("reviewStatus")?.trim()
-  const pageSize = 50
-  const prisma = getPrisma()
-  const normalizedEnrichmentStatus =
-    enrichmentStatus === "pending" || enrichmentStatus === "completed" || enrichmentStatus === "failed"
-      ? enrichmentStatus
-      : undefined
-  const normalizedReviewStatus =
-    reviewStatus === "draft" || reviewStatus === "approved" ? reviewStatus : undefined
-
-  const where: Prisma.WordCatalogWhereInput = {
-    ...(search
-      ? {
-          OR: [
-            { word: { contains: search, mode: "insensitive" as const } },
-            { translation: { contains: search, mode: "insensitive" as const } },
-            { topic: { contains: search, mode: "insensitive" as const } },
-            { partOfSpeech: { contains: search, mode: "insensitive" as const } }
-          ]
-        }
-      : {}),
-    ...(cefrLevel && isCefrLevel(cefrLevel) ? { cefrLevel } : {}),
-    ...(topic ? { topic: { contains: topic, mode: "insensitive" as const } } : {}),
-    ...(published === "published"
-      ? { isPublished: true }
-      : published === "draft"
-        ? { isPublished: false }
-        : {}),
-    ...(normalizedEnrichmentStatus ? { enrichmentStatus: normalizedEnrichmentStatus } : {}),
-    ...(normalizedReviewStatus ? { reviewStatus: normalizedReviewStatus } : {})
-  }
-
-  const [totalItems, items] = await Promise.all([
-    prisma.wordCatalog.count({ where }),
-    prisma.wordCatalog.findMany({
-      where,
-      orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
-      skip: (page - 1) * pageSize,
-      take: pageSize
-    })
-  ])
-
-  return NextResponse.json({
-    items: items.map((item) => serializeWordCatalog(item)),
-    page,
-    totalPages: Math.max(Math.ceil(totalItems / pageSize), 1),
-    totalItems
-  })
+  return NextResponse.json(await getCachedCatalogPayload(normalizeFilters(request)))
 }
 
 export async function POST(request: NextRequest) {
@@ -191,6 +333,8 @@ export async function POST(request: NextRequest) {
       enrichmentError: null
     }
   })
+
+  revalidateTag(adminCacheTag.catalog)
 
   return NextResponse.json({ item: serializeWordCatalog(created) }, { status: 201 })
 }

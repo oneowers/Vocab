@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
+import { revalidateTag } from "next/cache"
 
 import { getOptionalAuthUser } from "@/lib/auth"
 import { isCefrLevel } from "@/lib/catalog"
 import { getPrisma } from "@/lib/prisma"
+import { userCacheTag } from "@/lib/server-cache"
 import { serializeUser } from "@/lib/serializers"
 
 export async function PATCH(request: NextRequest) {
@@ -49,6 +51,10 @@ export async function PATCH(request: NextRequest) {
       ...(nextCefrLevel !== undefined ? { cefrLevel: nextCefrLevel } : {})
     }
   })
+
+  revalidateTag(userCacheTag.profile(user.id))
+  revalidateTag(userCacheTag.cards(user.id))
+  revalidateTag(userCacheTag.review(user.id))
 
   return NextResponse.json({
     user: serializeUser(updatedUser)

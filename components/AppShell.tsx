@@ -31,14 +31,15 @@ export function AppShell({ user, children }: AppShellProps) {
   }, [pathname])
 
   useEffect(() => {
-    const appRoutes = ["/", "/dashboard", "/practice", "/review", "/profile", "/stats", "/login"]
+    // Prefetch only the lightest, most likely next hops.
+    const appRoutes = ["/", "/dashboard", "/profile", "/login"]
 
     appRoutes.forEach((href) => {
       router.prefetch(href)
     })
 
     if (user?.role === "ADMIN") {
-      ;["/admin", "/admin/users", "/admin/cards", "/admin/analytics"].forEach((href) => {
+      ;["/admin", "/admin/users"].forEach((href) => {
         router.prefetch(href)
       })
     }

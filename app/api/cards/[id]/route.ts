@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
+import { revalidateTag } from "next/cache"
 
 import { getOptionalAuthUser } from "@/lib/auth"
+import { serializedCardSelect } from "@/lib/db-selects"
 import { getPrisma } from "@/lib/prisma"
+import { adminCacheTag, userCacheTag } from "@/lib/server-cache"
 import { serializeCard } from "@/lib/serializers"
 
 export async function PATCH(
@@ -24,9 +27,7 @@ export async function PATCH(
       id: context.params.id,
       userId: user.id
     },
-    include: {
-      catalogWord: true
-    }
+    select: serializedCardSelect
   })
 
   if (!existing) {
@@ -45,9 +46,7 @@ export async function PATCH(
     where: {
       id: existing.id
     },
-    include: {
-      catalogWord: true
-    },
+    select: serializedCardSelect,
     data: {
       nextReviewDate: body.nextReviewDate ?? existing.nextReviewDate,
       lastReviewResult: body.lastReviewResult ?? existing.lastReviewResult,
@@ -57,6 +56,10 @@ export async function PATCH(
       wrongCount: typeof body.wrongCount === "number" ? body.wrongCount : existing.wrongCount
     }
   })
+
+  revalidateTag(userCacheTag.cards(user.id))
+  revalidateTag(userCacheTag.review(user.id))
+  revalidateTag(userCacheTag.stats(user.id))
 
   return NextResponse.json({ card: serializeCard(card) })
 }
@@ -81,9 +84,7 @@ export async function DELETE(
       id: context.params.id,
       userId: user.id
     },
-    include: {
-      catalogWord: true
-    }
+    select: serializedCardSelect
   })
 
   if (!existing) {
@@ -95,6 +96,11 @@ export async function DELETE(
       id: existing.id
     }
   })
+
+  revalidateTag(userCacheTag.cards(user.id))
+  revalidateTag(userCacheTag.review(user.id))
+  revalidateTag(userCacheTag.stats(user.id))
+  revalidateTag(adminCacheTag.analytics)
 
   return NextResponse.json({ success: true })
 }

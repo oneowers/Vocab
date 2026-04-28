@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
+import { revalidateTag } from "next/cache"
 
 import { getDisplayName } from "@/lib/auth"
 import { getTodayDateKey } from "@/lib/date"
 import { hasDatabaseEnv } from "@/lib/config"
 import { getPrisma } from "@/lib/prisma"
+import { adminCacheTag } from "@/lib/server-cache"
 import { createSupabaseServerClient } from "@/lib/supabase-server"
 
 export async function GET(request: NextRequest) {
@@ -62,6 +64,8 @@ export async function GET(request: NextRequest) {
           newUsers: 1
         }
       })
+
+      revalidateTag(adminCacheTag.analytics)
     } else {
       await prisma.user.update({
         where: {

@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
+import { revalidateTag } from "next/cache"
 
 import { getOptionalAuthUser } from "@/lib/auth"
 import { getOrCreateAppSettings, isTranslationEngine, isTranslationProvider } from "@/lib/catalog"
 import { getPrisma } from "@/lib/prisma"
+import { sharedCacheTag } from "@/lib/server-cache"
 import { serializeAppSettings } from "@/lib/serializers"
 
 async function requireAdminUser() {
@@ -122,6 +124,8 @@ export async function PATCH(request: NextRequest) {
       translationPriority: normalizedPriority
     }
   })
+
+  revalidateTag(sharedCacheTag.appSettings)
 
   return NextResponse.json({
     settings: serializeAppSettings(settings)

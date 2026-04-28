@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { getOptionalAuthUser } from "@/lib/auth"
-import { buildAdminAnalytics } from "@/lib/server-data"
+import { getAdminAnalyticsData } from "@/lib/server-data"
 
 export async function GET() {
   const user = await getOptionalAuthUser()
@@ -14,5 +14,5 @@ export async function GET() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
-  return NextResponse.json(await buildAdminAnalytics())
+  return NextResponse.json(await getAdminAnalyticsData())
 }

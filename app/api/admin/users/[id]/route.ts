@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
+import { revalidateTag } from "next/cache"
 
 import { getOptionalAuthUser } from "@/lib/auth"
 import { getPrisma } from "@/lib/prisma"
+import { adminCacheTag } from "@/lib/server-cache"
 
 export async function PATCH(
   request: NextRequest,
@@ -39,6 +41,8 @@ export async function PATCH(
     }
   })
 
+  revalidateTag(adminCacheTag.analytics)
+
   return NextResponse.json({ role: updated.role })
 }
 
@@ -65,6 +69,8 @@ export async function DELETE(
       id: context.params.id
     }
   })
+
+  revalidateTag(adminCacheTag.analytics)
 
   return NextResponse.json({ success: true })
 }

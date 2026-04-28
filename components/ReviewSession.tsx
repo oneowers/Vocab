@@ -3,8 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion"
 import { ArrowLeft, ArrowRight, CheckCircle2, Sparkles, Zap, Trophy, ArrowUpRight, Plus } from "lucide-react"
 import Link from "next/link"
-import { Outfit } from "next/font/google"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 import { FlipCard } from "@/components/FlipCard"
 import { QuizCard, type QuizMatchItem } from "@/components/QuizCard"
@@ -41,11 +40,6 @@ const REVIEW_STEPS: Array<{ value: ReviewStage; label: string }> = [
   { value: "quiz", label: "Quiz" },
   { value: "write", label: "Write" }
 ]
-
-const outfit = Outfit({
-  subsets: ["latin"],
-  weight: ["500", "600", "700", "800"]
-})
 
 function shuffleItems<T>(items: T[]) {
   const nextItems = [...items]
@@ -158,7 +152,11 @@ function SkeletonPractice() {
   )
 }
 
-export function ReviewSession() {
+interface ReviewSessionProps {
+  initialData?: CardsResponse | null
+}
+
+export function ReviewSession({ initialData = null }: ReviewSessionProps) {
   const [guestMode, setGuestMode] = useState(false)
   const [allCards, setAllCards] = useState<CardRecord[]>([])
   const [dueCards, setDueCards] = useState<CardRecord[]>([])
@@ -183,6 +181,7 @@ export function ReviewSession() {
   const [dailyCatalog, setDailyCatalog] = useState<DailyCatalogStatus | null>(null)
   const [lastActionStatus, setLastActionStatus] = useState<"idle" | "correct" | "incorrect" | "active">("idle")
   const { showToast } = useToast()
+  const todayKey = getTodayDateKey()
   const {
     data: cardsPayload,
     loading,
@@ -190,7 +189,8 @@ export function ReviewSession() {
   } = useClientResource<CardsResponse>({
     key: "cards:collection",
     enabled: !guestMode,
-    revalidateOnMount: false,
+    initialData,
+    revalidateOnMount: initialData === null,
     loader: async () => {
       const response = await fetch("/api/cards")
 
@@ -215,10 +215,10 @@ export function ReviewSession() {
 
     const cards = sortDueCards(getGuestCards())
     setAllCards(cards)
-    setDueCards(cards.filter((card) => card.nextReviewDate <= getTodayDateKey()))
+    setDueCards(cards.filter((card) => card.nextReviewDate <= todayKey))
     setStreak(getGuestStreak())
     setReviewLives(DEFAULT_GUEST_REVIEW_LIVES)
-  }, [])
+  }, [todayKey])
 
   useEffect(() => {
     if (guestMode || !cardsPayload) {
@@ -227,27 +227,36 @@ export function ReviewSession() {
 
     const sortedCards = sortDueCards(cardsPayload.cards)
     setAllCards(sortedCards)
-    setDueCards(sortedCards.filter((card) => card.nextReviewDate <= getTodayDateKey()))
+    setDueCards(sortedCards.filter((card) => card.nextReviewDate <= todayKey))
     setStreak(cardsPayload.summary.streak)
     setReviewLives(cardsPayload.summary.reviewLives)
     setDailyCatalog(cardsPayload.dailyCatalog)
-  }, [cardsPayload, guestMode])
+  }, [cardsPayload, guestMode, todayKey])
 
-  const availableCards = dueCards.filter((card) => matchesCardStatus(card, selectedStatus))
-  const allAvailableCards = allCards.filter((card) => matchesCardStatus(card, selectedStatus))
+  const availableCards = useMemo(
+    () => dueCards.filter((card) => matchesCardStatus(card, selectedStatus)),
+    [dueCards, selectedStatus]
+  )
+  const allAvailableCards = useMemo(
+    () => allCards.filter((card) => matchesCardStatus(card, selectedStatus)),
+    [allCards, selectedStatus]
+  )
   const activeStage = REVIEW_STEPS[activeStageIndex]?.value ?? "flip"
-  const currentCard =
-    activeStage === "flip"
-      ? sessionCards[flipIndex]
-      : activeStage === "write"
-        ? sessionCards[writeIndex]
-        : null
+  const currentCard = useMemo(
+    () =>
+      activeStage === "flip"
+        ? sessionCards[flipIndex]
+        : activeStage === "write"
+          ? sessionCards[writeIndex]
+          : null,
+    [activeStage, flipIndex, sessionCards, writeIndex]
+  )
   const currentQuizBatch = quizBatches[quizBatchIndex]
 
   function refreshCardCollections(nextCards: CardRecord[]) {
     const sortedCards = sortDueCards(nextCards)
     setAllCards(sortedCards)
-    setDueCards(sortedCards.filter((card) => card.nextReviewDate <= getTodayDateKey()))
+    setDueCards(sortedCards.filter((card) => card.nextReviewDate <= todayKey))
     void revalidate()
   }
 
@@ -519,7 +528,7 @@ export function ReviewSession() {
 
   if (sessionStatus === "idle") {
     return (
-      <div className={outfit.className}>
+      <div>
         <PracticeBackground status="idle" />
         <ReviewSessionOverview
           currentStage="flip"
@@ -543,7 +552,7 @@ export function ReviewSession() {
 
   if (sessionStatus === "saving" || sessionStatus === "save-error") {
     return (
-      <div className={`${styles.sessionContainer} flex items-center justify-center ${outfit.className}`}>
+      <div className={`${styles.sessionContainer} flex items-center justify-center`}>
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -590,7 +599,7 @@ export function ReviewSession() {
 
   if (sessionStatus === "success") {
     return (
-      <div className={`${styles.sessionContainer} flex items-center justify-center ${outfit.className}`}>
+      <div className={`${styles.sessionContainer} flex items-center justify-center`}>
         <motion.div 
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -636,10 +645,27 @@ export function ReviewSession() {
     return null
   }
 
-  const progress = getActiveStageProgress()
+  const progress = useMemo(() => getActiveStageProgress(), [
+    activeStage,
+    flipIndex,
+    quizBatchIndex,
+    quizBatches.length,
+    quizSolvedPairs,
+    sessionCards.length,
+    writeIndex
+  ])
+  const stageCounterLabel = useMemo(() => getStageCounterLabel(), [
+    activeStage,
+    flipIndex,
+    quizBatchIndex,
+    quizBatches.length,
+    quizSolvedPairs,
+    sessionCards.length,
+    writeIndex
+  ])
 
   return (
-    <div className={`${styles.sessionContainer} ${outfit.className}`}>
+    <div className={styles.sessionContainer}>
       <PracticeBackground status={lastActionStatus} />
       
       <motion.header 
@@ -665,7 +691,7 @@ export function ReviewSession() {
 
         <div className={styles.sessionHeaderStatus}>
           <div className={styles.sessionCounterGroup}>
-            <span className={styles.sessionHeaderEyebrow}>{getStageCounterLabel()}</span>
+            <span className={styles.sessionHeaderEyebrow}>{stageCounterLabel}</span>
             <div className={styles.livesIndicator}>
               {Array.from({ length: reviewLives }).map((_, i) => (
                 <motion.div 
