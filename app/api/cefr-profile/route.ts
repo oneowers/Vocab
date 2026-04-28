@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server"
 
 import { getOptionalAuthUser } from "@/lib/auth"
 import { getOrCreateAppSettings } from "@/lib/catalog"
-import { isGuestModeEnabled } from "@/lib/config"
 import { fetchCefrProfile } from "@/lib/cefr-profile"
 import { getPrisma } from "@/lib/prisma"
 import { isRateLimited } from "@/lib/throttle"
@@ -19,7 +18,7 @@ function getThrottleKey(request: NextRequest, userId: string | null) {
 export async function POST(request: NextRequest) {
   const user = await getOptionalAuthUser()
 
-  if (!user && !isGuestModeEnabled()) {
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 

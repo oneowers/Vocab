@@ -436,6 +436,10 @@ export async function ensureCatalogWordLocalized(
   const nextPhonetic = dictionary.phonetic?.trim() || currentPhonetic
   const nextStatus =
     nextTranslation && nextExample && nextPhonetic ? "completed" : "failed"
+  const nextSource =
+    translationResult?.source && translationResult.source !== "catalog"
+      ? translationResult.source
+      : word.source
 
   return prisma.wordCatalog.update({
     where: {
@@ -446,6 +450,7 @@ export async function ensureCatalogWordLocalized(
       translationAlternatives: nextTranslationAlternatives,
       example: nextExample,
       phonetic: nextPhonetic,
+      source: nextSource,
       enrichmentStatus: nextStatus,
       enrichmentError:
         nextStatus === "failed"

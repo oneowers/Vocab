@@ -275,6 +275,8 @@
   flex-direction: column;
   justify-content: center;
   position: relative;
+  overflow: hidden;
+  isolation: isolate;
   z-index: 10;
 }
 

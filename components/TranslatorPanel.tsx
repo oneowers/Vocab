@@ -1,17 +1,29 @@
 "use client"
 
+import { motion } from "framer-motion"
 import { useEffect, useRef, useState } from "react"
-import { ArrowLeftRight, SlidersHorizontal, Volume2 } from "lucide-react"
+import { ArrowLeftRight, Sparkles, Volume2 } from "lucide-react"
 
 import { useToast } from "@/components/Toast"
 import { updateClientResourceData } from "@/hooks/useClientResource"
 import { getTooltipMessage } from "@/lib/config"
 import { speakText, canSpeak } from "@/lib/tts"
-import type { CardRecord, CardsResponse, CefrLevel, CefrProfilePayload, Direction, DictionaryPayload, TranslationPayload } from "@/lib/types"
+import type {
+  CardRecord,
+  CardsResponse,
+  CefrLevel,
+  CefrProfilePayload,
+  DailyCatalogStatus,
+  Direction,
+  DictionaryPayload,
+  TranslationPayload
+} from "@/lib/types"
 
 interface TranslatorPanelProps {
   guestMode: boolean
   onAddCard: (card: CardRecord) => void
+  dailyCatalog?: DailyCatalogStatus | null
+  onOpenDailyWords?: () => void
 }
 
 const CEFR_STYLES: Record<CefrLevel, { badge: string; dot: string; label: string }> = {
@@ -57,6 +69,8 @@ const CEFR_PROFILE_TEXT_STYLES: Record<string, string> = {
   "Off-List": "text-amber-300"
 }
 
+const SWAP_ANIMATION_MS = 520
+
 function mergeTranslationAlternatives(terms: string[], excludedTerms: string[]) {
   const excluded = new Set(excludedTerms.map((term) => term.trim().toLowerCase()).filter(Boolean))
   const seen = new Set<string>()
@@ -77,7 +91,9 @@ function mergeTranslationAlternatives(terms: string[], excludedTerms: string[]) 
 
 export function TranslatorPanel({
   guestMode,
-  onAddCard
+  onAddCard,
+  dailyCatalog = null,
+  onOpenDailyWords
 }: TranslatorPanelProps) {
   const queryTextareaRef = useRef<HTMLTextAreaElement | null>(null)
   const [query, setQuery] = useState("")
@@ -95,6 +111,7 @@ export function TranslatorPanel({
   const [example, setExample] = useState<string | null>(null)
   const [phonetic, setPhonetic] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [loadingDetails, setLoadingDetails] = useState(false)
   const [saving, setSaving] = useState(false)
   const [swapping, setSwapping] = useState(false)
   const { showToast } = useToast()
@@ -105,17 +122,23 @@ export function TranslatorPanel({
       return
     }
 
+    const trimmedQuery = query.trim()
     setLoading(true)
+    setLoadingDetails(false)
+    setTranslation("")
     setTranslationAlternatives([])
     setTranslationSource(null)
     setCefrLevel(null)
+    setCefrProfilerEnabled(false)
     setCefrProfile(null)
     setSelectedCefrWord(null)
+    setExample(null)
+    setPhonetic(null)
 
     try {
       const languagePair = direction === "en-ru" ? "en|ru" : "ru|en"
       const translationResponse = await fetch(
-        `/api/translate?q=${encodeURIComponent(query.trim())}&langpair=${encodeURIComponent(languagePair)}`,
+        `/api/translate?q=${encodeURIComponent(trimmedQuery)}&langpair=${encodeURIComponent(languagePair)}`,
         {
           cache: "no-store"
         }
@@ -131,57 +154,63 @@ export function TranslatorPanel({
       setTranslation(translated)
       const nextTranslationAlternatives = mergeTranslationAlternatives(
         translationPayload.translationAlternatives,
-        [translated, query.trim()]
+        [translated, trimmedQuery]
       )
       setTranslationAlternatives(nextTranslationAlternatives)
       setTranslationSource(translationPayload.source)
       setCefrLevel(translationPayload.cefrLevel)
       setCefrProfilerEnabled(translationPayload.cefrProfilerEnabled)
+      setLoading(false)
 
       const englishText =
-        direction === "en-ru" ? query.trim() : translated.trim()
+        direction === "en-ru" ? trimmedQuery : translated.trim()
+      const dictionaryWord = direction === "en-ru" ? trimmedQuery : translated
+      const shouldFetchCefrProfile =
+        translationPayload.cefrProfilerEnabled &&
+        Boolean(englishText) &&
+        !(translationPayload.source === "catalog" && !trimmedQuery.includes(" "))
 
-      if (translationPayload.cefrProfilerEnabled && englishText) {
-        const cefrProfileResponse = await fetch("/api/cefr-profile", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            text: englishText
-          })
-        })
+      if (shouldFetchCefrProfile || dictionaryWord) {
+        setLoadingDetails(true)
 
-        if (cefrProfileResponse.ok) {
+        const [cefrProfileResult, dictionaryResult] = await Promise.allSettled([
+          shouldFetchCefrProfile
+            ? fetch("/api/cefr-profile", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                  text: englishText
+                })
+              })
+            : Promise.resolve(null),
+          dictionaryWord
+            ? fetch(`/api/dictionary?word=${encodeURIComponent(dictionaryWord)}`, {
+                cache: "no-store"
+              })
+            : Promise.resolve(null)
+        ])
+
+        if (cefrProfileResult.status === "fulfilled" && cefrProfileResult.value?.ok) {
           const cefrProfilePayload =
-            (await cefrProfileResponse.json()) as CefrProfilePayload
+            (await cefrProfileResult.value.json()) as CefrProfilePayload
           setCefrProfile(cefrProfilePayload)
         }
-      }
 
-      const dictionaryWord = direction === "en-ru" ? query.trim() : translated
-      if (dictionaryWord) {
-        const dictionaryResponse = await fetch(
-          `/api/dictionary?word=${encodeURIComponent(dictionaryWord)}`,
-          {
-            cache: "no-store"
-          }
-        )
-
-        if (dictionaryResponse.ok) {
+        if (dictionaryResult.status === "fulfilled" && dictionaryResult.value?.ok) {
           const dictionaryPayload =
-            (await dictionaryResponse.json()) as DictionaryPayload
+            (await dictionaryResult.value.json()) as DictionaryPayload
           setExample(dictionaryPayload.example)
           setPhonetic(dictionaryPayload.phonetic)
-        } else {
-          setExample(null)
-          setPhonetic(null)
         }
+
+        setLoadingDetails(false)
       }
     } catch {
       showToast("Translation is temporarily unavailable.", "error")
-    } finally {
       setLoading(false)
+      setLoadingDetails(false)
     }
   }
 
@@ -254,24 +283,21 @@ export function TranslatorPanel({
     const nextTranslation = query
 
     setSwapping(true)
-
-    window.setTimeout(() => {
-      setDirection(nextDirection)
-      setQuery(nextQuery)
-      setTranslation(nextTranslation)
-      setTranslationAlternatives([])
-      setTranslationSource(null)
-      setCefrLevel(null)
-      setCefrProfilerEnabled(false)
-      setCefrProfile(null)
-      setSelectedCefrWord(null)
-      setExample(null)
-      setPhonetic(null)
-    }, 190)
+    setDirection(nextDirection)
+    setQuery(nextQuery)
+    setTranslation(nextTranslation)
+    setTranslationAlternatives([])
+    setTranslationSource(null)
+    setCefrLevel(null)
+    setCefrProfilerEnabled(false)
+    setCefrProfile(null)
+    setSelectedCefrWord(null)
+    setExample(null)
+    setPhonetic(null)
 
     window.setTimeout(() => {
       setSwapping(false)
-    }, 420)
+    }, SWAP_ANIMATION_MS)
   }
 
   const ttsLanguage = direction === "en-ru" ? "en-US" : "ru-RU"
@@ -291,6 +317,11 @@ export function TranslatorPanel({
     cefrProfilerEnabled &&
     Boolean(cefrProfile?.segments.length) &&
     ((direction === "en-ru" && query.trim()) || (direction === "ru-en" && translation.trim()))
+  const dailyWordsLabel = dailyCatalog
+    ? dailyCatalog.remainingToday > 0
+      ? `${dailyCatalog.remainingToday} new words`
+      : "Daily words"
+    : "Daily words"
 
   useEffect(() => {
     const textarea = queryTextareaRef.current
@@ -313,10 +344,22 @@ export function TranslatorPanel({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-[#28282f] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition hover:bg-[#303039]"
-            aria-label="Translation options"
+            onClick={onOpenDailyWords}
+            disabled={!dailyCatalog || !onOpenDailyWords}
+            className={`flex min-h-11 items-center gap-2 rounded-full px-4 text-[13px] font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition ${
+              dailyCatalog && onOpenDailyWords
+                ? "bg-[#28282f] hover:bg-[#303039]"
+                : "cursor-not-allowed bg-[#202027] text-white/38"
+            }`}
+            aria-label="Open daily words"
           >
-            <SlidersHorizontal size={20} />
+            <Sparkles size={16} className={dailyCatalog?.remainingToday ? "text-[#9ec0ff]" : "text-white/40"} />
+            <span className="hidden sm:inline">{dailyWordsLabel}</span>
+            {dailyCatalog ? (
+              <span className="rounded-full bg-white/[0.08] px-2 py-0.5 text-[11px] font-semibold text-white/72">
+                {dailyCatalog.remainingToday}
+              </span>
+            ) : null}
           </button>
           <button
             type="button"
@@ -364,8 +407,17 @@ export function TranslatorPanel({
         </div>
       </div>
 
-      <div className={`translate-card-grid grid gap-3 lg:grid-cols-2 ${swapping ? "translate-card-grid--swapping" : ""}`}>
-        <div className={`translate-card flex flex-col p-4 md:p-6 ${loading ? "translate-card--loading" : ""}`}>
+      <div className="translate-card-grid grid gap-3 lg:grid-cols-2">
+        <motion.div
+          layout
+          transition={{
+            layout: {
+              duration: 0.52,
+              ease: [0.22, 1, 0.36, 1]
+            }
+          }}
+          className={`translate-card flex flex-col p-4 md:p-6 ${loading ? "translate-card--loading" : ""}`}
+        >
           <div className="flex flex-1 flex-col">
             <div className="mb-3 flex items-center justify-between gap-3">
               <span className="text-[12px] font-bold uppercase tracking-[0.08em] text-white/42">
@@ -477,10 +529,19 @@ export function TranslatorPanel({
               </button>
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        <div className={`translate-card flex min-h-[260px] flex-col p-5 md:min-h-[320px] md:p-6 ${loading ? "translate-card--loading" : ""}`}>
-          {loading ? (
+        <motion.div
+          layout
+          transition={{
+            layout: {
+              duration: 0.52,
+              ease: [0.22, 1, 0.36, 1]
+            }
+          }}
+          className={`translate-card flex min-h-[260px] flex-col p-5 md:min-h-[320px] md:p-6 ${(loading && !translation) ? "translate-card--loading" : ""}`}
+        >
+          {loading && !translation ? (
             <div className="translate-result-loading flex flex-1 flex-col">
               <div className="h-8 w-2/3 rounded-full bg-white/[0.09]" />
               <div className="mt-4 h-4 w-1/3 rounded-full bg-white/[0.055]" />
@@ -533,6 +594,9 @@ export function TranslatorPanel({
                       </div>
                     </div>
                   )}
+                  {loadingDetails && !example && !phonetic ? (
+                    <p className="text-[13px] text-white/40">Loading details...</p>
+                  ) : null}
                   {example && (
                     <p className="translate-chip-enter border-l border-white/[0.1] pl-3 text-[14px] leading-relaxed text-white/58">{example}</p>
                   )}
@@ -569,7 +633,7 @@ export function TranslatorPanel({
               Translation
             </div>
           )}
-        </div>
+        </motion.div>
       </div>
     </section>
   )

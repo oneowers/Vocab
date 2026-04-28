@@ -3,7 +3,7 @@ export function isLocalDevelopment() {
 }
 
 export function isGuestModeEnabled() {
-  return process.env.NEXT_PUBLIC_GUEST_MODE === "true" || isLocalDevelopment()
+  return false
 }
 
 export function hasSupabaseEnv() {

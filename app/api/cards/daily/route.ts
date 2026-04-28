@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { revalidateTag } from "next/cache"
 
 import { getOptionalAuthUser } from "@/lib/auth"
@@ -7,15 +7,10 @@ import { serializedCardSelect } from "@/lib/db-selects"
 import { getTodayDateKey } from "@/lib/date"
 import { getPrisma } from "@/lib/prisma"
 import { adminCacheTag, userCacheTag } from "@/lib/server-cache"
-import { serializeCard } from "@/lib/serializers"
+import { serializeCard, type SerializableCard } from "@/lib/serializers"
+import type { CefrLevel } from "@/lib/types"
 
-export async function POST() {
-  const user = await getOptionalAuthUser()
-
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
-
+async function getDailyWordsContext(userId: string, cefrLevel: CefrLevel) {
   const prisma = getPrisma()
   const today = getTodayDateKey()
   const todayStart = new Date(`${today}T00:00:00.000Z`)
@@ -24,7 +19,7 @@ export async function POST() {
   const settings = await getOrCreateAppSettings(prisma)
   const claimedToday = await prisma.userCatalogWord.count({
     where: {
-      userId: user.id,
+      userId,
       createdAt: {
         gte: todayStart,
         lt: tomorrowStart
@@ -35,29 +30,29 @@ export async function POST() {
   const remainingToday = Math.max(settings.dailyNewCardsLimit - claimedToday, 0)
 
   if (!remainingToday) {
-    return NextResponse.json({
-      cards: [],
-      createdCount: 0,
+    return {
+      prisma,
+      today,
+      settings,
       claimedToday,
-      dailyLimit: settings.dailyNewCardsLimit,
-      remainingToday: 0,
-      limitReached: true
-    })
+      remainingToday,
+      eligibleWords: []
+    }
   }
 
   const existingClaimIds = await prisma.userCatalogWord.findMany({
     where: {
-      userId: user.id
+      userId
     },
     select: {
       wordCatalogId: true
     }
   })
 
-  const nextWords = await prisma.wordCatalog.findMany({
+  const eligibleWords = await prisma.wordCatalog.findMany({
     where: {
       isPublished: true,
-      cefrLevel: user.cefrLevel,
+      cefrLevel,
       id: {
         notIn: existingClaimIds.map((item) => item.wordCatalogId)
       }
@@ -73,7 +68,88 @@ export async function POST() {
     take: remainingToday
   })
 
-  if (!nextWords.length) {
+  return {
+    prisma,
+    today,
+    settings,
+    claimedToday,
+    remainingToday,
+    eligibleWords
+  }
+}
+
+export async function GET() {
+  const user = await getOptionalAuthUser()
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  const { settings, claimedToday, remainingToday, eligibleWords } = await getDailyWordsContext(
+    user.id,
+    user.cefrLevel
+  )
+
+  return NextResponse.json({
+    items: eligibleWords.map((word) => ({
+      id: word.id,
+      word: word.word,
+      translation: word.translation,
+      example: word.example?.trim() || null,
+      cefrLevel: word.cefrLevel
+    })),
+    claimedToday,
+    dailyLimit: settings.dailyNewCardsLimit,
+    remainingToday,
+    limitReached: remainingToday === 0
+  })
+}
+
+export async function POST(request: NextRequest) {
+  const user = await getOptionalAuthUser()
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  const body = (await request.json().catch(() => null)) as
+    | { wordCatalogIds?: string[] }
+    | null
+  const requestedIds = Array.isArray(body?.wordCatalogIds)
+    ? Array.from(new Set(body.wordCatalogIds.filter((value): value is string => typeof value === "string")))
+    : []
+  const { prisma, today, settings, claimedToday, remainingToday, eligibleWords } =
+    await getDailyWordsContext(user.id, user.cefrLevel)
+
+  if (!remainingToday) {
+    return NextResponse.json({
+      cards: [],
+      createdCount: 0,
+      claimedToday,
+      dailyLimit: settings.dailyNewCardsLimit,
+      remainingToday: 0,
+      limitReached: true
+    })
+  }
+
+  if (!eligibleWords.length) {
+    return NextResponse.json({
+      cards: [],
+      createdCount: 0,
+      claimedToday,
+      dailyLimit: settings.dailyNewCardsLimit,
+      remainingToday,
+      limitReached: false
+    })
+  }
+
+  const selectedWords =
+    requestedIds.length > 0
+      ? eligibleWords.filter((word) => requestedIds.includes(word.id))
+      : eligibleWords
+  const wordsToClaim = selectedWords.slice(0, remainingToday)
+
+  if (!wordsToClaim.length) {
     return NextResponse.json({
       cards: [],
       createdCount: 0,
@@ -85,56 +161,66 @@ export async function POST() {
   }
 
   const localizedWords = await Promise.all(
-    nextWords.map((word) => ensureCatalogWordLocalized(prisma, word.id))
+    wordsToClaim.map((word) => ensureCatalogWordLocalized(prisma, word.id))
   )
   const readyWords = localizedWords.filter((word): word is NonNullable<typeof word> => Boolean(word))
 
-  const createdCards = await prisma.$transaction(async (transaction) => {
-    await transaction.userCatalogWord.createMany({
+  if (!readyWords.length) {
+    return NextResponse.json({
+      cards: [],
+      createdCount: 0,
+      claimedToday,
+      dailyLimit: settings.dailyNewCardsLimit,
+      remainingToday,
+      limitReached: false
+    })
+  }
+
+  const cardCreateOperations = readyWords.map((word) =>
+    prisma.card.create({
+      data: {
+        userId: user.id,
+        catalogWordId: word.id,
+        original: null,
+        translation: null,
+        direction: "en-ru",
+        example: null,
+        phonetic: null,
+        nextReviewDate: today,
+        lastReviewResult: "unknown"
+      },
+      select: serializedCardSelect
+    })
+  )
+
+  const transactionResults = await prisma.$transaction([
+    prisma.userCatalogWord.createMany({
       data: readyWords.map((word) => ({
         userId: user.id,
         wordCatalogId: word.id
       }))
-    })
-
-    const cards = await Promise.all(
-      readyWords.map((word) =>
-        transaction.card.create({
-          data: {
-            userId: user.id,
-            catalogWordId: word.id,
-            original: null,
-            translation: null,
-            direction: "en-ru",
-            example: null,
-            phonetic: null,
-            nextReviewDate: today,
-            lastReviewResult: "unknown"
-          },
-          select: serializedCardSelect
-        })
-      )
-    )
-
-    if (cards.length) {
-      await transaction.appAnalytics.upsert({
-        where: {
-          date: today
-        },
-        update: {
-          newCards: {
-            increment: cards.length
-          }
-        },
-        create: {
-          date: today,
-          newCards: cards.length
+    }),
+    ...cardCreateOperations,
+    prisma.appAnalytics.upsert({
+      where: {
+        date: today
+      },
+      update: {
+        newCards: {
+          increment: readyWords.length
         }
-      })
-    }
+      },
+      create: {
+        date: today,
+        newCards: readyWords.length
+      }
+    })
+  ])
 
-    return cards
-  })
+  const createdCards = transactionResults.slice(
+    1,
+    transactionResults.length - 1
+  ) as SerializableCard[]
 
   const nextClaimedToday = claimedToday + createdCards.length
 

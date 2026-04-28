@@ -177,7 +177,7 @@ export function ReviewSessionOverview({
                     ) : (
                       <Plus size={16} className="text-blue-400" />
                     )}
-                    <span className="font-bold">{claiming ? "Processing..." : "Claim Daily Words"}</span>
+                    <span className="font-bold">{claiming ? "Processing..." : "Choose Daily Words"}</span>
                   </button>
                 )}
 

@@ -2,11 +2,9 @@ import { NextRequest, NextResponse } from "next/server"
 import { revalidateTag } from "next/cache"
 
 import { getOptionalAuthUser } from "@/lib/auth"
-import { serializedCardSelect } from "@/lib/db-selects"
 import { getTodayDateKey, getYesterdayDateKey } from "@/lib/date"
 import { getPrisma } from "@/lib/prisma"
 import { adminCacheTag, userCacheTag } from "@/lib/server-cache"
-import { serializeCard } from "@/lib/serializers"
 import { getReviewOutcome } from "@/lib/spaced-repetition"
 
 export async function POST(request: NextRequest) {
@@ -42,21 +40,18 @@ export async function POST(request: NextRequest) {
   )
 
   const prisma = getPrisma()
-  const cards = await prisma.card.findMany({
+  const matchingCardsCount = await prisma.card.count({
     where: {
       userId: user.id,
       id: {
         in: dedupedReviews.map((review) => review.cardId)
       }
-    },
-    select: serializedCardSelect
+    }
   })
 
-  if (cards.length !== dedupedReviews.length) {
+  if (matchingCardsCount !== dedupedReviews.length) {
     return NextResponse.json({ error: "Card not found" }, { status: 404 })
   }
-
-  const cardMap = new Map(cards.map((card) => [card.id, card]))
   const today = getTodayDateKey()
   const yesterday = getYesterdayDateKey(today)
   const firstReviewToday = user.lastReviewDate !== today
@@ -67,21 +62,25 @@ export async function POST(request: NextRequest) {
         ? user.streak + 1
         : 1
 
-  const operations = dedupedReviews.flatMap((review) => {
-    const card = cardMap.get(review.cardId)
+  const reviewIdsByResult = dedupedReviews.reduce<Record<"known" | "unknown", string[]>>(
+    (accumulator, review) => {
+      accumulator[review.result].push(review.cardId)
+      return accumulator
+    },
+    { known: [], unknown: [] }
+  )
+  const cardUpdateOperations = (["known", "unknown"] as const)
+    .filter((result) => reviewIdsByResult[result].length > 0)
+    .map((result) => {
+      const outcome = getReviewOutcome(result, today)
 
-    if (!card) {
-      return []
-    }
-
-    const outcome = getReviewOutcome(review.result, today)
-
-    return [
-      prisma.card.update({
+      return prisma.card.updateMany({
         where: {
-          id: card.id
+          userId: user.id,
+          id: {
+            in: reviewIdsByResult[result]
+          }
         },
-        select: serializedCardSelect,
         data: {
           nextReviewDate: outcome.nextReviewDate,
           lastReviewResult: outcome.lastReviewResult,
@@ -95,19 +94,18 @@ export async function POST(request: NextRequest) {
             increment: outcome.wrongCountDelta
           }
         }
-      }),
-      prisma.reviewLog.create({
-        data: {
-          userId: user.id,
-          cardId: card.id,
-          result: review.result
-        }
       })
-    ]
-  })
+    })
 
-  const transactionResult = await prisma.$transaction([
-    ...operations,
+  await prisma.$transaction([
+    ...cardUpdateOperations,
+    prisma.reviewLog.createMany({
+      data: dedupedReviews.map((review) => ({
+        userId: user.id,
+        cardId: review.cardId,
+        result: review.result
+      }))
+    }),
     prisma.user.update({
       where: {
         id: user.id
@@ -117,39 +115,38 @@ export async function POST(request: NextRequest) {
         lastReviewDate: today,
         lastActiveAt: new Date()
       }
-    }),
-    prisma.appAnalytics.upsert({
-      where: {
-        date: today
-      },
-      update: {
-        totalReviews: {
-          increment: dedupedReviews.length
-        },
-        totalSessions: {
-          increment: firstReviewToday ? 1 : 0
-        }
-      },
-      create: {
-        date: today,
-        totalReviews: dedupedReviews.length,
-        totalSessions: 1
-      }
     })
   ])
 
-  const updatedCards = transactionResult.filter(
-    (item): item is (typeof cards)[number] => "nextReviewDate" in item && "direction" in item
-  )
-
   revalidateTag(userCacheTag.cards(user.id))
-  revalidateTag(userCacheTag.review(user.id))
   revalidateTag(userCacheTag.stats(user.id))
   revalidateTag(userCacheTag.profile(user.id))
-  revalidateTag(adminCacheTag.analytics)
+
+  void prisma.appAnalytics.upsert({
+    where: {
+      date: today
+    },
+    update: {
+      totalReviews: {
+        increment: dedupedReviews.length
+      },
+      totalSessions: {
+        increment: firstReviewToday ? 1 : 0
+      }
+    },
+    create: {
+      date: today,
+      totalReviews: dedupedReviews.length,
+      totalSessions: 1
+    }
+  }).then(() => {
+    revalidateTag(adminCacheTag.analytics)
+  }).catch((error: unknown) => {
+    console.error("Failed to update app analytics after review session", error)
+  })
 
   return NextResponse.json({
-    cards: updatedCards.map((card) => serializeCard(card)),
+    updatedCardIds: dedupedReviews.map((review) => review.cardId),
     streak: nextStreak
   })
 }

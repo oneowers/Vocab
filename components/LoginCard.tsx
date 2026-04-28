@@ -7,14 +7,13 @@ import { BrandLogo } from "@/components/BrandLogo"
 import { useToast } from "@/components/Toast"
 import { hasSupabaseEnv, isLocalDevelopment } from "@/lib/config"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
-import { getGuestCards, setGuestSessionActive } from "@/lib/guest"
 
 interface LoginCardProps {
   guestModeEnabled: boolean
 }
 
 export function LoginCard({ guestModeEnabled }: LoginCardProps) {
-  const [loading, setLoading] = useState<"google" | "guest" | null>(null)
+  const [loading, setLoading] = useState<"google" | null>(null)
   const router = useRouter()
   const { showToast } = useToast()
   const supabaseEnabled = hasSupabaseEnv()
@@ -44,13 +43,6 @@ export function LoginCard({ guestModeEnabled }: LoginCardProps) {
       setLoading(null)
       showToast(error.message, "error")
     }
-  }
-
-  function handleGuestContinue() {
-    setLoading("guest")
-    setGuestSessionActive(true)
-    getGuestCards()
-    router.push("/")
   }
 
   return (
@@ -86,26 +78,11 @@ export function LoginCard({ guestModeEnabled }: LoginCardProps) {
             Login as Admin (Local)
           </button>
         )}
-        {!guestModeEnabled ? null : (
-          <button
-            type="button"
-            onClick={handleGuestContinue}
-            disabled={loading !== null}
-            className="button-secondary px-5 py-4 text-sm font-medium"
-          >
-            {loading === "guest" ? "Opening..." : "Continue as Guest"}
-          </button>
-        )}
       </div>
 
-      {guestModeEnabled ? (
-        <p className="mt-4 text-[15px] text-text-tertiary">
-          Guest mode — your progress will not be saved.
-        </p>
-      ) : null}
       {!supabaseEnabled ? (
         <p className="mt-2 text-[15px] text-text-tertiary">
-          Local mode: you can continue as a guest without registration.
+          Supabase is not configured. Use the local admin login to continue.
         </p>
       ) : null}
     </div>

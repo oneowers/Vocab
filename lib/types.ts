@@ -126,6 +126,22 @@ export interface DailyCatalogStatus {
   cefrLevel: CefrLevel
 }
 
+export interface DailyWordCandidate {
+  id: string
+  word: string
+  translation: string
+  example: string | null
+  cefrLevel: CefrLevel
+}
+
+export interface DailyWordsPreviewPayload {
+  items: DailyWordCandidate[]
+  claimedToday: number
+  dailyLimit: number
+  remainingToday: number
+  limitReached: boolean
+}
+
 export interface ReviewSummary {
   correct: number
   wrong: number

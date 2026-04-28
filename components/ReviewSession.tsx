@@ -6,6 +6,7 @@ import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 
 import { FlipCard } from "@/components/FlipCard"
+import { DailyWordsModal } from "@/components/DailyWordsModal"
 import { QuizCard, type QuizMatchItem } from "@/components/QuizCard"
 import { ReviewSessionOverview } from "@/components/ReviewSessionOverview"
 import { WriteCard } from "@/components/WriteCard"
@@ -21,7 +22,7 @@ import {
   getGuestReviewLogs,
   isGuestSessionActive
 } from "@/lib/guest"
-import { matchesCardStatus, sortDueCards } from "@/lib/spaced-repetition"
+import { getReviewOutcome, matchesCardStatus, sortDueCards } from "@/lib/spaced-repetition"
 import type { CardRecord, CardsResponse, CardStatusFilter, DailyCatalogStatus, DailyClaimResponse, ReviewResult } from "@/lib/types"
 
 type ReviewStage = "flip" | "quiz" | "write"
@@ -157,6 +158,7 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
   const [mistakes, setMistakes] = useState(0)
   const [claiming, setClaiming] = useState(false)
   const [dailyCatalog, setDailyCatalog] = useState<DailyCatalogStatus | null>(null)
+  const [dailyModalOpen, setDailyModalOpen] = useState(false)
   const [lastActionStatus, setLastActionStatus] = useState<"idle" | "correct" | "incorrect" | "active">("idle")
   const { showToast } = useToast()
   const todayKey = getTodayDateKey()
@@ -231,59 +233,43 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
   )
   const currentQuizBatch = quizBatches[quizBatchIndex]
 
-  function refreshCardCollections(nextCards: CardRecord[]) {
+  function refreshCardCollections(nextCards: CardRecord[], shouldRevalidate = true) {
     const sortedCards = sortDueCards(nextCards)
     setAllCards(sortedCards)
     setDueCards(sortedCards.filter((card) => card.nextReviewDate <= todayKey))
-    void revalidate()
+    if (shouldRevalidate) {
+      void revalidate()
+    }
   }
 
-  async function handleClaimDailyWords() {
+  function handleDailyClaimed(payload: DailyClaimResponse) {
+    setDailyCatalog({
+      claimedToday: payload.claimedToday,
+      dailyLimit: payload.dailyLimit,
+      remainingToday: payload.remainingToday,
+      cefrLevel: dailyCatalog?.cefrLevel ?? "A1"
+    })
+
+    if (payload.cards.length) {
+      refreshCardCollections([...payload.cards, ...allCards])
+      showToast(`${payload.createdCount} word${payload.createdCount === 1 ? "" : "s"} added.`, "success")
+      return
+    }
+
+    if (payload.limitReached) {
+      showToast("Today's word limit is reached.", "success")
+      return
+    }
+
+    showToast("No words were selected.", "error")
+  }
+
+  function handleClaimDailyWords() {
     if (guestMode || claiming) {
       return
     }
 
-    setClaiming(true)
-
-    try {
-      const response = await fetch("/api/cards/daily", {
-        method: "POST"
-      })
-
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as { error?: string } | null
-        throw new Error(payload?.error || "Could not add today's words.")
-      }
-
-      const payload = (await response.json()) as DailyClaimResponse
-
-      setDailyCatalog({
-        claimedToday: payload.claimedToday,
-        dailyLimit: payload.dailyLimit,
-        remainingToday: payload.remainingToday,
-        cefrLevel: dailyCatalog?.cefrLevel ?? "A1"
-      })
-
-      if (payload.cards.length) {
-        refreshCardCollections([...payload.cards, ...allCards])
-        showToast(`${payload.createdCount} word${payload.createdCount === 1 ? "" : "s"} added.`, "success")
-        return
-      }
-
-      if (payload.limitReached) {
-        showToast("Today's word limit is reached.", "success")
-        return
-      }
-
-      showToast("No matching words for your level.", "error")
-    } catch (error) {
-      showToast(
-        error instanceof Error ? error.message : "Could not add today's words.",
-        "error"
-      )
-    } finally {
-      setClaiming(false)
-    }
+    setDailyModalOpen(true)
   }
 
   function startSession(cards: CardRecord[], startStage: ReviewStage = "flip", flow: ReviewFlow = "linked") {
@@ -365,7 +351,7 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
     try {
       if (guestMode) {
         const nextCards = commitGuestReviewSession(sessionCards.map((card) => card.id))
-        refreshCardCollections(nextCards)
+        refreshCardCollections(nextCards, false)
         setStreak(getGuestStreak())
       } else {
         const response = await fetch("/api/review/session", {
@@ -386,12 +372,27 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
         }
 
         const payload = (await response.json()) as {
-          cards: CardRecord[]
+          updatedCardIds: string[]
           streak: number
         }
-        const updatedCards = new Map(payload.cards.map((card) => [card.id, card]))
-        const nextCards = allCards.map((card) => updatedCards.get(card.id) ?? card)
-        refreshCardCollections(nextCards)
+        const updatedIds = new Set(payload.updatedCardIds)
+        const nextCards = allCards.map((card) => {
+          if (!updatedIds.has(card.id)) {
+            return card
+          }
+
+          const outcome = getReviewOutcome("known", todayKey)
+
+          return {
+            ...card,
+            nextReviewDate: outcome.nextReviewDate,
+            lastReviewResult: outcome.lastReviewResult,
+            reviewCount: card.reviewCount + outcome.reviewCountDelta,
+            correctCount: card.correctCount + outcome.correctCountDelta,
+            wrongCount: card.wrongCount + outcome.wrongCountDelta
+          }
+        })
+        refreshCardCollections(nextCards, false)
         setStreak(payload.streak)
       }
 
@@ -500,6 +501,25 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
     return `Pair ${currentPair} of ${totalPairs}`
   }
 
+  const progress = useMemo(() => getActiveStageProgress(), [
+    activeStage,
+    flipIndex,
+    quizBatchIndex,
+    quizBatches.length,
+    quizSolvedPairs,
+    sessionCards.length,
+    writeIndex
+  ])
+  const stageCounterLabel = useMemo(() => getStageCounterLabel(), [
+    activeStage,
+    flipIndex,
+    quizBatchIndex,
+    quizBatches.length,
+    quizSolvedPairs,
+    sessionCards.length,
+    writeIndex
+  ])
+
   if (sessionStatus === "idle") {
     return (
       <div>
@@ -520,6 +540,18 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
           onClaimDailyWords={handleClaimDailyWords}
           onStartDue={() => startSession(availableCards, "flip", "linked")}
           onStartPractice={() => startSession(allAvailableCards, practiceStage, "single")}
+        />
+        <DailyWordsModal
+          open={dailyModalOpen}
+          dailyCatalog={dailyCatalog}
+          onClose={() => {
+            setDailyModalOpen(false)
+            setClaiming(false)
+          }}
+          onClaimed={(payload) => {
+            setClaiming(false)
+            handleDailyClaimed(payload)
+          }}
         />
       </div>
     )
@@ -619,25 +651,6 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
   if (!currentCard && activeStage !== "quiz") {
     return null
   }
-
-  const progress = useMemo(() => getActiveStageProgress(), [
-    activeStage,
-    flipIndex,
-    quizBatchIndex,
-    quizBatches.length,
-    quizSolvedPairs,
-    sessionCards.length,
-    writeIndex
-  ])
-  const stageCounterLabel = useMemo(() => getStageCounterLabel(), [
-    activeStage,
-    flipIndex,
-    quizBatchIndex,
-    quizBatches.length,
-    quizSolvedPairs,
-    sessionCards.length,
-    writeIndex
-  ])
 
   return (
     <div className={styles.sessionContainer}>

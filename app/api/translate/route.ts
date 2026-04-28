@@ -8,9 +8,9 @@ import {
   findCatalogWordByTranslation,
   findCatalogWordByWord,
   getOrCreateAppSettings,
+  isTranslationEngine,
   resolveTranslationDetails
 } from "@/lib/catalog"
-import { isGuestModeEnabled } from "@/lib/config"
 import { getPrisma } from "@/lib/prisma"
 import { isRateLimited } from "@/lib/throttle"
 
@@ -43,7 +43,7 @@ function parseLangpair(langpair: string) {
 export async function GET(request: NextRequest) {
   const user = await getOptionalAuthUser()
 
-  if (!user && !isGuestModeEnabled()) {
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -99,6 +99,12 @@ export async function GET(request: NextRequest) {
 
   let cefrLevel: CefrLevel | null =
     resolved.source === "catalog" ? localizedDirectCatalogWord?.cefrLevel ?? null : null
+  const resolvedSource =
+    resolved.source === "catalog" &&
+    localizedDirectCatalogWord?.source &&
+    isTranslationEngine(localizedDirectCatalogWord.source)
+      ? localizedDirectCatalogWord.source
+      : resolved.source
 
   if (!cefrLevel && sourceLang === "RU" && targetLang === "EN") {
     const resolvedEnglishCatalogWord = await findCatalogWordByWord(
@@ -120,7 +126,7 @@ export async function GET(request: NextRequest) {
     translation: resolved.translation,
     translationAlternatives: resolved.translationAlternatives,
     cefrLevel,
-    source: resolved.source,
+    source: resolvedSource,
     cefrProfilerEnabled: settings.cefrProfilerEnabled
   })
 }

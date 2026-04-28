@@ -89,7 +89,7 @@ export function AppShell({ user, children }: AppShellProps) {
   return (
     <div className="min-h-screen bg-black">
       <div className="mx-auto flex min-h-screen w-full max-w-[1600px]">
-        <aside className="hidden min-h-screen w-[288px] flex-col justify-between border-r border-white/[0.06] bg-black/88 px-6 py-8 backdrop-blur-xl md:flex">
+        <aside className="relative z-20 hidden min-h-screen w-[288px] flex-col justify-between border-r border-white/[0.06] bg-black/88 px-6 py-8 backdrop-blur-xl md:flex">
           <div className="space-y-8">
             <Link href="/" prefetch className="flex items-center gap-3">
               <div className="brand-mark h-12 w-12 text-lg font-semibold">
@@ -156,7 +156,7 @@ export function AppShell({ user, children }: AppShellProps) {
           </div>
         </aside>
 
-        <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+        <div className="relative z-0 flex min-h-screen min-w-0 flex-1 flex-col">
           <div className="flex-1 px-4 py-4 md:px-8 md:py-8">
             <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 md:gap-6">
               <main className="min-w-0 flex-1">

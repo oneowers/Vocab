@@ -94,11 +94,7 @@ function normalizeGuestCards(cards: CardRecord[]) {
 }
 
 export function isGuestSessionActive() {
-  if (!canUseStorage()) {
-    return false
-  }
-
-  return window.localStorage.getItem(GUEST_MODE_KEY) === "true"
+  return false
 }
 
 export function setGuestSessionActive(value: boolean) {
@@ -106,7 +102,9 @@ export function setGuestSessionActive(value: boolean) {
     return
   }
 
-  window.localStorage.setItem(GUEST_MODE_KEY, String(value))
+  if (!value) {
+    window.localStorage.removeItem(GUEST_MODE_KEY)
+  }
 }
 
 export function clearGuestSession() {

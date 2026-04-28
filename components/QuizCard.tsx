@@ -37,6 +37,12 @@ export function QuizCard({
   const [rejectedIds, setRejectedIds] = useState<string[]>([])
   const [resolving, setResolving] = useState(false)
 
+  function clearActiveQuizFocus() {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur()
+    }
+  }
+
   useEffect(() => {
     setSelectedLeftId(null)
     setSelectedRightId(null)
@@ -52,6 +58,7 @@ export function QuizCard({
 
     if (leftItem && rightItem && leftItem.sourceCardId === rightItem.sourceCardId) {
       const nextSolvedCount = solvedLeftIds.length + 1
+      clearActiveQuizFocus()
       setSolvedLeftIds((current) => [...current, leftId])
       setSolvedRightIds((current) => [...current, rightId])
       setSelectedLeftId(null)
@@ -69,6 +76,7 @@ export function QuizCard({
   }
 
   function handleMismatch(leftId: string, rightId: string) {
+    clearActiveQuizFocus()
     setResolving(true)
     setRejectedIds([leftId, rightId])
 
@@ -88,6 +96,7 @@ export function QuizCard({
 
     if (selectedRightId) {
       handleMatch(id, selectedRightId)
+      return
     }
 
     setSelectedLeftId((current) => (current === id ? null : id))
@@ -100,6 +109,7 @@ export function QuizCard({
 
     if (selectedLeftId) {
       handleMatch(selectedLeftId, id)
+      return
     }
 
     setSelectedRightId((current) => (current === id ? null : id))
@@ -109,16 +119,16 @@ export function QuizCard({
     <motion.div 
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
-      className={`relative overflow-hidden border border-white/10 bg-white/[0.03] p-8 shadow-[0_18px_36px_-18px_rgba(0,0,0,0.45)] md:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] rounded-[2rem] md:rounded-[2.5rem]`}
+      className="translate-card relative overflow-hidden rounded-[2rem] p-8 md:rounded-[2.5rem]"
     >
       <div className={styles.heroCardGlow} style={{ opacity: 0.05 }} />
       
       <div className="relative z-10 flex items-center justify-between mb-8">
         <div>
-          <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/20">Match the pairs</p>
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/30">Match the pairs</p>
           <h2 className="mt-1 text-[20px] font-black text-white leading-tight">Find 4 translations</h2>
         </div>
-        <div className="rounded-2xl bg-white/5 px-4 py-1.5 text-[10px] font-black text-white/40 border border-white/5">
+        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.07] px-4 py-1.5 text-[10px] font-black text-white/55">
           Batch {batchIndex + 1} of {totalBatches}
         </div>
       </div>
@@ -141,16 +151,16 @@ export function QuizCard({
                 disabled={resolving || isSolved}
                 className={`min-h-[60px] w-full rounded-2xl border px-4 py-3 text-center text-[14px] font-bold transition-all duration-300 relative overflow-hidden flex items-center justify-center ${
                   isSolved 
-                    ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400/20 opacity-30 scale-95" 
+                    ? "border-emerald-500/25 bg-emerald-500/12 text-emerald-300/35 opacity-40 scale-95" 
                     : isRejected
-                    ? `border-rose-500/50 bg-rose-500/10 text-rose-500 ${styles.shake}`
+                    ? `border-rose-500/50 bg-rose-500/12 text-rose-300 ${styles.shake}`
                     : isSelected
-                    ? "border-white/40 bg-white/15 text-white scale-[1.05] shadow-[0_0_30px_rgba(255,255,255,0.15)] z-10"
-                    : "border-white/5 bg-white/[0.04] text-white/50 hover:bg-white/[0.08] hover:text-white hover:scale-[1.02]"
+                    ? "border-white/28 bg-white/[0.14] text-white scale-[1.05] shadow-[0_0_30px_rgba(255,255,255,0.12)] z-10"
+                    : "border-white/[0.08] bg-white/[0.08] text-white/72 hover:bg-white/[0.12] hover:text-white hover:scale-[1.02]"
                 }`}
               >
                 <span className="relative z-10">{item.text}</span>
-                {isSelected && <motion.div layoutId="glow-left" className="absolute inset-0 bg-white/10" />}
+                {isSelected && <motion.div layoutId="glow-left" className="absolute inset-0 bg-white/[0.08]" />}
               </motion.button>
             )
           })}
@@ -173,23 +183,23 @@ export function QuizCard({
                 disabled={resolving || isSolved}
                 className={`min-h-[60px] w-full rounded-2xl border px-4 py-3 text-center text-[14px] font-bold transition-all duration-300 relative overflow-hidden flex items-center justify-center ${
                   isSolved 
-                    ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400/20 opacity-30 scale-95" 
+                    ? "border-emerald-500/25 bg-emerald-500/12 text-emerald-300/35 opacity-40 scale-95" 
                     : isRejected
-                    ? `border-rose-500/50 bg-rose-500/10 text-rose-500 ${styles.shake}`
+                    ? `border-rose-500/50 bg-rose-500/12 text-rose-300 ${styles.shake}`
                     : isSelected
-                    ? "border-white/40 bg-white/15 text-white scale-[1.05] shadow-[0_0_30px_rgba(255,255,255,0.15)] z-10"
-                    : "border-white/5 bg-white/[0.04] text-white/50 hover:bg-white/[0.08] hover:text-white hover:scale-[1.02]"
+                    ? "border-white/28 bg-white/[0.14] text-white scale-[1.05] shadow-[0_0_30px_rgba(255,255,255,0.12)] z-10"
+                    : "border-white/[0.08] bg-white/[0.08] text-white/72 hover:bg-white/[0.12] hover:text-white hover:scale-[1.02]"
                 }`}
               >
                 <div className="relative z-10 flex flex-col items-center gap-0.5">
                   <span className="leading-tight">{item.text}</span>
                   {item.cefrLevel && (
-                    <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.1em]">
+                    <span className="text-[9px] font-black text-white/35 uppercase tracking-[0.1em]">
                       {item.cefrLevel}
                     </span>
                   )}
                 </div>
-                {isSelected && <motion.div layoutId="glow-right" className="absolute inset-0 bg-white/10" />}
+                {isSelected && <motion.div layoutId="glow-right" className="absolute inset-0 bg-white/[0.08]" />}
               </motion.button>
             )
           })}
