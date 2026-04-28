@@ -109,7 +109,7 @@ export function QuizCard({
     <motion.div 
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
-      className={`relative overflow-hidden border border-white/10 bg-white/[0.03] backdrop-blur-3xl p-8 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] rounded-[2.5rem]`}
+      className={`relative overflow-hidden border border-white/10 bg-white/[0.03] p-8 shadow-[0_18px_36px_-18px_rgba(0,0,0,0.45)] md:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] rounded-[2rem] md:rounded-[2.5rem]`}
     >
       <div className={styles.heroCardGlow} style={{ opacity: 0.05 }} />
       
@@ -118,7 +118,7 @@ export function QuizCard({
           <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/20">Match the pairs</p>
           <h2 className="mt-1 text-[20px] font-black text-white leading-tight">Find 4 translations</h2>
         </div>
-        <div className="rounded-2xl bg-white/5 px-4 py-1.5 text-[10px] font-black text-white/40 border border-white/5 backdrop-blur-md">
+        <div className="rounded-2xl bg-white/5 px-4 py-1.5 text-[10px] font-black text-white/40 border border-white/5">
           Batch {batchIndex + 1} of {totalBatches}
         </div>
       </div>
@@ -150,7 +150,7 @@ export function QuizCard({
                 }`}
               >
                 <span className="relative z-10">{item.text}</span>
-                {isSelected && <motion.div layoutId="glow-left" className="absolute inset-0 bg-white/10 blur-xl" />}
+                {isSelected && <motion.div layoutId="glow-left" className="absolute inset-0 bg-white/10" />}
               </motion.button>
             )
           })}
@@ -189,7 +189,7 @@ export function QuizCard({
                     </span>
                   )}
                 </div>
-                {isSelected && <motion.div layoutId="glow-right" className="absolute inset-0 bg-white/10 blur-xl" />}
+                {isSelected && <motion.div layoutId="glow-right" className="absolute inset-0 bg-white/10" />}
               </motion.button>
             )
           })}

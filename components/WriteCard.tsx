@@ -46,7 +46,7 @@ export function WriteCard({ card, onResolved }: WriteCardProps) {
     <motion.div 
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
-      className={`relative overflow-hidden border border-white/10 bg-white/[0.03] backdrop-blur-3xl p-8 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] rounded-[2.5rem] ${result === "unknown" ? styles.shake : ""}`}
+      className={`relative overflow-hidden border border-white/10 bg-white/[0.03] p-8 shadow-[0_18px_36px_-18px_rgba(0,0,0,0.45)] md:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] rounded-[2rem] md:rounded-[2.5rem] ${result === "unknown" ? styles.shake : ""}`}
     >
       <div className={styles.heroCardGlow} style={{ opacity: 0.05 }} />
       
@@ -112,7 +112,7 @@ export function WriteCard({ card, onResolved }: WriteCardProps) {
             exit={{ opacity: 0, y: -12 }}
             className="mt-6"
           >
-            <div className={`rounded-[2rem] p-6 border backdrop-blur-md shadow-lg ${
+            <div className={`rounded-[2rem] p-6 border shadow-lg ${
               result === "known" 
                 ? "bg-emerald-500/10 border-emerald-500/20" 
                 : "bg-rose-500/10 border-rose-500/20"

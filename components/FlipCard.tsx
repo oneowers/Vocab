@@ -44,7 +44,7 @@ export function FlipCard({ card, onAnswer }: FlipCardProps) {
   return (
     <motion.div 
       layout
-      className={`relative overflow-hidden border border-white/10 bg-white/[0.03] backdrop-blur-3xl p-8 text-center shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] rounded-[2.5rem] ${shaking ? styles.shake : ""}`}
+      className={`relative overflow-hidden border border-white/10 bg-white/[0.03] p-8 text-center shadow-[0_18px_36px_-18px_rgba(0,0,0,0.45)] md:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] rounded-[2rem] md:rounded-[2.5rem] ${shaking ? styles.shake : ""}`}
       style={{ minHeight: "320px", display: "flex", flexDirection: "column", justifyContent: "center" }}
     >
       <div className={styles.heroCardGlow} style={{ opacity: revealed ? 0.15 : 0.05, transition: "opacity 0.5s ease" }} />
@@ -56,7 +56,7 @@ export function FlipCard({ card, onAnswer }: FlipCardProps) {
         </h2>
         {card.cefrLevel && (
           <div className="flex justify-center">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1 text-[10px] font-black text-white/40 border border-white/5 backdrop-blur-md">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-1 text-[10px] font-black text-white/40 border border-white/5">
               <span className={`h-1.5 w-1.5 rounded-full ${CEFR_STYLES[card.cefrLevel].dot} shadow-[0_0_8px_rgba(255,255,255,0.2)]`} />
               {card.cefrLevel}
             </span>
@@ -70,7 +70,7 @@ export function FlipCard({ card, onAnswer }: FlipCardProps) {
             key="hidden"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, filter: "blur(10px)" }}
+            exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.2 }}
             className="mt-8 relative z-10"
           >
@@ -85,8 +85,8 @@ export function FlipCard({ card, onAnswer }: FlipCardProps) {
         ) : (
           <motion.div 
             key="revealed"
-            initial={{ opacity: 0, scale: 0.9, filter: "blur(10px)" }}
-            animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
             className="mt-8 space-y-6 relative z-10"
           >
