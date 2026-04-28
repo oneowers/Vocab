@@ -483,7 +483,7 @@ export function TranslatorPanel({
               </div>
             </div>
           ) : (
-            <div className="flex flex-1 items-center text-[26px] font-black tracking-tight text-white/22 md:text-[32px]">
+            <div className="flex flex-1 text-[26px] text-white transition text-opacity-50 font-black tracking-tight md:text-[32px]">
               Translation
             </div>
           )}

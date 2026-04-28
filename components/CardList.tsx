@@ -243,14 +243,15 @@ export function CardList({
               >
                 <div className="min-w-0">
                   <h3
-                    className={`truncate text-[25px] font-bold tracking-[-0.3px] ${matchesCardStatus(card, "known") && card.cefrLevel
+                    className={`flex items-center gap-2 text-[25px] font-bold tracking-[-0.3px] ${matchesCardStatus(card, "known") && card.cefrLevel
                       ? `${CEFR_STYLES[card.cefrLevel].dot}`
                       : "text-text-primary"
                       }`}
                   >
-                    {card.original}{card.cefrLevel ? (
+                    <span className="truncate">{card.original}</span>
+                    {card.cefrLevel ? (
                       <span
-                        className={`ml-2 inline-flex shrink-0 items-center rounded-full px-1.5 py-0 text-[9px] font-bold ${CEFR_STYLES[card.cefrLevel].badge}`}
+                        className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[11px] font-black uppercase tracking-tight ${CEFR_STYLES[card.cefrLevel].badge}`}
                       >
                         {card.cefrLevel}
                       </span>

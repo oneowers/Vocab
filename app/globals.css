@@ -142,13 +142,13 @@ textarea {
   perspective: 1200px;
 }
 
-.translate-card-grid--swapping > .translate-card:first-child {
+.translate-card-grid--swapping>.translate-card:first-child {
   animation: translate-card-swap-source-mobile 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
   z-index: 2;
   will-change: transform, opacity;
 }
 
-.translate-card-grid--swapping > .translate-card:last-child {
+.translate-card-grid--swapping>.translate-card:last-child {
   animation: translate-card-swap-target-mobile 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
   z-index: 1;
   will-change: transform, opacity;
@@ -197,16 +197,17 @@ textarea {
 }
 
 @media (min-width: 1024px) {
-  .translate-card-grid--swapping > .translate-card:first-child {
+  .translate-card-grid--swapping>.translate-card:first-child {
     animation-name: translate-card-swap-source-desktop;
   }
 
-  .translate-card-grid--swapping > .translate-card:last-child {
+  .translate-card-grid--swapping>.translate-card:last-child {
     animation-name: translate-card-swap-target-desktop;
   }
 }
 
 @keyframes translate-card-breathe {
+
   0%,
   100% {
     transform: scale(1);
@@ -236,6 +237,7 @@ textarea {
 }
 
 @keyframes translate-loader-dot {
+
   0%,
   100% {
     transform: scale(0.72);
@@ -249,6 +251,7 @@ textarea {
 }
 
 @keyframes translate-result-pulse {
+
   0%,
   100% {
     opacity: 0.58;
@@ -391,8 +394,9 @@ textarea {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .translate-card-grid--swapping > .translate-card:first-child,
-  .translate-card-grid--swapping > .translate-card:last-child,
+
+  .translate-card-grid--swapping>.translate-card:first-child,
+  .translate-card-grid--swapping>.translate-card:last-child,
   .translate-swap-icon--active,
   .translate-card--loading,
   .translate-card--loading::after,
@@ -807,14 +811,12 @@ textarea {
   position: absolute;
   inset: 0;
   content: "";
-  background: linear-gradient(
-    100deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.02) 28%,
-    rgba(255, 255, 255, 0.11) 48%,
-    rgba(255, 255, 255, 0.03) 62%,
-    transparent 100%
-  );
+  background: linear-gradient(100deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.02) 28%,
+      rgba(255, 255, 255, 0.11) 48%,
+      rgba(255, 255, 255, 0.03) 62%,
+      transparent 100%);
   transform: translateX(-130%);
   animation: shimmer 1.15s cubic-bezier(0.22, 1, 0.36, 1) infinite;
 }
@@ -855,6 +857,7 @@ textarea {
 }
 
 @keyframes skeleton-breathe {
+
   0%,
   100% {
     opacity: 0.88;

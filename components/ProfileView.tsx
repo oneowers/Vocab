@@ -257,8 +257,8 @@ export function ProfileView({ user }: ProfileViewProps) {
               disabled={guestActive || savingLevel}
               onClick={() => void handleCefrLevelChange(value)}
               className={`flex h-10 items-center justify-center rounded-xl border text-[13px] font-bold transition-all ${(guestActive ? "A1" : cefrLevel) === value
-                  ? "border-white/10 bg-white text-black"
-                  : "border-transparent bg-white/[0.04] text-text-secondary hover:bg-white/[0.08]"
+                ? "border-white/10 bg-white text-black"
+                : "border-transparent bg-white/[0.04] text-text-secondary hover:bg-white/[0.08]"
                 } ${guestActive || savingLevel ? "cursor-not-allowed opacity-40" : ""}`}
             >
               {value}

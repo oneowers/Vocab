@@ -1,7 +1,7 @@
 "use client"
 
 import { Check, HelpCircle, Layers3, Lock, PenLine } from "lucide-react"
-
+import { motion } from "framer-motion"
 import styles from "@/components/review-session.module.css"
 
 interface ReviewStageStepperProps {
@@ -30,94 +30,56 @@ export function ReviewStageStepper({
 
   return (
     <div className={styles.stageStepper}>
-      <div className={`hide-scrollbar native-scroll ${styles.stageScrollFrame}`}>
-        <div
-          className={`${styles.stageTrack} ${
-            variant === "hero" ? styles.stageTrackHero : styles.stageTrackCompact
-          }`}
-        >
-          {items.map((item, index) => {
-            const isCompleted = completedValues.includes(item.value)
-            const isCurrent = currentIndex === index
-            const isLocked = !isCompleted && currentIndex >= 0 && index > currentIndex
-            const StageIcon = STAGE_ICONS[item.value]
-            const glyph = isCompleted ? (
-              <Check size={variant === "hero" ? 30 : 24} strokeWidth={2.8} aria-hidden="true" />
-            ) : isLocked ? (
-              <Lock size={variant === "hero" ? 28 : 22} strokeWidth={2.3} aria-hidden="true" />
-            ) : (
-              <StageIcon
-                size={variant === "hero" ? 28 : 22}
-                strokeWidth={2.2}
-                aria-hidden="true"
-              />
-            )
+      <div className={styles.stageTrack}>
+        {items.map((item, index) => {
+          const isCompleted = completedValues.includes(item.value)
+          const isCurrent = currentIndex === index
+          const isLocked = !isCompleted && currentIndex >= 0 && index > currentIndex
+          const StageIcon = STAGE_ICONS[item.value]
+          
+          const glyph = isCompleted ? (
+            <Check size={18} strokeWidth={3} />
+          ) : isLocked ? (
+            <Lock size={16} strokeWidth={2.5} />
+          ) : (
+            <StageIcon size={18} strokeWidth={2.4} />
+          )
 
-            return (
-              <div
-                key={item.value}
-                className={styles.stageEntry}
-                style={{ animationDelay: `${index * 150}ms` }}
-              >
-                <div
-                  className={styles.stageNode}
-                  data-state={
-                    isCompleted ? "completed" : isCurrent ? "current" : isLocked ? "locked" : "upcoming"
-                  }
-                >
-                  <div
-                    className={`${styles.stageCircleWrap} ${
-                      variant === "hero"
-                        ? styles.stageCircleWrapHero
-                        : styles.stageCircleWrapCompact
-                    }`}
-                  >
-                    {isCurrent && !isCompleted ? <span className={styles.stagePulse} /> : null}
+          return (
+            <div key={item.value} className="flex items-start">
+              <div className={styles.stageEntry} style={{ animationDelay: `${index * 100}ms` }}>
+                <div className={styles.stageNode}>
+                  <div className={styles.stageCircleWrap}>
+                    {isCurrent && !isCompleted && <span className={styles.stagePulse} />}
                     <div
                       className={`${styles.stageCircle} ${
-                        variant === "hero" ? styles.stageCircleHero : styles.stageCircleCompact
-                      } ${isCompleted ? styles.stageCompleted : ""} ${
-                        !isCompleted && isCurrent ? styles.stageCurrent : ""
-                      } ${isLocked ? styles.stageLocked : ""}`}
-                      aria-current={isCurrent && !isCompleted ? "step" : undefined}
+                        isCompleted ? styles.stageCompleted : isCurrent ? styles.stageCurrent : ""
+                      }`}
                     >
-                      {isCompleted ? <span className={styles.stageSweep} aria-hidden="true" /> : null}
-                      <span
-                        className={`${styles.stageGlyph} ${
-                          variant === "hero" ? styles.stageGlyphHero : styles.stageGlyphCompact
-                        }`}
-                      >
-                        {glyph}
-                      </span>
+                      <span className={styles.stageGlyph}>{glyph}</span>
                     </div>
                   </div>
                   <span
                     className={`${styles.stageLabel} ${
                       isCurrent && !isCompleted ? styles.stageLabelCurrent : ""
-                    } ${isLocked ? styles.stageLabelLocked : ""}`}
+                    }`}
                   >
                     {item.label}
                   </span>
                 </div>
-                {index < items.length - 1 ? (
-                  <div
-                    className={`${styles.stageConnector} ${
-                      variant === "hero"
-                        ? styles.stageConnectorHero
-                        : styles.stageConnectorCompact
-                    }`}
-                    aria-hidden="true"
-                  >
-                    <div
-                      className={styles.stageConnectorFill}
-                      style={{ width: completedValues.includes(item.value) ? "100%" : "0%" }}
-                    />
-                  </div>
-                ) : null}
               </div>
-            )
-          })}
-        </div>
+              
+              {index < items.length - 1 && (
+                <div className={styles.stageConnector}>
+                  <div
+                    className={styles.stageConnectorFill}
+                    style={{ width: isCompleted ? "100%" : "0%" }}
+                  />
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
     </div>
   )

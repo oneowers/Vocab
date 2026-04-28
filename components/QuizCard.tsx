@@ -1,12 +1,14 @@
 "use client"
 
+import { motion, AnimatePresence } from "framer-motion"
 import { useEffect, useState } from "react"
+import styles from "@/components/review-session.module.css"
 
 export interface QuizMatchItem {
   id: string
   sourceCardId: string
   text: string
-  cefrLevel?: string | null
+  cefrLevel?: string
 }
 
 interface QuizCardProps {
@@ -42,39 +44,33 @@ export function QuizCard({
     setSolvedRightIds([])
     setRejectedIds([])
     setResolving(false)
-    onProgressChange(0)
-  }, [leftItems, onProgressChange, rightItems])
+  }, [batchIndex])
 
-  function handleResolvedPair(nextSolvedCount: number) {
-    onProgressChange(nextSolvedCount)
+  function handleMatch(leftId: string, rightId: string) {
+    const leftItem = leftItems.find((item) => item.id === leftId)
+    const rightItem = rightItems.find((item) => item.id === rightId)
 
-    if (nextSolvedCount === leftItems.length) {
-      window.setTimeout(() => {
-        onBatchCompleted()
-      }, 220)
+    if (leftItem && rightItem && leftItem.sourceCardId === rightItem.sourceCardId) {
+      const nextSolvedCount = solvedLeftIds.length + 1
+      setSolvedLeftIds((current) => [...current, leftId])
+      setSolvedRightIds((current) => [...current, rightId])
+      setSelectedLeftId(null)
+      setSelectedRightId(null)
+      onProgressChange(nextSolvedCount)
+
+      if (nextSolvedCount === leftItems.length) {
+        window.setTimeout(() => {
+          onBatchCompleted()
+        }, 300)
+      }
+    } else {
+      handleMismatch(leftId, rightId)
     }
   }
 
-  function resolveSelection(nextLeftId: string, nextRightId: string) {
-    const leftItem = leftItems.find((item) => item.id === nextLeftId)
-    const rightItem = rightItems.find((item) => item.id === nextRightId)
-
-    if (!leftItem || !rightItem) {
-      return
-    }
-
-    if (leftItem.sourceCardId === rightItem.sourceCardId) {
-      const nextSolvedCount = solvedLeftIds.length + 1
-      setSolvedLeftIds((current) => [...current, nextLeftId])
-      setSolvedRightIds((current) => [...current, nextRightId])
-      setSelectedLeftId(null)
-      setSelectedRightId(null)
-      handleResolvedPair(nextSolvedCount)
-      return
-    }
-
+  function handleMismatch(leftId: string, rightId: string) {
     setResolving(true)
-    setRejectedIds([nextLeftId, nextRightId])
+    setRejectedIds([leftId, rightId])
 
     window.setTimeout(() => {
       setResolving(false)
@@ -82,7 +78,7 @@ export function QuizCard({
       setSelectedLeftId(null)
       setSelectedRightId(null)
       onLifeLost()
-    }, 420)
+    }, 450)
   }
 
   function handleSelectLeft(id: string) {
@@ -91,9 +87,7 @@ export function QuizCard({
     }
 
     if (selectedRightId) {
-      setSelectedLeftId(id)
-      resolveSelection(id, selectedRightId)
-      return
+      handleMatch(id, selectedRightId)
     }
 
     setSelectedLeftId((current) => (current === id ? null : id))
@@ -105,85 +99,102 @@ export function QuizCard({
     }
 
     if (selectedLeftId) {
-      setSelectedRightId(id)
-      resolveSelection(selectedLeftId, id)
-      return
+      handleMatch(selectedLeftId, id)
     }
 
     setSelectedRightId((current) => (current === id ? null : id))
   }
 
-  function getItemClassName(itemId: string, side: "left" | "right") {
-    const solvedIds = side === "left" ? solvedLeftIds : solvedRightIds
-    const selectedId = side === "left" ? selectedLeftId : selectedRightId
-
-    if (solvedIds.includes(itemId)) {
-      return "border-successText bg-successBg text-successText"
-    }
-
-    if (rejectedIds.includes(itemId)) {
-      return "border-dangerText bg-dangerBg text-dangerText"
-    }
-
-    if (selectedId === itemId) {
-      return "border-accent bg-accent/15 text-text-primary"
-    }
-
-    return "border-separator bg-bg-primary text-text-primary hover:border-accent"
-  }
-
   return (
-    <div className="panel p-6">
-      <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+    <motion.div 
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className={`relative overflow-hidden border border-white/10 bg-white/[0.03] backdrop-blur-3xl p-8 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] rounded-[2.5rem]`}
+    >
+      <div className={styles.heroCardGlow} style={{ opacity: 0.05 }} />
+      
+      <div className="relative z-10 flex items-center justify-between mb-8">
         <div>
-          <p className="text-[15px] text-text-secondary">Match Russian to English</p>
-          <p className="mt-2 text-[28px] font-bold tracking-[-0.5px] text-text-primary">
-            Build all 4 pairs
-          </p>
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/20">Match the pairs</p>
+          <h2 className="mt-1 text-[20px] font-black text-white leading-tight">Find 4 translations</h2>
         </div>
-        <p className="text-sm text-text-tertiary">
+        <div className="rounded-2xl bg-white/5 px-4 py-1.5 text-[10px] font-black text-white/40 border border-white/5 backdrop-blur-md">
           Batch {batchIndex + 1} of {totalBatches}
-        </p>
-      </div>
-
-      <div className="mt-6 grid grid-cols-2 gap-2 md:gap-3">
-        <div className="space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-quiet">Russian</p>
-          {leftItems.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => handleSelectLeft(item.id)}
-              disabled={resolving || solvedLeftIds.includes(item.id)}
-              className={`min-h-[68px] w-full rounded-[1.25rem] border px-3 py-3 text-center text-sm font-medium leading-5 transition md:min-h-[72px] md:rounded-[1.5rem] md:px-4 md:py-4 ${getItemClassName(item.id, "left")}`}
-            >
-              {item.text}
-            </button>
-          ))}
-        </div>
-
-        <div className="space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-quiet">English</p>
-          {rightItems.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => handleSelectRight(item.id)}
-              disabled={resolving || solvedRightIds.includes(item.id)}
-              className={`min-h-[68px] w-full rounded-[1.25rem] border px-3 py-3 text-center text-sm font-medium leading-5 transition md:min-h-[72px] md:rounded-[1.5rem] md:px-4 md:py-4 ${getItemClassName(item.id, "right")}`}
-            >
-              <div className="flex flex-col items-center gap-1">
-                <span>{item.text}</span>
-                {item.cefrLevel ? (
-                  <span className="text-[10px] font-normal opacity-75">
-                    {item.cefrLevel}
-                  </span>
-                ) : null}
-              </div>
-            </button>
-          ))}
         </div>
       </div>
-    </div>
+
+      <div className="relative z-10 grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          {leftItems.map((item, idx) => {
+            const isSolved = solvedLeftIds.includes(item.id)
+            const isSelected = selectedLeftId === item.id
+            const isRejected = rejectedIds.includes(item.id)
+
+            return (
+              <motion.button
+                key={item.id}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: idx * 0.05 }}
+                type="button"
+                onClick={() => handleSelectLeft(item.id)}
+                disabled={resolving || isSolved}
+                className={`min-h-[60px] w-full rounded-2xl border px-4 py-3 text-center text-[14px] font-bold transition-all duration-300 relative overflow-hidden flex items-center justify-center ${
+                  isSolved 
+                    ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400/20 opacity-30 scale-95" 
+                    : isRejected
+                    ? `border-rose-500/50 bg-rose-500/10 text-rose-500 ${styles.shake}`
+                    : isSelected
+                    ? "border-white/40 bg-white/15 text-white scale-[1.05] shadow-[0_0_30px_rgba(255,255,255,0.15)] z-10"
+                    : "border-white/5 bg-white/[0.04] text-white/50 hover:bg-white/[0.08] hover:text-white hover:scale-[1.02]"
+                }`}
+              >
+                <span className="relative z-10">{item.text}</span>
+                {isSelected && <motion.div layoutId="glow-left" className="absolute inset-0 bg-white/10 blur-xl" />}
+              </motion.button>
+            )
+          })}
+        </div>
+
+        <div className="space-y-2">
+          {rightItems.map((item, idx) => {
+            const isSolved = solvedRightIds.includes(item.id)
+            const isSelected = selectedRightId === item.id
+            const isRejected = rejectedIds.includes(item.id)
+
+            return (
+              <motion.button
+                key={item.id}
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: idx * 0.05 }}
+                type="button"
+                onClick={() => handleSelectRight(item.id)}
+                disabled={resolving || isSolved}
+                className={`min-h-[60px] w-full rounded-2xl border px-4 py-3 text-center text-[14px] font-bold transition-all duration-300 relative overflow-hidden flex items-center justify-center ${
+                  isSolved 
+                    ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400/20 opacity-30 scale-95" 
+                    : isRejected
+                    ? `border-rose-500/50 bg-rose-500/10 text-rose-500 ${styles.shake}`
+                    : isSelected
+                    ? "border-white/40 bg-white/15 text-white scale-[1.05] shadow-[0_0_30px_rgba(255,255,255,0.15)] z-10"
+                    : "border-white/5 bg-white/[0.04] text-white/50 hover:bg-white/[0.08] hover:text-white hover:scale-[1.02]"
+                }`}
+              >
+                <div className="relative z-10 flex flex-col items-center gap-0.5">
+                  <span className="leading-tight">{item.text}</span>
+                  {item.cefrLevel && (
+                    <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.1em]">
+                      {item.cefrLevel}
+                    </span>
+                  )}
+                </div>
+                {isSelected && <motion.div layoutId="glow-right" className="absolute inset-0 bg-white/10 blur-xl" />}
+              </motion.button>
+            )
+          })}
+        </div>
+      </div>
+    </motion.div>
   )
 }

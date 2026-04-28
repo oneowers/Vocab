@@ -116,7 +116,7 @@ export function StatsView() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 page-with-tabbar">
       <section className="grid grid-cols-3 gap-3">
         <article className="panel rounded-[1.5rem] p-3 md:rounded-[2rem] md:p-5">
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-quiet md:text-xs md:tracking-[0.24em]">

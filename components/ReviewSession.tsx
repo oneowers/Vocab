@@ -1,5 +1,7 @@
 "use client"
 
+import { motion, AnimatePresence } from "framer-motion"
+import { ArrowLeft, ArrowRight, CheckCircle2, Sparkles, Zap, Trophy, ArrowUpRight, Plus } from "lucide-react"
 import Link from "next/link"
 import { Outfit } from "next/font/google"
 import { useEffect, useState } from "react"
@@ -7,8 +9,8 @@ import { useEffect, useState } from "react"
 import { FlipCard } from "@/components/FlipCard"
 import { QuizCard, type QuizMatchItem } from "@/components/QuizCard"
 import { ReviewSessionOverview } from "@/components/ReviewSessionOverview"
-import { ReviewStageStepper } from "@/components/ReviewStageStepper"
 import { WriteCard } from "@/components/WriteCard"
+import { PracticeBackground } from "@/components/PracticeBackground"
 import styles from "@/components/review-session.module.css"
 import { useToast } from "@/components/Toast"
 import { getTodayDateKey } from "@/lib/date"
@@ -133,6 +135,28 @@ function getStageLabel(stage: ReviewStage) {
   return REVIEW_STEPS.find((item) => item.value === stage)?.label ?? "Stage"
 }
 
+function SkeletonPractice() {
+  return (
+    <div className={styles.commandCenter}>
+      <div className="flex justify-center mb-5">
+        <div className="skeleton h-10 w-48 rounded-full" />
+      </div>
+      <div className={styles.heroCard}>
+        <div className="flex items-center gap-4 mb-8">
+          <div className="skeleton h-14 w-14 rounded-2xl" />
+          <div className="space-y-2">
+            <div className="skeleton h-6 w-32 rounded-lg" />
+            <div className="skeleton h-4 w-48 rounded-lg" />
+          </div>
+        </div>
+        <div className="skeleton h-32 w-full rounded-2xl mb-8" />
+        <div className="skeleton h-16 w-full rounded-2xl mb-8" />
+        <div className="skeleton h-14 w-full rounded-2xl" />
+      </div>
+    </div>
+  )
+}
+
 export function ReviewSession() {
   const [guestMode, setGuestMode] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -157,6 +181,7 @@ export function ReviewSession() {
   const [mistakes, setMistakes] = useState(0)
   const [claiming, setClaiming] = useState(false)
   const [dailyCatalog, setDailyCatalog] = useState<DailyCatalogStatus | null>(null)
+  const [lastActionStatus, setLastActionStatus] = useState<"idle" | "correct" | "incorrect" | "active">("idle")
   const { showToast } = useToast()
 
   useEffect(() => {
@@ -170,7 +195,7 @@ export function ReviewSession() {
         setDueCards(cards.filter((card) => card.nextReviewDate <= getTodayDateKey()))
         setStreak(getGuestStreak())
         setReviewLives(DEFAULT_GUEST_REVIEW_LIVES)
-        setLoading(false)
+        setTimeout(() => setLoading(false), 600)
         return
       }
 
@@ -193,7 +218,7 @@ export function ReviewSession() {
       } catch {
         showToast("Could not load review cards.", "error")
       } finally {
-        setLoading(false)
+        setTimeout(() => setLoading(false), 600)
       }
     }
 
@@ -245,16 +270,16 @@ export function ReviewSession() {
 
       if (payload.cards.length) {
         refreshCardCollections([...payload.cards, ...allCards])
-        showToast(`${payload.createdCount} new word${payload.createdCount === 1 ? "" : "s"} added.`, "success")
+        showToast(`${payload.createdCount} word${payload.createdCount === 1 ? "" : "s"} added.`, "success")
         return
       }
 
       if (payload.limitReached) {
-        showToast("Today's word limit is already reached.", "success")
+        showToast("Today's word limit is reached.", "success")
         return
       }
 
-      showToast("No more matching words are available for your level.", "error")
+      showToast("No matching words for your level.", "error")
     } catch (error) {
       showToast(
         error instanceof Error ? error.message : "Could not add today's words.",
@@ -280,6 +305,7 @@ export function ReviewSession() {
     setStageAttempt(0)
     setSessionFlow(flow)
     setSessionStatus("active")
+    setLastActionStatus("active")
   }
 
   function restartActiveStage() {
@@ -379,13 +405,16 @@ export function ReviewSession() {
       setSessionStatus("success")
     } catch {
       setSessionStatus("save-error")
-      showToast("Could not save this linked review session.", "error")
+      showToast("Could not save session.", "error")
     }
   }
 
   function handleFlipResolved(result: ReviewResult) {
-    if (result === "unknown" && spendLife()) {
-      return
+    if (result === "unknown") {
+      setLastActionStatus("incorrect")
+      if (spendLife()) return
+    } else {
+      setLastActionStatus("correct")
     }
 
     if (flipIndex + 1 >= sessionCards.length) {
@@ -401,6 +430,7 @@ export function ReviewSession() {
   }
 
   function handleQuizLifeLost() {
+    setLastActionStatus("incorrect")
     spendLife()
   }
 
@@ -419,8 +449,11 @@ export function ReviewSession() {
   }
 
   function handleWriteResolved(result: ReviewResult) {
-    if (result === "unknown" && spendLife()) {
-      return
+    if (result === "unknown") {
+      setLastActionStatus("incorrect")
+      if (spendLife()) return
+    } else {
+      setLastActionStatus("correct")
     }
 
     if (writeIndex + 1 >= sessionCards.length) {
@@ -472,12 +505,13 @@ export function ReviewSession() {
   }
 
   if (loading) {
-    return <div className="skeleton h-[32rem] rounded-[2rem]" />
+    return <SkeletonPractice />
   }
 
   if (sessionStatus === "idle") {
     return (
       <div className={outfit.className}>
+        <PracticeBackground status="idle" />
         <ReviewSessionOverview
           currentStage="flip"
           completedStages={[]}
@@ -500,81 +534,92 @@ export function ReviewSession() {
 
   if (sessionStatus === "saving" || sessionStatus === "save-error") {
     return (
-      <section className={`panel mx-auto max-w-5xl p-6 text-center ${outfit.className}`}>
-        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-quiet">
-          {sessionStatus === "saving" ? "Saving" : "Save error"}
-        </p>
-        <h1 className="mt-3 text-[28px] font-bold tracking-[-0.5px] text-text-primary">
-          {sessionStatus === "saving"
-            ? "Saving your linked session"
-            : "We couldn&apos;t save this session"}
-        </h1>
-        <div className="mt-6">
-          <ReviewStageStepper
-            items={REVIEW_STEPS}
-            currentStage="write"
-            completedValues={completedStages}
-            variant="compact"
-          />
-        </div>
-        <p className="mt-6 text-[15px] text-text-secondary">
-          {sessionStatus === "saving"
-            ? "Please wait while we save your completed stages."
-            : "Your review path is finished, but the final save needs another try."}
-        </p>
-        {sessionStatus === "save-error" ? (
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
-            <button
-              type="button"
-              onClick={() => void commitSession()}
-              className="button-primary min-h-[48px] px-5 py-3 text-sm font-medium"
-            >
-              Retry save
-            </button>
-            <Link
-              href="/"
-              prefetch
-              className="button-secondary inline-flex min-h-[48px] items-center justify-center px-5 py-3 text-sm font-medium"
-            >
-              Back to deck
+      <div className={`${styles.sessionContainer} flex items-center justify-center ${outfit.className}`}>
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className={styles.heroCard}
+          style={{ maxWidth: "24rem", textAlign: "center" }}
+        >
+          <div className={styles.heroCardGlow} />
+          <div className="flex justify-center mb-6">
+            <div className={styles.heroIconWrap}>
+              {sessionStatus === "saving" ? (
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/10 border-t-white" />
+              ) : (
+                <Zap className="text-rose-500" size={24} />
+              )}
+            </div>
+          </div>
+          <h2 className={styles.heroTitle}>
+            {sessionStatus === "saving" ? "Saving Progress" : "Sync Failed"}
+          </h2>
+          <p className={styles.heroSubtitle} style={{ marginBottom: "2rem" }}>
+            {sessionStatus === "saving"
+              ? "Your achievements are being uploaded to the cloud..."
+              : "We couldn't reach the server. Don't worry, your progress is safe locally."}
+          </p>
+          
+          <div className={styles.heroActions}>
+            {sessionStatus === "save-error" && (
+              <button
+                type="button"
+                onClick={() => void commitSession()}
+                className={styles.glassButtonPrimary}
+              >
+                Retry Sync
+              </button>
+            )}
+            <Link href="/" className={styles.glassButtonSecondary}>
+              Back to Home
             </Link>
           </div>
-        ) : null}
-      </section>
+        </motion.div>
+      </div>
     )
   }
 
   if (sessionStatus === "success") {
     return (
-      <section className={`panel mx-auto max-w-5xl p-6 text-center ${outfit.className}`}>
-        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-quiet">
-          Session complete
-        </p>
-        <h1 className="mt-3 text-[28px] font-bold tracking-[-0.5px] text-text-primary">
-          You crushed it
-        </h1>
-        <div className="mt-6">
-          <ReviewStageStepper
-            items={REVIEW_STEPS}
-            currentStage="write"
-            completedValues={REVIEW_STEPS.map((item) => item.value)}
-            variant="compact"
-          />
-        </div>
-        <p className="mt-6 text-[15px] text-text-secondary">
-          {sessionCards.length} cards completed across all 3 stages.
-        </p>
-        <p className="mt-2 text-[15px] text-text-secondary">
-          Mistakes spent: {mistakes} | Streak: {streak} days
-        </p>
-        <Link
-          href="/"
-          prefetch
-          className="button-primary mt-8 inline-flex min-h-[48px] px-5 py-3 text-sm font-medium"
+      <div className={`${styles.sessionContainer} flex items-center justify-center ${outfit.className}`}>
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={styles.heroCard}
+          style={{ maxWidth: "28rem", textAlign: "center" }}
         >
-          Back to deck
-        </Link>
-      </section>
+          <div className={styles.heroCardGlow} style={{ background: "radial-gradient(circle at center, rgba(34, 197, 94, 0.15), transparent 70%)" }} />
+          
+          <div className="relative mx-auto mb-6 h-20 w-20">
+            <div className="absolute inset-0 animate-ping rounded-full bg-emerald-500/20" />
+            <div className={styles.heroIconWrap} style={{ width: "100%", height: "100%", borderRadius: "50%", background: "#22c55e", border: "none" }}>
+              <CheckCircle2 size={40} className="text-white" strokeWidth={3} />
+            </div>
+          </div>
+
+          <h1 className={styles.heroTitle} style={{ fontSize: "1.75rem" }}>Session Complete!</h1>
+          <p className={styles.heroSubtitle}>You've made significant progress today.</p>
+
+          <div className={styles.heroStats} style={{ marginTop: "2rem", marginBottom: "2rem" }}>
+            <div className={styles.heroStatItem}>
+              <span className={styles.heroStatValue}>{sessionCards.length}</span>
+              <span className={styles.heroStatLabel}>Cards Done</span>
+            </div>
+            <div className={styles.heroStatDivider} />
+            <div className={styles.heroStatItem}>
+              <span className={styles.heroStatValue}>{mistakes}</span>
+              <span className={styles.heroStatLabel}>Mistakes</span>
+            </div>
+          </div>
+
+          <div className={styles.heroActions}>
+            <Link href="/" className={styles.glassButtonPrimary}>
+              <ArrowRight size={18} />
+              Return to Dashboard
+            </Link>
+          </div>
+        </motion.div>
+      </div>
     )
   }
 
@@ -585,61 +630,96 @@ export function ReviewSession() {
   const progress = getActiveStageProgress()
 
   return (
-    <div className={`mx-auto w-full max-w-5xl space-y-5 ${outfit.className}`}>
-        <div className={`panel p-5 ${styles.activeHeader}`}>
-        <div className={styles.activeHeaderTop}>
-          <div className="min-w-0 flex-1">
-            <div className={styles.sessionMeta}>
-              <p className={styles.sessionCounter}>{getStageCounterLabel()}</p>
-              <p className={styles.sessionStage}>Stage: {getStageLabel(activeStage)}</p>
-            </div>
-            <div className={styles.stepperBlock}>
-              <ReviewStageStepper
-                items={REVIEW_STEPS}
-                currentStage={activeStage}
-                completedValues={completedStages}
-                variant="compact"
-              />
+    <div className={`${styles.sessionContainer} ${outfit.className}`}>
+      <PracticeBackground status={lastActionStatus} />
+      
+      <motion.header 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className={styles.floatingSessionHeader}
+      >
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setSessionStatus("idle")}
+            className={styles.sessionBackButton}
+          >
+            <ArrowLeft size={16} />
+          </button>
+          <div className={styles.sessionHeaderMeta}>
+            <span className={styles.sessionHeaderEyebrow}>Stage {activeStageIndex + 1}/3</span>
+            <div className="flex items-center gap-2 mt-0.5">
+              <div className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse" />
+              <h2 className={styles.sessionHeaderTitle} style={{ letterSpacing: "0.02em" }}>{getStageLabel(activeStage)}</h2>
             </div>
           </div>
         </div>
 
-        <div className={styles.progressTrack}>
-          <div
-            className={styles.progressFill}
-            style={{ width: `${progress}%` }}
+        <div className={styles.sessionHeaderStatus}>
+          <div className={styles.sessionCounterGroup}>
+            <span className={styles.sessionHeaderEyebrow}>{getStageCounterLabel()}</span>
+            <div className={styles.livesIndicator}>
+              {Array.from({ length: reviewLives }).map((_, i) => (
+                <motion.div 
+                  key={i}
+                  initial={false}
+                  animate={{ 
+                    scale: i < livesRemaining ? 1 : 0.8,
+                    opacity: i < livesRemaining ? 1 : 0.2
+                  }}
+                  className={`${styles.lifePill} ${i < livesRemaining ? styles.lifePillActive : ""}`} 
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.sessionProgressBar}>
+          <motion.div
+            className={styles.sessionProgressFill}
+            initial={{ width: 0 }}
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           />
         </div>
+      </motion.header>
+
+      <div className={styles.sessionStageArea}>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={`${activeStage}-${stageAttempt}-${currentCard?.id ?? quizBatchIndex}`}
+            initial={{ opacity: 0, scale: 0.98, y: 5 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.98, y: -5 }}
+            transition={{ duration: 0.1, ease: "easeOut" }}
+          >
+            {activeStage === "flip" && (
+              <FlipCard
+                card={currentCard as CardRecord}
+                onAnswer={handleFlipResolved}
+              />
+            )}
+
+            {activeStage === "quiz" && currentQuizBatch && (
+              <QuizCard
+                leftItems={currentQuizBatch.leftItems}
+                rightItems={currentQuizBatch.rightItems}
+                batchIndex={quizBatchIndex}
+                totalBatches={quizBatches.length}
+                onLifeLost={handleQuizLifeLost}
+                onBatchCompleted={handleQuizBatchCompleted}
+                onProgressChange={setQuizSolvedPairs}
+              />
+            )}
+
+            {activeStage === "write" && (
+              <WriteCard
+                card={currentCard as CardRecord}
+                onResolved={handleWriteResolved}
+              />
+            )}
+          </motion.div>
+        </AnimatePresence>
       </div>
-
-      {activeStage === "flip" ? (
-        <FlipCard
-          key={`flip-${stageAttempt}-${currentCard?.id ?? "none"}`}
-          card={currentCard as CardRecord}
-          onAnswer={handleFlipResolved}
-        />
-      ) : null}
-
-      {activeStage === "quiz" && currentQuizBatch ? (
-        <QuizCard
-          key={`${currentQuizBatch.id}-${stageAttempt}`}
-          leftItems={currentQuizBatch.leftItems}
-          rightItems={currentQuizBatch.rightItems}
-          batchIndex={quizBatchIndex}
-          totalBatches={quizBatches.length}
-          onLifeLost={handleQuizLifeLost}
-          onBatchCompleted={handleQuizBatchCompleted}
-          onProgressChange={setQuizSolvedPairs}
-        />
-      ) : null}
-
-      {activeStage === "write" ? (
-        <WriteCard
-          key={`write-${stageAttempt}-${currentCard?.id ?? "none"}`}
-          card={currentCard as CardRecord}
-          onResolved={handleWriteResolved}
-        />
-      ) : null}
     </div>
   )
 }

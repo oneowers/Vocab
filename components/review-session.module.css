@@ -1,818 +1,482 @@
-.questPanel {
-  border-color: #3a3a3a;
-  background:
-    radial-gradient(circle at top center, rgba(74, 158, 255, 0.12), transparent 34%),
-    linear-gradient(180deg, #2a2a2a 0%, #242424 100%);
-  box-shadow:
-    0 24px 70px rgba(0, 0, 0, 0.34),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  overflow: hidden;
+/* Command Center Styles */
+.commandCenter {
+  max-width: 32rem;
+  margin: 0 auto;
 }
 
-.overviewShell {
-  padding: clamp(1.4rem, 2vw, 2rem);
-}
-
-.sectionGrid {
-  display: grid;
-  gap: 1.2rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.modeCard {
-  border: 0;
-  border-radius: 1.65rem;
-  background:
-    linear-gradient(145deg, rgba(43, 43, 49, 0.94), rgba(27, 27, 32, 0.98));
-  padding: 1.1rem;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.07),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.3),
-    0 20px 48px rgba(0, 0, 0, 0.28);
-  overflow: visible;
-}
-
-.modeCardHeader {
+.glassSwitcherContainer {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+  justify-content: center;
+  margin-bottom: 2rem;
 }
 
-.cardEyebrow {
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.42);
+.glassSwitcher {
+  position: relative;
+  display: flex;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  padding: 0.25rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
-.cardTitle {
-  margin-top: 0.55rem;
-  font-size: 1.2rem;
-  font-weight: 700;
-  line-height: 1.12;
+.switcherTab {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+  transition: color 0.3s ease;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.switcherTabActive {
   color: #ffffff;
 }
 
-.cardBody {
-  margin-top: 0.45rem;
-  font-size: 0.86rem;
-  line-height: 1.45;
-  color: rgba(255, 255, 255, 0.7);
+.switcherSlider {
+  position: absolute;
+  top: 0.25rem;
+  left: 0.25rem;
+  bottom: 0.25rem;
+  width: calc(50% - 0.25rem);
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.questStageCluster {
-  margin-top: 2.2rem;
-  display: flex;
-  justify-content: center;
-  overflow: visible;
+.immersiveContent {
+  position: relative;
 }
 
-.dailyStatsCard {
-  margin-top: 1.3rem;
+.heroCard {
+  position: relative;
+  border-radius: 2.5rem;
+  background: linear-gradient(145deg, rgba(30, 30, 36, 0.65), rgba(18, 18, 22, 0.8));
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  padding: 2.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 0.15),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.5),
+    0 32px 64px -16px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+
+.heroCardGlow {
+  position: absolute;
+  top: -20%;
+  right: -20%;
+  width: 80%;
+  height: 80%;
+  background: radial-gradient(circle at center, rgba(74, 158, 255, 0.1), transparent 70%);
+  filter: blur(40px);
+  pointer-events: none;
+}
+
+.heroHeader {
   display: flex;
-  min-height: 7rem;
-  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.heroIconWrap {
+  display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
-  border: 1px solid #333333;
-  border-radius: 1.4rem;
-  background: linear-gradient(180deg, #202020 0%, #1a1a1a 100%);
-  padding: 1rem;
-  text-align: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  background: rgba(74, 158, 255, 0.15);
+  border-radius: 1.25rem;
+  border: 1px solid rgba(74, 158, 255, 0.2);
 }
 
-.stageStepper {
-  width: 100%;
-}
-
-.stageScrollFrame {
-  overflow-x: auto;
-  overflow-y: visible;
-  padding-top: 0.85rem;
-  padding-bottom: 0.35rem;
-  padding-inline: 1rem;
-}
-
-.stageTrack {
+.heroTitleGroup {
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
+}
+
+.heroTitle {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.7) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.heroSubtitle {
+  font-size: 0.9375rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 500;
+}
+
+.questVisualizer {
+  margin: 2.5rem 0;
+}
+
+.heroStats {
+  display: flex;
+  align-items: center;
   justify-content: center;
-  width: 100%;
-  min-width: max-content;
+  gap: clamp(1.5rem, 5vw, 3rem);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 1.25rem;
+  border-radius: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 2rem;
 }
 
-.stageTrackHero {
-  gap: clamp(0.35rem, 1vw, 0.85rem);
-}
-
-.stageTrackCompact {
+.heroStatItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 0.25rem;
 }
 
-.stageEntry {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.4rem;
-  animation: fadeInScale 560ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
-}
-
-.stageNode {
-  display: flex;
-  min-width: clamp(5rem, 12vw, 7.5rem);
-  flex-direction: column;
-  align-items: center;
-}
-
-.stageCircleWrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.stageCircleWrapHero {
-  height: 6.4rem;
-  width: 6.4rem;
-}
-
-.stageCircleWrapCompact {
-  height: 4.8rem;
-  width: 4.8rem;
-}
-
-.stageCircle {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 999px;
-  background: #2a2a2a;
-  color: #ffffff;
-  transition:
-    transform 200ms ease,
-    opacity 200ms ease,
-    box-shadow 200ms ease,
-    background-color 200ms ease,
-    border-color 200ms ease;
-}
-
-.stageCircleHero {
-  height: 5.4rem;
-  width: 5.4rem;
-}
-
-.stageCircleCompact {
-  height: 4rem;
-  width: 4rem;
-}
-
-.stageCurrent {
-  background: #f2f2f4;
-  color: #000000;
-  border-color: rgba(255, 255, 255, 0.3);
-  box-shadow:
-    0 14px 32px rgba(255, 255, 255, 0.1),
-    0 0 44px rgba(255, 255, 255, 0.08);
-}
-
-.stageCompleted {
-  background: #22c55e;
-  border-color: rgba(34, 197, 94, 0.96);
-  box-shadow:
-    0 0 18px rgba(34, 197, 94, 0.42),
-    0 0 36px rgba(34, 197, 94, 0.18);
-}
-
-.stageLocked {
-  opacity: 0.42;
-}
-
-.stageSweep {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0));
-  transform-origin: left center;
-  animation: completeSweep 420ms ease both;
-}
-
-.stagePulse {
-  position: absolute;
-  inset: -0.5rem;
-  border: 1px solid rgba(74, 158, 255, 0.7);
-  border-radius: 999px;
-  animation: pulseRing 2.1s ease-out infinite;
-}
-
-.stageGlyph {
-  position: relative;
-  z-index: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-}
-
-.stageGlyphHero {
-  font-size: 1.9rem;
-}
-
-.stageGlyphCompact {
-  font-size: 1.45rem;
-}
-
-.stageLabel {
-  margin-top: 0.85rem;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  color: rgba(255, 255, 255, 0.62);
-}
-
-.stageLabelCurrent {
-  color: rgba(255, 255, 255, 0.92);
-}
-
-.stageLabelLocked {
-  color: rgba(255, 255, 255, 0.34);
-}
-
-.stageConnector {
-  position: relative;
-  align-self: flex-start;
-  overflow: hidden;
-  border-radius: 999px;
-  background: #3a3a3a;
-}
-
-.stageConnectorHero {
-  margin-top: 2.7rem;
-  width: clamp(2.1rem, 7vw, 4.6rem);
-  height: 2px;
-}
-
-.stageConnectorCompact {
-  margin-top: 2rem;
-  width: clamp(1.75rem, 6vw, 4.75rem);
-  height: 2px;
-}
-
-.stageConnectorFill {
-  height: 100%;
-  border-radius: inherit;
-  background: #22c55e;
-  box-shadow: 0 0 12px rgba(34, 197, 94, 0.45);
-  transition: width 420ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.filterRow {
-  margin-top: 1rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-
-.modeTabs {
-  display: grid;
-  gap: 0.75rem;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.practiceGroup {
-  margin-top: 0.95rem;
-}
-
-.groupLabel {
-  margin-bottom: 0.5rem;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.48);
-}
-
-.practiceFooter {
-  margin-top: 0.95rem;
-  display: grid;
-  gap: 0.7rem;
-  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.4fr);
-  align-items: center;
-}
-
-.practiceMeta {
-  display: flex;
-  min-height: 3.45rem;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  gap: 0.45rem;
-  border: 1px solid #333333;
-  border-radius: 1.05rem;
-  background: linear-gradient(180deg, #202020 0%, #191919 100%);
-  padding: 0.7rem 0.8rem;
-  text-align: center;
-}
-
-.practiceMetaValue {
-  font-size: 1.55rem;
+.heroStatValue {
+  font-size: 1.75rem;
   font-weight: 800;
-  line-height: 1;
   color: #ffffff;
+  line-height: 1;
 }
 
-.practiceMetaLabel {
-  font-size: 0.8rem;
-  line-height: 1.2;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.practiceStartButton {
-  margin-top: 0;
-  min-height: 3.45rem;
-  border-radius: 1.05rem;
-  font-size: 0.96rem;
-}
-
-.filterTab {
-  min-height: 2.7rem;
-  border: 1px solid #333333;
-  border-radius: 999px;
-  background: #1a1a1a;
-  padding: 0 0.95rem;
-  font-size: 0.92rem;
+.heroStatLabel {
+  font-size: 0.75rem;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.88);
-  transition:
-    transform 200ms ease,
-    box-shadow 200ms ease,
-    background-color 200ms ease,
-    color 200ms ease,
-    border-color 200ms ease;
+  color: rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-.filterTab:hover {
+.heroStatDivider {
+  width: 1px;
+  height: 2rem;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.heroActions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.glassButtonPrimary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  height: 3.75rem;
+  background: linear-gradient(135deg, #ffffff 0%, #e2e2e5 100%);
+  color: #000000;
+  border-radius: 1.25rem;
+  font-size: 1rem;
+  font-weight: 800;
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  border: none;
+  box-shadow: 0 4px 14px rgba(255, 255, 255, 0.15);
+}
+
+.glassButtonPrimary:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 12px 24px rgba(255, 255, 255, 0.25);
+}
+
+.glassButtonSecondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  height: 3.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #ffffff;
+  border-radius: 1.25rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05);
+}
+
+.glassButtonSecondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
   transform: translateY(-1px);
 }
 
-.filterTabActive {
-  border-color: transparent;
-  background: #f2f2f4;
-  color: #000000;
-  box-shadow: none;
-}
-
-.statsGrid {
-  margin-top: 1.8rem;
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.statCard {
+/* Practice Options in Library */
+.practiceOptions {
   display: flex;
-  min-height: 9rem;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.optionSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.optionLabel {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.optionPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.pill {
+  padding: 0.6rem 1.25rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.5);
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  cursor: pointer;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05);
+}
+
+.pill:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.pillActive {
+  background: #ffffff;
+  color: #000000;
+  border-color: #ffffff;
+  box-shadow: 0 8px 20px rgba(255, 255, 255, 0.2);
+}
+
+/* Session UI (Active State) */
+.sessionContainer {
+  min-height: calc(100vh - 12rem);
+  display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 0.75rem;
-  border: 1px solid #333333;
-  border-radius: 1.65rem;
-  background: linear-gradient(180deg, #212121 0%, #1a1a1a 100%);
-  padding: 1.5rem 1.25rem;
-  text-align: center;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  position: relative;
+  z-index: 10;
 }
 
-.statValue {
-  font-size: clamp(2rem, 5vw, 2.2rem);
-  font-weight: 800;
-  line-height: 1;
-  color: #ffffff;
-}
-
-.statLabel {
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.68);
-}
-
-.ctaGrid {
-  margin-top: 1.5rem;
-  display: grid;
-  gap: 0.95rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.ctaFull {
-  margin-top: 1rem;
-  width: 100%;
-}
-
-.ctaButton {
-  min-height: 3.8rem;
-  border-radius: 1.35rem;
-  font-size: 1.1rem;
-  font-weight: 700;
-  transition:
-    transform 200ms ease,
-    box-shadow 200ms ease,
-    background-color 200ms ease,
-    color 200ms ease,
-    border-color 200ms ease,
-    opacity 200ms ease;
-}
-
-.ctaButton:hover:not(:disabled) {
-  transform: translateY(-2px);
-}
-
-.ctaPrimary {
-  border: 0;
-  background: #f2f2f4;
-  color: #000000;
-  box-shadow: none;
-}
-
-.ctaPrimary:hover:not(:disabled) {
-  box-shadow: 0 20px 40px rgba(74, 158, 255, 0.38);
-}
-
-.ctaPrimary:disabled {
-  border-color: rgba(74, 158, 255, 0.2);
-  background: rgba(74, 158, 255, 0.44);
-  color: rgba(255, 255, 255, 0.45);
-  box-shadow: none;
-  cursor: not-allowed;
-}
-
-.ctaSecondary {
-  border: 1px solid #333333;
-  background: linear-gradient(180deg, #242424 0%, #1a1a1a 100%);
-  color: #ffffff;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
-}
-
-.ctaSecondary:hover:not(:disabled) {
-  box-shadow: 0 18px 32px rgba(0, 0, 0, 0.28);
-}
-
-.activeHeader {
-  border-color: #3a3a3a;
-  background: linear-gradient(180deg, #262626 0%, #1f1f1f 100%);
-  box-shadow:
-    0 18px 52px rgba(0, 0, 0, 0.24),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
-}
-
-.activeHeaderTop {
-  display: flex;
-  gap: 1rem;
-  align-items: flex-start;
-  justify-content: space-between;
-}
-
-.sessionMeta {
+.floatingSessionHeader {
+  position: fixed;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 2rem);
+  max-width: 40rem;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.5rem;
+  padding: 0.75rem 1rem;
   display: flex;
   flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+}
+
+.sessionBackButton {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  color: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.sessionHeaderMeta {
+  display: flex;
+  flex-direction: column;
+}
+
+.sessionHeaderEyebrow {
+  font-size: 0.625rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sessionHeaderTitle {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.sessionHeaderStatus {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-left: auto;
+}
+
+.sessionCounterGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
   gap: 0.25rem;
 }
 
-.sessionCounter {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #ffffff;
+.livesIndicator {
+  display: flex;
+  gap: 0.25rem;
 }
 
-.sessionStage {
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.64);
-}
-
-.stepperBlock {
-  margin-top: 1rem;
-}
-
-.progressTrack {
-  margin-top: 1.15rem;
-  height: 0.55rem;
+.lifePill {
+  width: 1.25rem;
+  height: 0.25rem;
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 999px;
-  background: #1a1a1a;
+  transition: all 0.3s ease;
 }
 
-.progressFill {
+.lifePillActive {
+  background: #f43f5e;
+  box-shadow: 0 0 10px rgba(244, 63, 94, 0.5);
+}
+
+.sessionProgressBar {
+  width: 100%;
+  height: 0.25rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.sessionProgressFill {
   height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #4a9eff 0%, #22c55e 100%);
-  box-shadow: 0 0 20px rgba(74, 158, 255, 0.22);
-  transition: width 240ms ease;
+  background: #ffffff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
 }
 
-@media (max-width: 768px) {
-  .sectionGrid {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0.9rem;
-  }
-
-  .modeCard {
-    border-radius: 1.3rem;
-    padding: 0.85rem;
-  }
-
-  .cardTitle {
-    font-size: 0.98rem;
-  }
-
-  .cardBody {
-    font-size: 0.74rem;
-    line-height: 1.3;
-  }
-
-  .overviewShell {
-    min-height: calc(100svh - var(--tab-bar-height) - 1rem);
-    padding: 0.95rem 0.9rem;
-  }
-
-  .activeHeaderTop {
-    flex-direction: column;
-    gap: 0.7rem;
-  }
-
-  .questStageCluster {
-    margin-top: 1rem;
-  }
-
-  .stageScrollFrame {
-    overflow: visible;
-    padding-top: 0.4rem;
-    padding-bottom: 0;
-    padding-inline: 0.65rem;
-  }
-
-  .stageTrack {
-    min-width: 0;
-    justify-content: center;
-  }
-
-  .stageCircleWrapHero {
-    height: 4.6rem;
-    width: 4.6rem;
-  }
-
-  .stageCircleHero {
-    height: 3.8rem;
-    width: 3.8rem;
-  }
-
-  .stageGlyphHero {
-    font-size: 1.35rem;
-  }
-
-  .stageNode {
-    min-width: 3.9rem;
-    flex: 0 0 auto;
-  }
-
-  .stageLabel {
-    margin-top: 0.5rem;
-    font-size: 0.72rem;
-  }
-
-  .stageConnectorHero {
-    margin-top: 1.9rem;
-    width: 0.95rem;
-  }
-
-  .filterRow {
-    margin-top: 1rem;
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.45rem;
-  }
-
-  .modeTabs {
-    gap: 0.45rem;
-  }
-
-  .filterTab {
-    width: 100%;
-    min-height: 2.25rem;
-    padding: 0 0.35rem;
-    font-size: 0.76rem;
-  }
-
-  .statsGrid {
-    margin-top: 0.85rem;
-    gap: 0.65rem;
-  }
-
-  .practiceFooter {
-    margin-top: 0.65rem;
-    gap: 0.45rem;
-    grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
-  }
-
-  .statCard {
-    min-height: 5.8rem;
-    gap: 0.35rem;
-    border-radius: 1.1rem;
-    padding: 0.85rem 0.65rem;
-  }
-
-  .statValue {
-    font-size: 1.65rem;
-  }
-
-  .statLabel {
-    font-size: 0.74rem;
-  }
-
-  .ctaGrid {
-    margin-top: 0.85rem;
-    gap: 0.65rem;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .ctaButton {
-    min-height: 3.05rem;
-    border-radius: 1rem;
-    font-size: 0.92rem;
-  }
-
-  .practiceMeta {
-    min-height: 3.05rem;
-    padding: 0.55rem 0.6rem;
-  }
-
-  .practiceMetaValue {
-    font-size: 1.28rem;
-  }
-
-  .practiceMetaLabel {
-    font-size: 0.72rem;
-  }
-
-  .practiceStartButton {
-    min-height: 3.05rem;
-    font-size: 0.8rem;
-  }
+.sessionStageArea {
+  margin-top: 6rem;
 }
 
-@media (max-width: 560px) {
-  .overviewShell {
-    padding: 0.85rem 0.75rem;
-  }
-
-  .stageScrollFrame {
-    padding-top: 0.3rem;
-    padding-inline: 0.45rem;
-  }
-
-  .stageCircleWrapHero {
-    height: 4.1rem;
-    width: 4.1rem;
-  }
-
-  .stageCircleHero {
-    height: 3.35rem;
-    width: 3.35rem;
-  }
-
-  .stageNode {
-    min-width: 3.25rem;
-  }
-
-  .stageCircleWrapCompact {
-    height: 4.2rem;
-    width: 4.2rem;
-  }
-
-  .stageCircleCompact {
-    height: 3.35rem;
-    width: 3.35rem;
-  }
-
-  .stageGlyphCompact {
-    font-size: 1.2rem;
-  }
-
-  .stageLabel {
-    font-size: 0.68rem;
-  }
-
-  .stageConnectorHero {
-    margin-top: 1.68rem;
-    width: 0.75rem;
-  }
-
-  .stageConnectorCompact {
-    margin-top: 1.65rem;
-    width: 1.15rem;
-  }
-
-  .statsGrid,
-  .ctaGrid {
-    gap: 0.55rem;
-  }
-
-  .dailyStatsCard,
-  .practiceMeta {
-    min-height: 5.2rem;
-    padding: 0.7rem 0.55rem;
-  }
-
-  .practiceFooter {
-    grid-template-columns: minmax(0, 0.72fr) minmax(0, 1.28fr);
-    gap: 0.45rem;
-  }
-
-  .practiceMeta {
-    min-height: 2.8rem;
-    gap: 0.3rem;
-    padding: 0.45rem 0.5rem;
-  }
-
-  .practiceMetaValue {
-    font-size: 1.1rem;
-  }
-
-  .practiceMetaLabel {
-    font-size: 0.66rem;
-  }
-
-  .practiceStartButton {
-    min-height: 2.8rem;
-    font-size: 0.74rem;
-  }
-
-  .statCard {
-    min-height: 5.2rem;
-    padding: 0.7rem 0.45rem;
-  }
-
-  .statValue {
-    font-size: 1.5rem;
-  }
-
-  .statLabel {
-    font-size: 0.7rem;
-  }
-
-  .ctaButton {
-    min-height: 2.8rem;
-    font-size: 0.82rem;
-  }
-}
-
-@media (max-width: 768px) and (max-height: 760px) {
-
-  .sectionGrid,
-  .questStageCluster,
-  .filterRow,
-  .statsGrid,
-  .ctaGrid {
-    margin-top: 0.8rem;
-  }
-
-  .statsGrid,
-  .ctaGrid {
-    gap: 0.5rem;
-  }
-}
-
-@keyframes pulseRing {
-  0% {
-    opacity: 1;
-    transform: scale(1);
-  }
-
-  100% {
-    opacity: 0;
-    transform: scale(1.15);
-  }
-}
-
+/* Animations */
 @keyframes completeSweep {
-  0% {
-    transform: scaleX(0);
-    opacity: 0.9;
-  }
-
-  100% {
-    transform: scaleX(1);
-    opacity: 0;
-  }
+  0% { transform: scaleX(0); opacity: 0.9; }
+  100% { transform: scaleX(1); opacity: 1; }
 }
 
 @keyframes fadeInScale {
-  0% {
-    opacity: 0;
-    transform: translateY(0.4rem) scale(0.92);
-  }
+  0% { opacity: 0; transform: translateY(0.1rem) scale(0.98); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
 
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+/* Stepper Adjustments */
+.stageStepper { width: 100%; }
+.stageTrack { 
+  display: flex; 
+  align-items: flex-start; 
+  justify-content: center; 
+  width: 100%; 
+  gap: 0.5rem; 
+}
+.stageEntry { 
+  display: flex; 
+  align-items: flex-start; 
+  gap: 0; 
+  animation: fadeInScale 150ms ease-out both; 
+}
+.stageNode { display: flex; flex-direction: column; align-items: center; min-width: 3.5rem; }
+.stageCircleWrap { position: relative; width: 3.5rem; height: 3.5rem; display: flex; align-items: center; justify-content: center; }
+.stageCircle { width: 2.8rem; height: 2.8rem; border-radius: 999px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); display: flex; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.4); transition: all 0.3s ease; }
+.stageCurrent { background: #ffffff; color: #000000; border-color: #ffffff; box-shadow: 0 0 20px rgba(255, 255, 255, 0.2); }
+.stageCompleted { background: #22c55e; color: #ffffff; border-color: #22c55e; box-shadow: 0 0 15px rgba(34, 197, 94, 0.3); }
+.stagePulse { position: absolute; inset: -0.25rem; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 999px; animation: pulseRing 2s infinite; }
+.stageLabel {
+  margin-top: 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.2);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.02);
+  transition: all 0.3s ease;
+}
+.stageLabelCurrent { 
+  color: #ffffff; 
+  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+}
+.stageConnector { 
+  margin-top: 1.75rem; 
+  height: 2px; 
+  width: 1rem; 
+  background: rgba(255, 255, 255, 0.06); 
+  border-radius: 999px;
+  overflow: hidden;
+}
+.stageConnectorFill { height: 100%; background: #22c55e; transition: width 0.4s ease; }
+.shake {
+  animation: shake 0.3s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes shake {
+  10%, 90% { transform: translate3d(-1px, 0, 0); }
+  20%, 80% { transform: translate3d(2px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+  40%, 60% { transform: translate3d(4px, 0, 0); }
+}
+
+.correctGlow {
+  box-shadow: 0 0 30px rgba(34, 197, 94, 0.3);
+  border-color: rgba(34, 197, 94, 0.5) !important;
+}
+
+.incorrectGlow {
+  box-shadow: 0 0 30px rgba(244, 63, 94, 0.3);
+  border-color: rgba(244, 63, 94, 0.5) !important;
+}
+
+@keyframes pulseRing {
+  0% { transform: scale(1); opacity: 0.5; }
+  100% { transform: scale(1.3); opacity: 0; }
+}
+
+/* Glass Panels & Modals */
+.glassPanel {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01));
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
 }
