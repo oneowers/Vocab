@@ -96,6 +96,7 @@ export function TranslatorPanel({
   const [phonetic, setPhonetic] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [swapping, setSwapping] = useState(false)
   const { showToast } = useToast()
 
   async function handleTranslate() {
@@ -209,12 +210,30 @@ export function TranslatorPanel({
   }
 
   function handleSwapDirection() {
-    setDirection((current) => (current === "en-ru" ? "ru-en" : "en-ru"))
-    setQuery(translation || query)
-    setTranslation(query)
-    setTranslationAlternatives([])
-    setEnglishSynonyms([])
-    setCefrLevel(null)
+    if (swapping) {
+      return
+    }
+
+    const nextDirection = direction === "en-ru" ? "ru-en" : "en-ru"
+    const nextQuery = translation || query
+    const nextTranslation = query
+
+    setSwapping(true)
+
+    window.setTimeout(() => {
+      setDirection(nextDirection)
+      setQuery(nextQuery)
+      setTranslation(nextTranslation)
+      setTranslationAlternatives([])
+      setEnglishSynonyms([])
+      setCefrLevel(null)
+      setExample(null)
+      setPhonetic(null)
+    }, 190)
+
+    window.setTimeout(() => {
+      setSwapping(false)
+    }, 420)
   }
 
   const ttsLanguage = direction === "en-ru" ? "en-US" : "ru-RU"
@@ -222,15 +241,16 @@ export function TranslatorPanel({
   const sourceLabel = direction === "en-ru" ? "English" : "Russian"
   const targetLabel = direction === "en-ru" ? "Russian" : "English"
   const englishSynonymsBlock = englishSynonyms.length > 0 ? (
-    <div className="mt-5">
-      <p className="mb-2.5 text-[12px] font-bold uppercase tracking-wider text-text-tertiary">
+    <div className="mt-4">
+      <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-text-tertiary">
         Synonyms
       </p>
-      <div className="flex flex-wrap gap-2">
-        {englishSynonyms.map((item) => (
+      <div className="flex flex-wrap gap-1.5">
+        {englishSynonyms.map((item, index) => (
           <span
             key={item.word}
-            className="inline-flex items-center gap-2 rounded-full bg-white/[0.06] px-2.5 py-1 text-[14px] font-medium text-text-secondary"
+            className="translate-chip-enter inline-flex items-center gap-1.5 rounded-full bg-white/[0.06] px-2.5 py-1 text-[13px] font-medium text-text-secondary"
+            style={{ animationDelay: `${70 + index * 36}ms` }}
           >
             {item.word}
             {item.cefrLevel && (
@@ -262,10 +282,11 @@ export function TranslatorPanel({
           <button
             type="button"
             onClick={handleSwapDirection}
+            disabled={swapping}
             className="flex h-11 w-11 items-center justify-center rounded-full bg-[#28282f] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition hover:bg-[#303039]"
             aria-label="Swap languages"
           >
-            <ArrowLeftRight size={20} />
+            <ArrowLeftRight className={swapping ? "translate-swap-icon--active" : ""} size={20} />
           </button>
         </div>
       </div>
@@ -285,10 +306,11 @@ export function TranslatorPanel({
           <button
             type="button"
             onClick={handleSwapDirection}
+            disabled={swapping}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white/38 transition hover:bg-white/[0.05] hover:text-white"
             aria-label="Swap languages"
           >
-            <ArrowLeftRight size={18} />
+            <ArrowLeftRight className={swapping ? "translate-swap-icon--active" : ""} size={18} />
           </button>
           <button
             type="button"
@@ -303,10 +325,10 @@ export function TranslatorPanel({
         </div>
       </div>
 
-      <div className="grid gap-3 lg:grid-cols-2">
-        <div className="translate-card flex min-h-[280px] flex-col p-5 md:min-h-[340px] md:p-6">
+      <div className={`translate-card-grid grid gap-3 lg:grid-cols-2 ${swapping ? "translate-card-grid--swapping" : ""}`}>
+        <div className={`translate-card flex flex-col p-4 md:p-6 ${loading ? "translate-card--loading" : ""}`}>
           <div className="flex flex-1 flex-col">
-            <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="mb-3 flex items-center justify-between gap-3">
               <span className="text-[12px] font-bold uppercase tracking-[0.08em] text-white/42">
                 {sourceLabel}
               </span>
@@ -328,15 +350,22 @@ export function TranslatorPanel({
               autoComplete="off"
               spellCheck={false}
               placeholder={direction === "en-ru" ? "Enter text" : "Введите текст"}
-              className="min-h-[110px] w-full flex-1 resize-none border-0 bg-transparent p-0 text-[26px] font-black tracking-tight text-white outline-none placeholder:text-white/24 md:text-[32px]"
+              rows={translation ? 1 : 3}
+              className={`w-full resize-none border-0 bg-transparent p-0 font-black tracking-tight text-white outline-none placeholder:text-white/24 ${
+                translation
+                  ? "min-h-[42px] text-[26px] md:text-[32px]"
+                  : "min-h-[110px] flex-1 text-[26px] md:text-[32px]"
+              }`}
             />
 
-            {direction === "en-ru" && phonetic && (
-              <p className="mt-2 text-[15px] font-medium text-text-secondary">{phonetic}</p>
-            )}
+            {direction === "en-ru" && phonetic && translation ? (
+              <p className="mt-1 text-[14px] font-medium text-white/48">{phonetic}</p>
+            ) : direction === "en-ru" && phonetic ? (
+              <p className="mt-2 text-[15px] font-medium text-white/48">{phonetic}</p>
+            ) : null}
             {direction === "en-ru" && englishSynonymsBlock}
 
-            <div className="mt-5 flex items-center justify-between gap-3">
+            <div className="mt-4 flex items-center justify-between gap-3">
               <div>
                 {canSpeak() && (
                   <button
@@ -356,21 +385,32 @@ export function TranslatorPanel({
                 disabled={loading || !query.trim()}
                 className="min-h-10 rounded-full bg-[#f2f2f4] px-5 text-[14px] font-black text-black transition hover:bg-white disabled:opacity-45"
               >
-                {loading ? "Translating..." : "Translate"}
+                {loading ? (
+                  <span className="inline-flex items-center gap-2">
+                    <span className="translate-loader-dot" />
+                    Translating
+                  </span>
+                ) : (
+                  "Translate"
+                )}
               </button>
             </div>
           </div>
         </div>
 
-        <div className="translate-card flex min-h-[280px] flex-col p-5 md:min-h-[340px] md:p-6">
+        <div className={`translate-card flex min-h-[260px] flex-col p-5 md:min-h-[320px] md:p-6 ${loading ? "translate-card--loading" : ""}`}>
           {loading ? (
-            <div className="flex flex-1 flex-col">
-              <div className="skeleton h-10 w-2/3 rounded-2xl" />
-              <div className="skeleton mt-4 h-5 w-1/3 rounded-xl" />
-              <div className="skeleton mt-8 h-24 w-full rounded-[24px]" />
+            <div className="translate-result-loading flex flex-1 flex-col">
+              <div className="h-8 w-2/3 rounded-full bg-white/[0.09]" />
+              <div className="mt-4 h-4 w-1/3 rounded-full bg-white/[0.055]" />
+              <div className="mt-8 grid gap-2">
+                <div className="h-3 w-full rounded-full bg-white/[0.045]" />
+                <div className="h-3 w-5/6 rounded-full bg-white/[0.04]" />
+                <div className="h-3 w-2/3 rounded-full bg-white/[0.035]" />
+              </div>
             </div>
           ) : translation ? (
-            <div className="flex flex-1 flex-col">
+            <div key={`${direction}-${translation}`} className="translate-result-enter flex flex-1 flex-col">
               <div className="flex-1">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <span className="text-[12px] font-bold uppercase tracking-[0.08em] text-white/42">
@@ -395,8 +435,12 @@ export function TranslatorPanel({
                     <div>
                       <p className="mb-2.5 text-[12px] font-bold uppercase tracking-wider text-white/42">Alternative translations</p>
                       <div className="flex flex-wrap gap-2">
-                        {translationAlternatives.map(item => (
-                          <span key={item} className="rounded-full bg-white/[0.06] px-2.5 py-1 text-[14px] font-medium text-white/64">
+                        {translationAlternatives.map((item, index) => (
+                          <span
+                            key={item}
+                            className="translate-chip-enter rounded-full bg-white/[0.06] px-2.5 py-1 text-[14px] font-medium text-white/64"
+                            style={{ animationDelay: `${90 + index * 38}ms` }}
+                          >
                             {item}
                           </span>
                         ))}
@@ -404,7 +448,7 @@ export function TranslatorPanel({
                     </div>
                   )}
                   {example && (
-                    <p className="border-l border-white/[0.1] pl-3 text-[14px] leading-relaxed text-white/58">{example}</p>
+                    <p className="translate-chip-enter border-l border-white/[0.1] pl-3 text-[14px] leading-relaxed text-white/58">{example}</p>
                   )}
                 </div>
               </div>

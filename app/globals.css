@@ -124,6 +124,8 @@ textarea {
 }
 
 .translate-card {
+  position: relative;
+  overflow: hidden;
   border-radius: 26px;
   background:
     linear-gradient(145deg, rgba(43, 43, 49, 0.94), rgba(27, 27, 32, 0.98));
@@ -131,6 +133,272 @@ textarea {
     inset 0 1px 0 rgba(255, 255, 255, 0.07),
     inset 0 -1px 0 rgba(0, 0, 0, 0.3),
     0 20px 48px rgba(0, 0, 0, 0.28);
+}
+
+.translate-card-grid {
+  perspective: 1200px;
+}
+
+.translate-card-grid--swapping > .translate-card:first-child {
+  animation: translate-card-swap-source-mobile 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  z-index: 2;
+  will-change: transform, opacity;
+}
+
+.translate-card-grid--swapping > .translate-card:last-child {
+  animation: translate-card-swap-target-mobile 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  z-index: 1;
+  will-change: transform, opacity;
+}
+
+.translate-card::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(115deg, transparent 0%, rgba(255, 255, 255, 0.1) 44%, transparent 64%);
+  transform: translateX(-130%);
+}
+
+.translate-card--loading {
+  animation: translate-card-breathe 1.2s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+}
+
+.translate-card--loading::after {
+  animation: translate-card-sweep 1.15s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+.translate-loader-dot {
+  width: 0.46rem;
+  height: 0.46rem;
+  border-radius: 999px;
+  background: #000000;
+  animation: translate-loader-dot 0.8s ease-in-out infinite;
+}
+
+.translate-result-loading {
+  animation: translate-result-pulse 1s ease-in-out infinite;
+}
+
+.translate-result-enter {
+  animation: translate-result-enter 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.translate-chip-enter {
+  animation: translate-chip-enter 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.translate-swap-icon--active {
+  animation: translate-swap-icon 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (min-width: 1024px) {
+  .translate-card-grid--swapping > .translate-card:first-child {
+    animation-name: translate-card-swap-source-desktop;
+  }
+
+  .translate-card-grid--swapping > .translate-card:last-child {
+    animation-name: translate-card-swap-target-desktop;
+  }
+}
+
+@keyframes translate-card-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+
+  50% {
+    transform: scale(0.995);
+    filter: brightness(1.08);
+  }
+}
+
+@keyframes translate-card-sweep {
+  0% {
+    opacity: 0;
+    transform: translateX(-130%);
+  }
+
+  18% {
+    opacity: 0.5;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(130%);
+  }
+}
+
+@keyframes translate-loader-dot {
+  0%,
+  100% {
+    transform: scale(0.72);
+    opacity: 0.36;
+  }
+
+  50% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes translate-result-pulse {
+  0%,
+  100% {
+    opacity: 0.58;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes translate-result-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+    filter: blur(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes translate-chip-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes translate-card-swap-source-mobile {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  38% {
+    opacity: 0.72;
+    transform: translate3d(0, 34px, 0) scale(0.985);
+  }
+
+  52% {
+    opacity: 0.58;
+    transform: translate3d(0, 34px, 0) scale(0.985);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes translate-card-swap-target-mobile {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  38% {
+    opacity: 0.72;
+    transform: translate3d(0, -34px, 0) scale(1.01);
+  }
+
+  52% {
+    opacity: 0.58;
+    transform: translate3d(0, -34px, 0) scale(1.01);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes translate-card-swap-source-desktop {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  38% {
+    opacity: 0.72;
+    transform: translate3d(34px, 0, 0) scale(0.985);
+  }
+
+  52% {
+    opacity: 0.58;
+    transform: translate3d(34px, 0, 0) scale(0.985);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes translate-card-swap-target-desktop {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  38% {
+    opacity: 0.72;
+    transform: translate3d(-34px, 0, 0) scale(1.01);
+  }
+
+  52% {
+    opacity: 0.58;
+    transform: translate3d(-34px, 0, 0) scale(1.01);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes translate-swap-icon {
+  0% {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+  }
+
+  50% {
+    opacity: 0.68;
+    transform: rotate(90deg) scale(0.92);
+  }
+
+  100% {
+    opacity: 1;
+    transform: rotate(180deg) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .translate-card-grid--swapping > .translate-card:first-child,
+  .translate-card-grid--swapping > .translate-card:last-child,
+  .translate-swap-icon--active,
+  .translate-card--loading,
+  .translate-card--loading::after,
+  .translate-loader-dot,
+  .translate-result-loading,
+  .translate-result-enter,
+  .translate-chip-enter {
+    animation: none;
+  }
 }
 
 @media (prefers-color-scheme: light) {
