@@ -196,6 +196,7 @@ export function ReviewSession() {
         setStreak(getGuestStreak())
         setReviewLives(DEFAULT_GUEST_REVIEW_LIVES)
         setTimeout(() => setLoading(false), 600)
+
         return
       }
 
