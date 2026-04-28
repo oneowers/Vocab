@@ -22,6 +22,7 @@ export interface CardRecord {
   isCatalogLinked?: boolean
   original: string
   translation: string
+  translationAlternatives: string[]
   direction: Direction
   example: string | null
   phonetic: string | null
@@ -241,6 +242,10 @@ export interface TranslationPayload {
 export interface DictionaryPayload {
   example: string | null
   phonetic: string | null
+  synonyms: Array<{
+    word: string
+    cefrLevel: CefrLevel | null
+  }>
 }
 
 export interface GuestReviewLog {

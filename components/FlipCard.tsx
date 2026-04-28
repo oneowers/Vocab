@@ -55,11 +55,10 @@ export function FlipCard({ card, onAnswer }: FlipCardProps) {
     <div className="panel p-6 text-center">
       <div className="flex justify-center">
         <p
-          className={`text-[28px] font-bold tracking-[-0.5px] ${
-            matchesCardStatus(card, "known") && card.cefrLevel
+          className={`text-[28px] font-bold tracking-[-0.5px] ${matchesCardStatus(card, "known") && card.cefrLevel
               ? `${CEFR_STYLES[card.cefrLevel].dot} text-white`
               : "text-text-primary"
-          }`}
+            }`}
         >
           {card.original}
         </p>

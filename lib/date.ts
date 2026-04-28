@@ -48,7 +48,14 @@ export function formatDateLabel(dateKey: string) {
 }
 
 export function formatTimestamp(value: string) {
-  return new Date(value).toLocaleString()
+  const date = new Date(value)
+  return date.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: date.getFullYear() !== new Date().getFullYear() ? "2-digit" : undefined,
+    hour: "2-digit",
+    minute: "2-digit"
+  })
 }
 
 export function groupByDate(items: string[]) {

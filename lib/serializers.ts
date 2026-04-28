@@ -28,6 +28,8 @@ export function serializeCard(
 ): CardRecord {
   const resolvedOriginal = card.catalogWord?.word ?? card.original ?? ""
   const resolvedTranslation = card.catalogWord?.translation ?? card.translation ?? ""
+  const resolvedTranslationAlternatives =
+    card.catalogWord?.translationAlternatives ?? card.translationAlternatives
   const resolvedExample =
     card.catalogWord?.example?.trim()
       ? card.catalogWord.example
@@ -44,6 +46,7 @@ export function serializeCard(
     isCatalogLinked: Boolean(card.catalogWordId),
     original: resolvedOriginal,
     translation: resolvedTranslation,
+    translationAlternatives: resolvedTranslationAlternatives,
     direction: card.direction as CardRecord["direction"],
     example: resolvedExample,
     phonetic: resolvedPhonetic,

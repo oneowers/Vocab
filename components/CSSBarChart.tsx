@@ -12,21 +12,31 @@ interface CSSBarChartProps {
 }
 
 const toneMap = {
-  ink: "var(--accent)",
-  gold: "var(--warning)",
-  green: "var(--success)",
-  rose: "var(--destructive)"
-} satisfies Record<NonNullable<CSSBarChartProps["tone"]>, string>
+  ink: {
+    bar: "var(--accent)",
+    glow: "rgba(0,122,255,0.28)",
+    gradient: "linear-gradient(180deg, rgba(0,122,255,0.9) 0%, rgba(0,122,255,0.55) 100%)"
+  },
+  gold: {
+    bar: "var(--warning)",
+    glow: "rgba(255,159,10,0.28)",
+    gradient: "linear-gradient(180deg, rgba(255,159,10,0.95) 0%, rgba(255,159,10,0.55) 100%)"
+  },
+  green: {
+    bar: "var(--success)",
+    glow: "rgba(52,199,89,0.28)",
+    gradient: "linear-gradient(180deg, rgba(52,199,89,0.95) 0%, rgba(52,199,89,0.55) 100%)"
+  },
+  rose: {
+    bar: "var(--destructive)",
+    glow: "rgba(255,69,58,0.28)",
+    gradient: "linear-gradient(180deg, rgba(255,69,58,0.95) 0%, rgba(255,69,58,0.55) 100%)"
+  }
+} satisfies Record<NonNullable<CSSBarChartProps["tone"]>, { bar: string; glow: string; gradient: string }>
 
 function formatAxisValue(value: number) {
-  if (value >= 1_000_000) {
-    return `${Math.round(value / 1_000_000)}M`
-  }
-
-  if (value >= 1_000) {
-    return `${Math.round(value / 1_000)}K`
-  }
-
+  if (value >= 1_000_000) return `${Math.round(value / 1_000_000)}M`
+  if (value >= 1_000) return `${Math.round(value / 1_000)}K`
   return String(value)
 }
 
@@ -34,89 +44,107 @@ export function CSSBarChart({
   title,
   points,
   tone = "ink",
-  heightClassName = "h-40",
+  heightClassName = "h-36",
   summaryLabel,
   periodLabel,
   valueSuffix = ""
 }: CSSBarChartProps) {
-  const peak = Math.max(...points.map((point) => point.value), 1)
-  const total = points.reduce((sum, point) => sum + point.value, 0)
+  const peak = Math.max(...points.map((p) => p.value), 1)
+  const total = points.reduce((sum, p) => sum + p.value, 0)
   const summary = summaryLabel ? `${total}${valueSuffix} ${summaryLabel}` : `Last ${points.length} days`
-  const ticks = [0, 0.33, 0.66, 1].map((step) => Math.round(peak * step))
+  const ticks = [0, 0.5, 1].map((step) => Math.round(peak * step))
+  const colors = toneMap[tone]
 
   return (
-    <section className="panel p-5">
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-        <h2 className="text-[22px] font-bold tracking-[-0.5px] text-ink">{title}</h2>
-        <span className="text-xs uppercase tracking-[0.24em] text-quiet">
-          {periodLabel || summary}
+    <section className="panel-admin rounded-[2rem] p-6">
+      {/* Header */}
+      <div className="flex items-end justify-between gap-2">
+        <div>
+          <h2 className="text-[18px] font-bold tracking-tight text-ink">{title}</h2>
+          <p className="mt-0.5 text-xs uppercase tracking-[0.2em] text-quiet">
+            {periodLabel || summary}
+          </p>
+        </div>
+        <span
+          className="rounded-full px-3 py-1 text-[13px] font-bold"
+          style={{
+            background: colors.glow,
+            color: colors.bar
+          }}
+        >
+          {total}{valueSuffix}
         </span>
       </div>
 
-      <div className="mt-6">
-        <div className="relative pl-16">
+      {/* Chart */}
+      <div className="mt-5">
+        <div className="relative pl-10">
           <div className={`relative ${heightClassName}`}>
+            {/* Grid lines */}
             {ticks.map((tick, index) => {
               const bottom = `${(index / (ticks.length - 1)) * 100}%`
-
               return (
                 <div
                   key={`${title}-tick-${tick}-${index}`}
                   className="absolute inset-x-0"
                   style={{ bottom }}
                 >
-                  <div className="absolute -left-16 -translate-y-1/2 text-right text-[11px] font-medium text-quiet">
-                    {formatAxisValue(tick)}
-                    {valueSuffix}
+                  <div className="absolute -left-10 -translate-y-1/2 text-right text-[10px] font-semibold text-quiet/70">
+                    {formatAxisValue(tick)}{valueSuffix}
                   </div>
-                  <div className="border-t border-separator" />
+                  <div
+                    className="border-t"
+                    style={{ borderColor: "var(--separator)", opacity: index === 0 ? 0.6 : 0.3 }}
+                  />
                 </div>
               )
             })}
 
-            <div className="absolute inset-x-0 bottom-0 top-0 flex items-end gap-3">
+            {/* Bars */}
+            <div className="absolute inset-x-0 bottom-0 top-0 flex items-end gap-2">
               {points.map((point) => {
-                const barHeight = Math.max((point.value / peak) * 100, point.value > 0 ? 8 : 0)
+                const barHeight = Math.max((point.value / peak) * 100, point.value > 0 ? 6 : 0)
 
                 return (
-                <div
-                  key={point.date}
-                  className="relative flex h-full min-w-0 flex-1 flex-col justify-end"
-                >
-                  <span
-                    className="pointer-events-none absolute left-1/2 z-10 -translate-x-1/2 rounded-full bg-bg-primary/95 px-2 py-0.5 text-center text-[11px] font-semibold text-text-primary shadow-subtle"
-                    style={{
-                      bottom:
-                        point.value > 0
-                          ? `clamp(8px, calc(${barHeight}% + 8px), calc(100% - 20px))`
-                          : "8px"
-                    }}
-                  >
-                    {point.value}
-                    {valueSuffix}
-                  </span>
                   <div
-                    className="w-full rounded-t-[8px] transition-all"
-                    style={{
-                      background: toneMap[tone],
-                      height: `${barHeight}%`
-                    }}
-                  />
-                </div>
+                    key={point.date}
+                    className="group relative flex h-full min-w-0 flex-1 flex-col justify-end"
+                  >
+                    {/* Tooltip on hover */}
+                    <span
+                      className="pointer-events-none absolute left-1/2 z-10 -translate-x-1/2 -translate-y-1 rounded-lg px-2 py-0.5 text-center text-[11px] font-bold opacity-0 shadow-subtle transition-all duration-150 group-hover:opacity-100"
+                      style={{
+                        bottom: point.value > 0
+                          ? `clamp(8px, calc(${barHeight}% + 6px), calc(100% - 24px))`
+                          : "8px",
+                        background: colors.bar,
+                        color: "#fff"
+                      }}
+                    >
+                      {point.value}{valueSuffix}
+                    </span>
+
+                    {/* Bar */}
+                    <div
+                      className="w-full rounded-t-[6px] transition-all duration-300 group-hover:brightness-110"
+                      style={{
+                        background: colors.gradient,
+                        height: `${barHeight}%`,
+                        boxShadow: barHeight > 10 ? `0 -2px 12px ${colors.glow}` : "none"
+                      }}
+                    />
+                  </div>
                 )
               })}
             </div>
           </div>
 
-          <div className="mt-4 flex gap-3">
+          {/* X-axis labels */}
+          <div className="mt-2 flex gap-2">
             {points.map((point) => (
-              <div key={`${point.date}-label`} className="flex min-w-0 flex-1 flex-col items-center gap-1">
-                <span className="truncate text-center text-[12px] font-medium text-quiet">
+              <div key={`${point.date}-label`} className="flex min-w-0 flex-1 flex-col items-center">
+                <span className="truncate text-center text-[11px] font-medium text-quiet">
                   {point.label || formatDateLabel(point.date)}
-                </span>
-                <span className="text-center text-[11px] font-semibold text-ink">
-                  {point.value}
-                  {valueSuffix}
                 </span>
               </div>
             ))}

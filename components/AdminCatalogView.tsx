@@ -1,8 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { EyeOff, Globe, Pencil, Sparkles } from "lucide-react"
 
 import { AdminTable } from "@/components/AdminTable"
+import { Modal } from "@/components/Modal"
 import { useToast } from "@/components/Toast"
 import { useClientResource } from "@/hooks/useClientResource"
 import { CEFR_LEVELS } from "@/lib/catalog"
@@ -42,36 +44,47 @@ const emptyForm: CatalogFormState = {
   isPublished: false
 }
 
+function getStylesForCEFRLevel(level: CefrLevel) {
+  switch (level) {
+    case "A1":
+    case "A2":
+      return "bg-green-500/10 text-green-600 border border-green-500/20"
+    case "B1":
+    case "B2":
+      return "bg-blue-500/10 text-blue-600 border border-blue-500/20"
+    case "C1":
+    case "C2":
+      return "bg-purple-500/10 text-purple-600 border border-purple-500/20"
+    default:
+      return "bg-bg-secondary text-text-tertiary border border-separator"
+  }
+}
+
 export function AdminCatalogView() {
   const [payload, setPayload] = useState<AdminCatalogPayload | null>(null)
   const [settingsLimit, setSettingsLimit] = useState("5")
   const [search, setSearch] = useState("")
-  const [topicFilter, setTopicFilter] = useState("")
   const [cefrFilter, setCefrFilter] = useState<"" | CefrLevel>("")
   const [publishedFilter, setPublishedFilter] = useState<"all" | "published" | "draft">("all")
-  const [enrichmentFilter, setEnrichmentFilter] = useState<"all" | CatalogEnrichmentStatus>("all")
-  const [reviewFilter, setReviewFilter] = useState<"all" | CatalogReviewStatus>("all")
   const [page, setPage] = useState(1)
   const [form, setForm] = useState<CatalogFormState>(emptyForm)
   const [editingItemId, setEditingItemId] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [savingLimit, setSavingLimit] = useState(false)
   const [autofilling, setAutofilling] = useState<string | null>(null)
+  const [isFormOpen, setIsFormOpen] = useState(false)
   const { showToast } = useToast()
   const { data, loading, refreshing } = useClientResource<{
     catalog: AdminCatalogPayload
     settings: AdminSettingsPayload
   }>({
-    key: `admin-catalog:${page}:${search}:${topicFilter}:${cefrFilter}:${publishedFilter}:${enrichmentFilter}:${reviewFilter}`,
+    key: `admin-catalog:${page}:${search}:${cefrFilter}:${publishedFilter}`,
     loader: async () => {
       const catalogUrl =
         `/api/admin/catalog?page=${page}` +
         `&search=${encodeURIComponent(search)}` +
-        `&topic=${encodeURIComponent(topicFilter)}` +
         `&cefrLevel=${encodeURIComponent(cefrFilter)}` +
-        `&published=${encodeURIComponent(publishedFilter)}` +
-        `&enrichmentStatus=${encodeURIComponent(enrichmentFilter)}` +
-        `&reviewStatus=${encodeURIComponent(reviewFilter)}`
+        `&published=${encodeURIComponent(publishedFilter)}`
 
       const [catalogResponse, settingsResponse] = await Promise.all([
         fetch(catalogUrl, {
@@ -106,8 +119,9 @@ export function AdminCatalogView() {
   }, [data])
 
   function resetForm() {
-    setForm(emptyForm)
     setEditingItemId(null)
+    setForm(emptyForm)
+    setIsFormOpen(false)
   }
 
   function updateForm<Key extends keyof CatalogFormState>(key: Key, value: CatalogFormState[Key]) {
@@ -257,9 +271,9 @@ export function AdminCatalogView() {
       setPayload((current) =>
         current
           ? {
-              ...current,
-              items: current.items.map((entry) => (entry.id === payload.item.id ? payload.item : entry))
-            }
+            ...current,
+            items: current.items.map((entry) => (entry.id === payload.item.id ? payload.item : entry))
+          }
           : current
       )
       showToast(payload.item.isPublished ? "Word published." : "Word moved to draft.", "success")
@@ -312,6 +326,7 @@ export function AdminCatalogView() {
       priority: String(item.priority),
       isPublished: item.isPublished
     })
+    setIsFormOpen(true)
   }
 
   async function startReview(item: WordCatalogRecord) {
@@ -371,9 +386,9 @@ export function AdminCatalogView() {
       setPayload((current) =>
         current
           ? {
-              ...current,
-              items: current.items.map((entry) => (entry.id === saved.item.id ? saved.item : entry))
-            }
+            ...current,
+            items: current.items.map((entry) => (entry.id === saved.item.id ? saved.item : entry))
+          }
           : current
       )
 
@@ -399,126 +414,173 @@ export function AdminCatalogView() {
                 Add curated words once, then let learners claim them manually by CEFR level.
               </p>
             </div>
-
-            <div className="grid gap-3 md:grid-cols-2">
-              <input
-                value={form.word}
-                onChange={(event) => updateForm("word", event.target.value)}
-                placeholder="Word"
-                className="input-field"
-              />
-              <input
-                value={form.translation}
-                onChange={(event) => updateForm("translation", event.target.value)}
-                placeholder="Translation"
-                className="input-field"
-              />
-              <select
-                value={form.cefrLevel}
-                onChange={(event) => updateForm("cefrLevel", event.target.value as CefrLevel)}
-                className="input-field"
-              >
-                {CEFR_LEVELS.map((level) => (
-                  <option key={level} value={level}>
-                    {level}
-                  </option>
-                ))}
-              </select>
-              <input
-                value={form.partOfSpeech}
-                onChange={(event) => updateForm("partOfSpeech", event.target.value)}
-                placeholder="Part of speech"
-                className="input-field"
-              />
-              <input
-                value={form.topic}
-                onChange={(event) => updateForm("topic", event.target.value)}
-                placeholder="Topic"
-                className="input-field"
-              />
-              <input
-                value={form.priority}
-                onChange={(event) => updateForm("priority", event.target.value)}
-                placeholder="Priority"
-                inputMode="numeric"
-                className="input-field"
-              />
-            </div>
-
-            <textarea
-              value={form.example}
-              onChange={(event) => updateForm("example", event.target.value)}
-              placeholder="Example sentence"
-              rows={3}
-              className="input-field min-h-[110px] resize-y"
-            />
-            <input
-              value={form.phonetic}
-              onChange={(event) => updateForm("phonetic", event.target.value)}
-              placeholder="Phonetic"
-              className="input-field"
-            />
-
-            <div className="flex flex-wrap items-center gap-3">
-              <label className="inline-flex items-center gap-2 text-sm text-muted">
-                <input
-                  type="checkbox"
-                  checked={form.isPublished}
-                  onChange={(event) => updateForm("isPublished", event.target.checked)}
-                />
-                Published
-              </label>
-              <button
-                type="button"
-                onClick={() => void handleAutofill()}
-                disabled={!!autofilling}
-                className="button-secondary"
-              >
-                {autofilling === "form" ? "Auto-filling..." : "Auto-fill"}
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleSubmit()}
-                disabled={submitting}
-                className="button-primary"
-              >
-                {submitting
-                  ? "Saving..."
-                  : editingItemId
-                    ? "Update word"
-                    : "Create word"}
-              </button>
-              {editingItemId ? (
-                <button type="button" onClick={resetForm} className="button-secondary">
-                  Cancel edit
-                </button>
-              ) : null}
-            </div>
           </div>
 
-          <div className="rounded-card border border-line bg-white/60 p-4">
+          <div className="rounded-[1.25rem] border border-separator bg-bg-secondary p-6">
             <p className="section-label">Daily limit</p>
-            <h2 className="mt-2 text-xl font-semibold text-ink">Global new words per day</h2>
-            <p className="mt-2 text-sm text-muted">
-              This limit applies to every learner when they claim today&apos;s words.
+            <p className="mt-1 text-[15px] text-muted">
+              Limit for learners to claim new words per day.
             </p>
-            <div className="mt-4 flex flex-col gap-3">
+            <div className="mt-4 flex items-center gap-3">
               <input
                 value={settingsLimit}
                 onChange={(event) => setSettingsLimit(event.target.value)}
+                className="input-field w-20 border-separator"
                 inputMode="numeric"
-                className="input-field"
+                type="number"
               />
               <button
                 type="button"
                 onClick={() => void handleSaveLimit()}
                 disabled={savingLimit}
-                className="button-primary"
+                className="button-primary whitespace-nowrap"
               >
-                {savingLimit ? "Saving..." : "Save daily limit"}
+                {savingLimit ? "Saving..." : "Update limit"}
               </button>
             </div>
           </div>
+
+          <Modal
+            open={isFormOpen}
+            onClose={resetForm}
+            title={editingItemId ? "Edit word" : "Add curated word"}
+          >
+            <div className="space-y-6">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted px-1">
+                    Word
+                  </label>
+                  <input
+                    value={form.word}
+                    onChange={(event) => updateForm("word", event.target.value)}
+                    placeholder="jones"
+                    className="input-field"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted px-1">
+                    Translation
+                  </label>
+                  <input
+                    value={form.translation}
+                    onChange={(event) => updateForm("translation", event.target.value)}
+                    placeholder="джонс"
+                    className="input-field"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted px-1">
+                    Level
+                  </label>
+                  <select
+                    value={form.cefrLevel}
+                    onChange={(event) => updateForm("cefrLevel", event.target.value as CefrLevel)}
+                    className="input-field"
+                  >
+                    {CEFR_LEVELS.map((level) => (
+                      <option key={level} value={level}>
+                        {level}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted px-1">
+                    POS
+                  </label>
+                  <input
+                    value={form.partOfSpeech}
+                    onChange={(event) => updateForm("partOfSpeech", event.target.value)}
+                    placeholder="nnp"
+                    className="input-field"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted px-1">
+                    Topic
+                  </label>
+                  <input
+                    value={form.topic}
+                    onChange={(event) => updateForm("topic", event.target.value)}
+                    placeholder="general"
+                    className="input-field"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted px-1">
+                    Priority
+                  </label>
+                  <input
+                    value={form.priority}
+                    onChange={(event) => updateForm("priority", event.target.value)}
+                    placeholder="10011"
+                    inputMode="numeric"
+                    className="input-field"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted px-1">
+                  Example Sentence
+                </label>
+                <textarea
+                  value={form.example}
+                  onChange={(event) => updateForm("example", event.target.value)}
+                  placeholder="I’ve got a basketball jones!"
+                  rows={3}
+                  className="input-field min-h-[110px] resize-y"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted px-1">
+                  Phonetic
+                </label>
+                <input
+                  value={form.phonetic}
+                  onChange={(event) => updateForm("phonetic", event.target.value)}
+                  placeholder="/dʒoʊnz/"
+                  className="input-field"
+                />
+              </div>
+
+              <div className="flex flex-wrap items-center gap-4 pt-2">
+                <label className="inline-flex cursor-pointer items-center gap-2 text-[15px] font-medium text-text-secondary">
+                  <input
+                    type="checkbox"
+                    checked={form.isPublished}
+                    onChange={(event) => updateForm("isPublished", event.target.checked)}
+                    className="h-4 w-4 rounded border-line text-accent focus:ring-accent"
+                  />
+                  Published
+                </label>
+
+                <div className="ml-auto flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => void handleAutofill()}
+                    disabled={!!autofilling}
+                    className="button-secondary px-5"
+                  >
+                    {autofilling === "form" ? "Auto-filling..." : "Auto-fill"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleSubmit()}
+                    disabled={submitting}
+                    className="button-primary px-8"
+                  >
+                    {submitting ? "Saving..." : editingItemId ? "Update word" : "Create word"}
+                  </button>
+                  <button type="button" onClick={resetForm} className="button-secondary">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </Modal>
         </div>
       </section>
 
@@ -526,77 +588,58 @@ export function AdminCatalogView() {
         title="Catalog words"
         subtitle="Search, filter, and publish the shared bank."
         actions={
-          <div className="grid w-full gap-2 md:w-auto md:grid-cols-6">
-            <input
-              value={search}
-              onChange={(event) => {
-                setSearch(event.target.value)
-                setPage(1)
-              }}
-              placeholder="Search"
-              className="input-field"
-            />
-            <input
-              value={topicFilter}
-              onChange={(event) => {
-                setTopicFilter(event.target.value)
-                setPage(1)
-              }}
-              placeholder="Topic"
-              className="input-field"
-            />
-            <select
-              value={cefrFilter}
-              onChange={(event) => {
-                setCefrFilter(event.target.value as "" | CefrLevel)
-                setPage(1)
-              }}
-              className="input-field"
-            >
-              <option value="">All levels</option>
-              {CEFR_LEVELS.map((level) => (
-                <option key={level} value={level}>
-                  {level}
-                </option>
-              ))}
-            </select>
-            <select
-              value={publishedFilter}
-              onChange={(event) => {
-                setPublishedFilter(event.target.value as "all" | "published" | "draft")
-                setPage(1)
-              }}
-              className="input-field"
-            >
-              <option value="all">All states</option>
-              <option value="published">Published</option>
-              <option value="draft">Drafts</option>
-            </select>
-            <select
-              value={enrichmentFilter}
-              onChange={(event) => {
-                setEnrichmentFilter(event.target.value as "all" | CatalogEnrichmentStatus)
-                setPage(1)
-              }}
-              className="input-field"
-            >
-              <option value="all">All enrichments</option>
-              <option value="pending">Pending</option>
-              <option value="completed">Completed</option>
-              <option value="failed">Failed</option>
-            </select>
-            <select
-              value={reviewFilter}
-              onChange={(event) => {
-                setReviewFilter(event.target.value as "all" | CatalogReviewStatus)
-                setPage(1)
-              }}
-              className="input-field"
-            >
-              <option value="all">All reviews</option>
-              <option value="draft">Draft</option>
-              <option value="approved">Approved</option>
-            </select>
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            {/* Search - Full width on mobile */}
+            <div className="w-full md:w-64">
+              <input
+                type="text"
+                value={search}
+                onChange={(event) => {
+                  setSearch(event.target.value)
+                  setPage(1)
+                }}
+                placeholder="Search words..."
+                className="input-field w-full px-3 text-sm"
+              />
+            </div>
+
+            {/* Filters & Add Button */}
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar md:overflow-visible">
+              <select
+                value={cefrFilter}
+                onChange={(event) => {
+                  setCefrFilter(event.target.value as "" | CefrLevel)
+                  setPage(1)
+                }}
+                className="input-field w-24 px-2 text-sm flex-shrink-0"
+              >
+                <option value="">Levels</option>
+                {CEFR_LEVELS.map((level) => (
+                  <option key={level} value={level}>
+                    {level}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={publishedFilter}
+                onChange={(event) => {
+                  setPublishedFilter(event.target.value as "all" | "published" | "draft")
+                  setPage(1)
+                }}
+                className="input-field w-28 px-2 text-sm flex-shrink-0"
+              >
+                <option value="all">Status</option>
+                <option value="published">Pub.</option>
+                <option value="draft">Draft</option>
+              </select>
+              <button
+                type="button"
+                onClick={() => setIsFormOpen(true)}
+                className="button-primary h-9 min-h-0 whitespace-nowrap px-4 text-sm ml-auto md:ml-0 flex-shrink-0"
+              >
+                Add word
+              </button>
+            </div>
           </div>
         }
       >
@@ -604,71 +647,70 @@ export function AdminCatalogView() {
           <div className="skeleton h-80 rounded-[1.75rem]" />
         ) : (
           <div className={`space-y-4 transition-opacity ${refreshing ? "opacity-70" : "opacity-100"}`}>
-            <div className="space-y-3 md:hidden">
+            <div className="space-y-2 md:hidden">
               {payload.items.map((item) => (
-                <article key={item.id} className="rounded-card border border-separator bg-bg-primary p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-[17px] font-semibold text-text-primary">{item.word}</p>
-                      {autofilling === item.id ? (
-                        <div className="skeleton mt-1 h-5 w-24 rounded" />
-                      ) : (
-                        <p className="text-[15px] text-text-secondary">{item.translation || "—"}</p>
-                      )}
+                <article key={item.id} className="rounded-2xl border border-separator bg-bg-primary p-3">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline gap-2">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span
+                            className={`h-1.5 w-1.5 rounded-full flex-shrink-0 ${item.isPublished ? "bg-green-500" : "bg-red-500"
+                              }`}
+                          />
+                          <p className="truncate font-semibold text-text-primary">{item.word}</p>
+                        </div>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap ${getStylesForCEFRLevel(item.cefrLevel)}`}>
+                          {item.cefrLevel}
+                        </span>
+                      </div>
+                      <p className="truncate text-sm text-text-secondary">{item.translation || "—"}</p>
                     </div>
-                    <span className="rounded-full bg-bg-secondary px-3 py-1 text-xs font-semibold text-text-secondary">
-                      {item.cefrLevel}
-                    </span>
-                  </div>
-                  {autofilling === item.id ? (
-                    <div className="skeleton mt-3 h-5 w-full rounded" />
-                  ) : (
-                    <p className="mt-3 text-sm text-text-secondary">{item.example || "No example yet"}</p>
-                  )}
-                  <div className="mt-4 grid grid-cols-2 gap-3 text-[13px] text-text-tertiary">
-                    <div>Topic: {item.topic}</div>
-                    <div>POS: {item.partOfSpeech}</div>
-                    <div>Priority: {item.priority}</div>
-                    <div>Status: {item.isPublished ? "Published" : "Draft"}</div>
-                    <div>Enrichment: {item.enrichmentStatus}</div>
-                    <div>Review: {item.reviewStatus}</div>
+
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => void startReview(item)}
+                        disabled={!!autofilling}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg bg-bg-secondary text-text-primary transition-colors hover:bg-bg-tertiary disabled:opacity-50"
+                        title="Autofill"
+                      >
+                        {autofilling === item.id ? (
+                          <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        ) : (
+                          <Sparkles size={14} />
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleTogglePublished(item)}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg bg-bg-secondary text-text-primary transition-colors hover:bg-bg-tertiary"
+                        title={item.isPublished ? "Unpublish" : "Publish"}
+                      >
+                        {item.isPublished ? <EyeOff size={14} /> : <Globe size={14} />}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => startEditing(item)}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg bg-bg-secondary text-text-primary transition-colors hover:bg-bg-tertiary"
+                        title="Edit"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                    </div>
                   </div>
                   {item.enrichmentError ? (
-                    <p className="mt-3 text-xs text-dangerText">{item.enrichmentError}</p>
+                    <p className="mt-2 text-[10px] text-dangerText">{item.enrichmentError}</p>
                   ) : null}
-                  <div className="mt-4 flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => startEditing(item)}
-                      className="button-secondary flex-1"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void startReview(item)}
-                      disabled={!!autofilling}
-                      className="button-secondary flex-1"
-                    >
-                      {autofilling === item.id ? "..." : "Autofill"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void handleTogglePublished(item)}
-                      className="button-secondary flex-1"
-                    >
-                      {item.isPublished ? "Unpublish" : "Publish"}
-                    </button>
-                  </div>
                 </article>
               ))}
             </div>
 
-            <table className="hidden min-w-full text-left text-sm md:table">
+            <table className="hidden min-w-full text-center text-sm md:table">
               <thead className="text-quiet">
                 <tr>
-                  {["Word", "Translation", "Level", "Topic", "Priority", "Enrichment", "Review", "Status", "Updated", "Actions"].map((heading) => (
-                    <th key={heading} className="px-3 py-3 font-medium">
+                  {["Word", "Translation", "Level", "Status", "Updated", "Actions"].map((heading) => (
+                    <th key={heading} className="px-3 py-3 font-medium whitespace-nowrap">
                       {heading}
                     </th>
                   ))}
@@ -680,41 +722,56 @@ export function AdminCatalogView() {
                     <td className="px-3 py-4 font-medium text-ink">{item.word}</td>
                     <td className="px-3 py-4 text-muted">
                       {autofilling === item.id ? (
-                        <div className="skeleton h-4 w-20 rounded" />
+                        <div className="skeleton h-4 w-16 mx-auto rounded" />
                       ) : (
                         item.translation || "—"
                       )}
                     </td>
-                    <td className="px-3 py-4 text-muted">{item.cefrLevel}</td>
-                    <td className="px-3 py-4 text-muted">{item.topic}</td>
-                    <td className="px-3 py-4 text-muted">{item.priority}</td>
-                    <td className="px-3 py-4 text-muted">{item.enrichmentStatus}</td>
-                    <td className="px-3 py-4 text-muted">{item.reviewStatus}</td>
-                    <td className="px-3 py-4 text-muted">{item.isPublished ? "Published" : "Draft"}</td>
-                    <td className="px-3 py-4 text-muted">{formatTimestamp(item.updatedAt)}</td>
                     <td className="px-3 py-4">
-                      <div className="flex gap-2">
+                      <span className={`px-2 py-1 rounded-full text-[11px] font-bold whitespace-nowrap ${getStylesForCEFRLevel(item.cefrLevel)}`}>
+                        {item.cefrLevel}
+                      </span>
+                    </td>
+                    <td className="px-3 py-4 text-muted">
+                      <div className="flex items-center justify-center gap-2">
+                        <span
+                          className={`h-2 w-2 rounded-full ${item.isPublished ? "bg-green-500" : "bg-red-500"
+                            }`}
+                        />
+                        <span>{item.isPublished ? "Published" : "Draft"}</span>
+                      </div>
+                    </td>
+                    <td className="px-3 py-4 text-muted whitespace-nowrap text-xs">{formatTimestamp(item.updatedAt)}</td>
+                    <td className="px-2 py-4">
+                      <div className="flex justify-center gap-2">
                         <button
                           type="button"
                           onClick={() => startEditing(item)}
-                          className="button-secondary px-3 py-2 text-xs font-medium"
+                          className="button-secondary flex h-8 w-8 items-center justify-center p-0"
+                          title="Edit"
                         >
-                          Edit
+                          <Pencil size={14} />
                         </button>
                         <button
                           type="button"
                           onClick={() => void startReview(item)}
                           disabled={!!autofilling}
-                          className="button-secondary px-3 py-2 text-xs font-medium"
+                          className="button-secondary flex h-8 w-8 items-center justify-center p-0"
+                          title="Autofill"
                         >
-                          {autofilling === item.id ? "..." : "Autofill"}
+                          {autofilling === item.id ? (
+                            <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                          ) : (
+                            <Sparkles size={14} />
+                          )}
                         </button>
                         <button
                           type="button"
                           onClick={() => void handleTogglePublished(item)}
-                          className="button-secondary px-3 py-2 text-xs font-medium"
+                          className="button-secondary flex h-8 w-8 items-center justify-center p-0"
+                          title={item.isPublished ? "Unpublish" : "Publish"}
                         >
-                          {item.isPublished ? "Unpublish" : "Publish"}
+                          {item.isPublished ? <EyeOff size={14} /> : <Globe size={14} />}
                         </button>
                       </div>
                     </td>

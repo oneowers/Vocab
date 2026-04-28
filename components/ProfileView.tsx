@@ -254,11 +254,10 @@ export function ProfileView({ user }: ProfileViewProps) {
               type="button"
               disabled={guestActive || savingLives}
               onClick={() => void handleReviewLivesChange(value)}
-              className={`min-w-[56px] rounded-[1rem] border px-4 py-3 text-sm font-semibold transition ${
-                (guestActive ? DEFAULT_GUEST_REVIEW_LIVES : reviewLives) === value
+              className={`min-w-[56px] rounded-[1rem] border px-4 py-3 text-sm font-semibold transition ${(guestActive ? DEFAULT_GUEST_REVIEW_LIVES : reviewLives) === value
                   ? "border-accent bg-accent text-accentForeground"
                   : "border-separator bg-bg-primary text-text-primary hover:border-accent"
-              } ${guestActive || savingLives ? "cursor-not-allowed opacity-70" : ""}`}
+                } ${guestActive || savingLives ? "cursor-not-allowed opacity-70" : ""}`}
             >
               {value}
             </button>
@@ -288,11 +287,10 @@ export function ProfileView({ user }: ProfileViewProps) {
               type="button"
               disabled={guestActive || savingLevel}
               onClick={() => void handleCefrLevelChange(value)}
-              className={`min-w-[64px] rounded-[1rem] border px-4 py-3 text-sm font-semibold transition ${
-                (guestActive ? "A1" : cefrLevel) === value
+              className={`min-w-[64px] rounded-[1rem] border px-4 py-3 text-sm font-semibold transition ${(guestActive ? "A1" : cefrLevel) === value
                   ? "border-accent bg-accent text-accentForeground"
                   : "border-separator bg-bg-primary text-text-primary hover:border-accent"
-              } ${guestActive || savingLevel ? "cursor-not-allowed opacity-70" : ""}`}
+                } ${guestActive || savingLevel ? "cursor-not-allowed opacity-70" : ""}`}
             >
               {value}
             </button>
@@ -327,9 +325,8 @@ export function ProfileView({ user }: ProfileViewProps) {
         ) : null}
 
         <div
-          className={`mt-5 overflow-x-auto pb-1 hide-scrollbar native-scroll transition-opacity ${
-            activityLoading ? "hidden" : activityRefreshing ? "opacity-70" : "opacity-100"
-          }`}
+          className={`mt-5 overflow-x-auto pb-1 hide-scrollbar native-scroll transition-opacity ${activityLoading ? "hidden" : activityRefreshing ? "opacity-70" : "opacity-100"
+            }`}
         >
           <div className="min-w-[760px]">
             <div

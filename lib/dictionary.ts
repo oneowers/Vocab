@@ -2,10 +2,29 @@ interface DictionaryEntry {
   phonetic?: string
   phonetics?: Array<{ text?: string }>
   meanings?: Array<{
+    synonyms?: string[]
     definitions?: Array<{
       example?: string
+      synonyms?: string[]
     }>
   }>
+}
+
+function normalizeTerms(terms: string[]) {
+  const seen = new Set<string>()
+
+  return terms
+    .map((term) => term.trim())
+    .filter((term) => {
+      const key = term.toLowerCase()
+
+      if (!term || seen.has(key)) {
+        return false
+      }
+
+      seen.add(key)
+      return true
+    })
 }
 
 export async function fetchDictionaryDetails(word: string) {
@@ -14,7 +33,8 @@ export async function fetchDictionaryDetails(word: string) {
   if (!normalizedWord) {
     return {
       example: null,
-      phonetic: null
+      phonetic: null,
+      synonyms: []
     }
   }
 
@@ -28,7 +48,8 @@ export async function fetchDictionaryDetails(word: string) {
   if (!response.ok) {
     return {
       example: null,
-      phonetic: null
+      phonetic: null,
+      synonyms: []
     }
   }
 
@@ -42,9 +63,16 @@ export async function fetchDictionaryDetails(word: string) {
     firstEntry?.phonetic ||
     firstEntry?.phonetics?.find((item) => typeof item.text === "string")?.text ||
     null
+  const synonyms = normalizeTerms(
+    firstEntry?.meanings?.flatMap((meaning) => [
+      ...(meaning.synonyms ?? []),
+      ...(meaning.definitions?.flatMap((definition) => definition.synonyms ?? []) ?? [])
+    ]) ?? []
+  )
 
   return {
     example,
-    phonetic
+    phonetic,
+    synonyms
   }
 }

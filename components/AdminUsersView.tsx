@@ -68,11 +68,11 @@ export function AdminUsersView() {
       setPayload((current) =>
         current
           ? {
-              ...current,
-              items: current.items.map((item) =>
-                item.id === user.id ? { ...item, role: nextRole } : item
-              )
-            }
+            ...current,
+            items: current.items.map((item) =>
+              item.id === user.id ? { ...item, role: nextRole } : item
+            )
+          }
           : current
       )
       showToast("User role updated.", "success")
@@ -142,9 +142,9 @@ export function AdminUsersView() {
       setPayload((current) =>
         current
           ? {
-              ...current,
-              items: current.items.filter((item) => item.id !== selectedUser.id)
-            }
+            ...current,
+            items: current.items.filter((item) => item.id !== selectedUser.id)
+          }
           : current
       )
       setSelectedUser(null)

@@ -58,6 +58,7 @@ model Card {
   catalogWord    WordCatalog? @relation(fields: [catalogWordId], references: [id], onDelete: SetNull)
   original       String?
   translation    String?
+  translationAlternatives String[] @default([])
   direction      String
   example        String?
   phonetic       String?

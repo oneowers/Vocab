@@ -108,14 +108,13 @@ export function AppShell({ user, children }: AppShellProps) {
                 return (
                   <Link
                     key={item.href}
-                  href={item.href}
-                  prefetch
-                  aria-current={active ? "page" : undefined}
-                    className={`flex min-h-[52px] items-center gap-3 rounded-card px-4 text-[17px] font-semibold transition ${
-                      active
-                        ? "bg-bg-primary text-accent shadow-subtle"
-                        : "text-text-secondary hover:bg-bg-primary hover:text-text-primary"
-                    }`}
+                    href={item.href}
+                    prefetch
+                    aria-current={active ? "page" : undefined}
+                    className={`flex min-h-[52px] items-center gap-3 rounded-card px-4 text-[17px] font-semibold transition ${active
+                      ? "bg-bg-primary text-accent shadow-subtle"
+                      : "text-text-secondary hover:bg-bg-primary hover:text-text-primary"
+                      }`}
                   >
                     <Icon size={20} strokeWidth={active ? 2.4 : 2} />
                     <span>{item.label}</span>
@@ -127,11 +126,10 @@ export function AppShell({ user, children }: AppShellProps) {
                   href="/admin"
                   prefetch
                   aria-current={pathname.startsWith("/admin") ? "page" : undefined}
-                  className={`flex min-h-[52px] items-center gap-3 rounded-card px-4 text-[17px] font-semibold transition ${
-                    pathname.startsWith("/admin")
-                      ? "bg-bg-primary text-accent shadow-subtle"
-                      : "text-text-secondary hover:bg-bg-primary hover:text-text-primary"
-                  }`}
+                  className={`flex min-h-[52px] items-center gap-3 rounded-card px-4 text-[17px] font-semibold transition ${pathname.startsWith("/admin")
+                    ? "bg-bg-primary text-accent shadow-subtle"
+                    : "text-text-secondary hover:bg-bg-primary hover:text-text-primary"
+                    }`}
                 >
                   <ArrowRight size={20} strokeWidth={pathname.startsWith("/admin") ? 2.4 : 2} />
                   <span>Admin</span>

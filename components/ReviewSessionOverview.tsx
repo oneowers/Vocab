@@ -120,9 +120,8 @@ export function ReviewSessionOverview({
                     key={status}
                     type="button"
                     onClick={() => onSelectStatus(status)}
-                    className={`${styles.filterTab} ${
-                      selectedStatus === status ? styles.filterTabActive : ""
-                    }`}
+                    className={`${styles.filterTab} ${selectedStatus === status ? styles.filterTabActive : ""
+                      }`}
                   >
                     {label}
                   </button>
@@ -139,9 +138,8 @@ export function ReviewSessionOverview({
                   key={step.value}
                   type="button"
                   onClick={() => onSelectPracticeStage(step.value)}
-                  className={`${styles.filterTab} ${
-                    practiceStage === step.value ? styles.filterTabActive : ""
-                  }`}
+                  className={`${styles.filterTab} ${practiceStage === step.value ? styles.filterTabActive : ""
+                    }`}
                 >
                   {step.label}
                 </button>

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ArrowLeftRight, Languages, Volume2 } from "lucide-react"
+import { ArrowLeftRight, SlidersHorizontal, Volume2 } from "lucide-react"
 
 import { useToast } from "@/components/Toast"
 import { getTooltipMessage } from "@/lib/config"
@@ -15,35 +15,71 @@ interface TranslatorPanelProps {
 
 const CEFR_STYLES: Record<CefrLevel, { badge: string; dot: string; label: string }> = {
   A1: {
-    badge: "border-emerald-200 bg-emerald-500/10 text-emerald-700",
+    badge: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
     dot: "bg-emerald-500",
     label: "Beginner"
   },
   A2: {
-    badge: "border-lime-200 bg-lime-500/10 text-lime-700",
+    badge: "bg-lime-500/10 text-lime-700 dark:text-lime-300",
     dot: "bg-lime-500",
     label: "Elementary"
   },
   B1: {
-    badge: "border-sky-200 bg-sky-500/10 text-sky-700",
+    badge: "bg-sky-500/10 text-sky-700 dark:text-sky-300",
     dot: "bg-sky-500",
     label: "Intermediate"
   },
   B2: {
-    badge: "border-indigo-200 bg-indigo-500/10 text-indigo-700",
+    badge: "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300",
     dot: "bg-indigo-500",
     label: "Upper-intermediate"
   },
   C1: {
-    badge: "border-fuchsia-200 bg-fuchsia-500/10 text-fuchsia-700",
+    badge: "bg-fuchsia-500/10 text-fuchsia-700 dark:text-fuchsia-300",
     dot: "bg-fuchsia-500",
     label: "Advanced"
   },
   C2: {
-    badge: "border-rose-200 bg-rose-500/10 text-rose-700",
+    badge: "bg-rose-500/10 text-rose-700 dark:text-rose-300",
     dot: "bg-rose-500",
     label: "Mastery"
   }
+}
+
+function mergeTranslationAlternatives(terms: string[], excludedTerms: string[]) {
+  const excluded = new Set(excludedTerms.map((term) => term.trim().toLowerCase()).filter(Boolean))
+  const seen = new Set<string>()
+
+  return terms
+    .map((term) => term.trim())
+    .filter((term) => {
+      const key = term.toLowerCase()
+
+      if (!term || excluded.has(key) || seen.has(key)) {
+        return false
+      }
+
+      seen.add(key)
+      return true
+    })
+}
+
+type EnglishSynonym = DictionaryPayload["synonyms"][number]
+
+function mergeEnglishSynonyms(synonyms: EnglishSynonym[], excludedTerms: string[]) {
+  const excluded = new Set(excludedTerms.map((term) => term.trim().toLowerCase()).filter(Boolean))
+  const seen = new Set<string>()
+
+  return synonyms.filter((synonym) => {
+    const key = synonym.word.trim().toLowerCase()
+
+    if (!key || excluded.has(key) || seen.has(key)) {
+      return false
+    }
+
+    seen.add(key)
+    return true
+  })
 }
 
 export function TranslatorPanel({
@@ -54,6 +90,7 @@ export function TranslatorPanel({
   const [direction, setDirection] = useState<Direction>("en-ru")
   const [translation, setTranslation] = useState("")
   const [translationAlternatives, setTranslationAlternatives] = useState<string[]>([])
+  const [englishSynonyms, setEnglishSynonyms] = useState<EnglishSynonym[]>([])
   const [cefrLevel, setCefrLevel] = useState<CefrLevel | null>(null)
   const [example, setExample] = useState<string | null>(null)
   const [phonetic, setPhonetic] = useState<string | null>(null)
@@ -69,6 +106,7 @@ export function TranslatorPanel({
 
     setLoading(true)
     setTranslationAlternatives([])
+    setEnglishSynonyms([])
     setCefrLevel(null)
 
     try {
@@ -88,7 +126,11 @@ export function TranslatorPanel({
         (await translationResponse.json()) as TranslationPayload
       const translated = translationPayload.translation
       setTranslation(translated)
-      setTranslationAlternatives(translationPayload.translationAlternatives)
+      const nextTranslationAlternatives = mergeTranslationAlternatives(
+        translationPayload.translationAlternatives,
+        [translated, query.trim()]
+      )
+      setTranslationAlternatives(nextTranslationAlternatives)
       setCefrLevel(translationPayload.cefrLevel)
 
       const dictionaryWord = direction === "en-ru" ? query.trim() : translated
@@ -105,9 +147,16 @@ export function TranslatorPanel({
             (await dictionaryResponse.json()) as DictionaryPayload
           setExample(dictionaryPayload.example)
           setPhonetic(dictionaryPayload.phonetic)
+          setEnglishSynonyms(
+            mergeEnglishSynonyms(
+              dictionaryPayload.synonyms,
+              [translated, query.trim()]
+            )
+          )
         } else {
           setExample(null)
           setPhonetic(null)
+          setEnglishSynonyms([])
         }
       }
     } catch {
@@ -133,6 +182,10 @@ export function TranslatorPanel({
         body: JSON.stringify({
           original: query.trim(),
           translation: translation.trim(),
+          translationAlternatives: mergeTranslationAlternatives(
+            [...translationAlternatives, ...englishSynonyms.map((synonym) => synonym.word)],
+            [translation.trim(), query.trim()]
+          ),
           direction,
           example,
           phonetic
@@ -160,6 +213,7 @@ export function TranslatorPanel({
     setQuery(translation || query)
     setTranslation(query)
     setTranslationAlternatives([])
+    setEnglishSynonyms([])
     setCefrLevel(null)
   }
 
@@ -167,27 +221,71 @@ export function TranslatorPanel({
   const translatedLanguage = direction === "en-ru" ? "ru-RU" : "en-US"
   const sourceLabel = direction === "en-ru" ? "English" : "Russian"
   const targetLabel = direction === "en-ru" ? "Russian" : "English"
+  const englishSynonymsBlock = englishSynonyms.length > 0 ? (
+    <div className="mt-5">
+      <p className="mb-2.5 text-[12px] font-bold uppercase tracking-wider text-text-tertiary">
+        Synonyms
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {englishSynonyms.map((item) => (
+          <span
+            key={item.word}
+            className="inline-flex items-center gap-2 rounded-full bg-white/[0.06] px-2.5 py-1 text-[14px] font-medium text-text-secondary"
+          >
+            {item.word}
+            {item.cefrLevel && (
+              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${CEFR_STYLES[item.cefrLevel].badge}`}>
+                {item.cefrLevel}
+              </span>
+            )}
+          </span>
+        ))}
+      </div>
+    </div>
+  ) : null
 
   return (
-    <section className="panel overflow-hidden rounded-[20px] p-0">
-      <div className="border-b border-separator px-4 py-3 md:px-6">
-        <div className="flex items-center gap-2 text-[15px] font-semibold text-text-secondary">
-          <Languages size={18} className="text-accent" />
-          Translator
+    <section className="translate-phone-surface space-y-5">
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-[34px] font-black leading-none tracking-tight text-white md:text-[44px]">
+          Translate
+        </h1>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-[#28282f] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition hover:bg-[#303039]"
+            aria-label="Translation options"
+          >
+            <SlidersHorizontal size={20} />
+          </button>
+          <button
+            type="button"
+            onClick={handleSwapDirection}
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-[#28282f] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition hover:bg-[#303039]"
+            aria-label="Swap languages"
+          >
+            <ArrowLeftRight size={20} />
+          </button>
         </div>
-        <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-center md:gap-3">
+      </div>
+
+      <div className="rounded-[26px] bg-[#19191e] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] md:max-w-[380px]">
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center">
           <button
             type="button"
             onClick={() => setDirection("en-ru")}
-            className="rounded-[12px] px-3 py-2 text-[15px] font-semibold transition data-[active=true]:bg-bg-secondary data-[active=true]:text-text-primary md:px-4"
-            data-active={direction === "en-ru"}
+            className={`min-h-10 rounded-[22px] px-3 text-[14px] font-bold transition-all duration-300 ${direction === "en-ru"
+                ? "bg-[#f2f2f4] text-black"
+                : "text-white/48 hover:bg-white/[0.05] hover:text-white"
+              }`}
           >
             English
           </button>
           <button
             type="button"
             onClick={handleSwapDirection}
-            className="mx-auto inline-flex h-10 w-10 items-center justify-center rounded-full bg-bg-secondary text-text-tertiary transition hover:text-text-primary"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white/38 transition hover:bg-white/[0.05] hover:text-white"
             aria-label="Swap languages"
           >
             <ArrowLeftRight size={18} />
@@ -195,151 +293,152 @@ export function TranslatorPanel({
           <button
             type="button"
             onClick={() => setDirection("ru-en")}
-            className="rounded-[12px] px-3 py-2 text-[15px] font-semibold transition data-[active=true]:bg-bg-secondary data-[active=true]:text-text-primary md:px-4"
-            data-active={direction === "ru-en"}
+            className={`min-h-10 rounded-[22px] px-3 text-[14px] font-bold transition-all duration-300 ${direction === "ru-en"
+                ? "bg-[#f2f2f4] text-black"
+                : "text-white/48 hover:bg-white/[0.05] hover:text-white"
+              }`}
           >
             Russian
           </button>
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-2">
-        <div className="border-b border-separator p-4 md:p-6 lg:border-b-0 lg:border-r">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-text-tertiary">
-              {sourceLabel}
-            </p>
-            {canSpeak() ? (
-              <button
-                type="button"
-                onClick={() => speakText(query, ttsLanguage)}
-                className="button-ghost min-h-[36px] px-2"
-                aria-label="Speak source word"
-              >
-                <Volume2 size={18} />
-              </button>
-            ) : null}
-          </div>
-          <textarea
-            id="translation-query"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            autoCapitalize="none"
-            autoCorrect="off"
-            autoComplete="off"
-            spellCheck={false}
-            placeholder={
-              direction === "en-ru" ? "Type text to translate" : "Введите текст для перевода"
-            }
-            className="mt-4 min-h-[132px] w-full resize-none border-0 bg-transparent p-0 text-[24px] font-bold tracking-[-0.5px] text-text-primary outline-none placeholder:text-text-tertiary md:min-h-[220px] md:text-[28px]"
-          />
-          {cefrLevel && direction === "en-ru" ? (
-            <div className="pt-1">
-              <span
-                className={`inline-flex items-center rounded-full border px-3 py-1 text-[12px] font-semibold ${CEFR_STYLES[cefrLevel].badge}`}
-              >
-                {cefrLevel} · {CEFR_STYLES[cefrLevel].label}
+      <div className="grid gap-3 lg:grid-cols-2">
+        <div className="translate-card flex min-h-[280px] flex-col p-5 md:min-h-[340px] md:p-6">
+          <div className="flex flex-1 flex-col">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <span className="text-[12px] font-bold uppercase tracking-[0.08em] text-white/42">
+                {sourceLabel}
               </span>
-            </div>
-          ) : null}
-          <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-            <button
-              type="button"
-              onClick={() => void handleTranslate()}
-              disabled={loading || !query.trim()}
-              className="button-primary w-full"
-            >
-              {loading ? "Translating..." : "Translate"}
-            </button>
-          </div>
-        </div>
-
-        <div className="bg-bg-secondary/45 p-4 md:p-6">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-text-tertiary">
-              {targetLabel}
-            </p>
-            {canSpeak() && translation ? (
-              <button
-                type="button"
-                onClick={() => speakText(translation, translatedLanguage)}
-                className="button-ghost min-h-[36px] px-2"
-                aria-label="Speak translated text"
-              >
-                <Volume2 size={18} />
-              </button>
-            ) : null}
-          </div>
-
-          {loading ? (
-            <div className="mt-4 space-y-3">
-              <div className="skeleton h-8 w-2/3 rounded-[12px]" />
-              <div className="skeleton h-4 w-1/3 rounded-[12px]" />
-              <div className="skeleton h-20 w-full rounded-[16px] md:h-24" />
-            </div>
-          ) : translation ? (
-            <div className="mt-4 space-y-4">
-              <div className="space-y-1">
-                <p className="text-[24px] font-bold tracking-[-0.5px] text-text-primary md:text-[28px]">
-                  {translation}
-                </p>
-                {phonetic ? <p className="text-[13px] text-text-tertiary">{phonetic}</p> : null}
-                {cefrLevel && direction === "ru-en" ? (
-                  <div className="pt-1">
-                    <span
-                      className={`inline-flex items-center rounded-full border px-3 py-1 text-[12px] font-semibold ${CEFR_STYLES[cefrLevel].badge}`}
-                    >
-                      {cefrLevel} · {CEFR_STYLES[cefrLevel].label}
-                    </span>
-                  </div>
-                ) : null}
-              </div>
-              {translationAlternatives.length ? (
-                <div className="rounded-[16px] bg-bg-primary px-4 py-3">
-                  <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-text-tertiary">
-                    Alternative translations
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {translationAlternatives.map((item) => (
-                      <span
-                        key={item}
-                        className="rounded-full bg-bg-secondary px-3 py-1 text-[13px] text-text-secondary"
-                      >
-                        {item}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-              {example ? (
-                <p className="rounded-[16px] bg-bg-primary px-4 py-3 text-[15px] leading-6 text-text-secondary">
-                  {example}
-                </p>
-              ) : (
-                <div className="min-h-[84px] rounded-[16px] bg-bg-primary/70 md:min-h-[120px]" />
+              {direction === "en-ru" && cefrLevel && (
+                <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold ${CEFR_STYLES[cefrLevel].badge}`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${CEFR_STYLES[cefrLevel].dot}`} />
+                  {cefrLevel} · {CEFR_STYLES[cefrLevel].label}
+                </span>
               )}
             </div>
+
+            <textarea
+              id="translation-query"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void handleTranslate() } }}
+              autoCapitalize="none"
+              autoCorrect="off"
+              autoComplete="off"
+              spellCheck={false}
+              placeholder={direction === "en-ru" ? "Enter text" : "Введите текст"}
+              className="min-h-[110px] w-full flex-1 resize-none border-0 bg-transparent p-0 text-[26px] font-black tracking-tight text-white outline-none placeholder:text-white/24 md:text-[32px]"
+            />
+
+            {direction === "en-ru" && phonetic && (
+              <p className="mt-2 text-[15px] font-medium text-text-secondary">{phonetic}</p>
+            )}
+            {direction === "en-ru" && englishSynonymsBlock}
+
+            <div className="mt-5 flex items-center justify-between gap-3">
+              <div>
+                {canSpeak() && (
+                  <button
+                    type="button"
+                    onClick={() => speakText(query, ttsLanguage)}
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-[#292930] text-white/68 transition hover:bg-[#34343c] hover:text-white"
+                    aria-label="Speak source word"
+                  >
+                    <Volume2 size={18} />
+                  </button>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => void handleTranslate()}
+                disabled={loading || !query.trim()}
+                className="min-h-10 rounded-full bg-[#f2f2f4] px-5 text-[14px] font-black text-black transition hover:bg-white disabled:opacity-45"
+              >
+                {loading ? "Translating..." : "Translate"}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="translate-card flex min-h-[280px] flex-col p-5 md:min-h-[340px] md:p-6">
+          {loading ? (
+            <div className="flex flex-1 flex-col">
+              <div className="skeleton h-10 w-2/3 rounded-2xl" />
+              <div className="skeleton mt-4 h-5 w-1/3 rounded-xl" />
+              <div className="skeleton mt-8 h-24 w-full rounded-[24px]" />
+            </div>
+          ) : translation ? (
+            <div className="flex flex-1 flex-col">
+              <div className="flex-1">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <span className="text-[12px] font-bold uppercase tracking-[0.08em] text-white/42">
+                    {targetLabel}
+                  </span>
+                  {direction === "ru-en" && cefrLevel && (
+                    <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold ${CEFR_STYLES[cefrLevel].badge}`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${CEFR_STYLES[cefrLevel].dot}`} />
+                      {cefrLevel} · {CEFR_STYLES[cefrLevel].label}
+                    </span>
+                  )}
+                </div>
+
+                <p className="text-[30px] font-black tracking-tight text-white md:text-[40px]">{translation}</p>
+                {direction === "ru-en" && phonetic && (
+                  <p className="mt-2 text-[15px] font-medium text-white/50">{phonetic}</p>
+                )}
+                {direction === "ru-en" && englishSynonymsBlock}
+
+                <div className="mt-6 space-y-5">
+                  {translationAlternatives.length > 0 && (
+                    <div>
+                      <p className="mb-2.5 text-[12px] font-bold uppercase tracking-wider text-white/42">Alternative translations</p>
+                      <div className="flex flex-wrap gap-2">
+                        {translationAlternatives.map(item => (
+                          <span key={item} className="rounded-full bg-white/[0.06] px-2.5 py-1 text-[14px] font-medium text-white/64">
+                            {item}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {example && (
+                    <p className="border-l border-white/[0.1] pl-3 text-[14px] leading-relaxed text-white/58">{example}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-6 flex items-center justify-between">
+                <div>
+                  {canSpeak() && (
+                    <button
+                      type="button"
+                      onClick={() => speakText(translation, translatedLanguage)}
+                      className="flex h-10 w-10 items-center justify-center rounded-full bg-[#292930] text-white/68 transition hover:bg-[#34343c] hover:text-white"
+                      aria-label="Speak translated text"
+                    >
+                      <Volume2 size={18} />
+                    </button>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => void handleAddCard()}
+                  disabled={guestMode || saving}
+                  title={guestMode ? getTooltipMessage() : undefined}
+                  className="min-h-10 rounded-full bg-[#292930] px-5 text-[14px] font-black text-white transition hover:bg-[#34343c] disabled:opacity-45"
+                >
+                  {saving ? "Saving..." : "Add to cards"}
+                </button>
+              </div>
+            </div>
           ) : (
-            <div className="mt-4 flex min-h-[132px] items-center rounded-[16px] bg-bg-primary/70 px-5 md:min-h-[220px]">
-              <p className="text-[18px] text-text-tertiary">
-                Translation will appear here
-              </p>
+            <div className="flex flex-1 items-center text-[26px] font-black tracking-tight text-white/22 md:text-[32px]">
+              Translation
             </div>
           )}
-        </div>
-      </div>
-
-      <div className="border-t border-separator p-4 md:px-6 md:py-5">
-        <div className="flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={() => void handleAddCard()}
-            disabled={guestMode || saving || !translation}
-            title={guestMode ? getTooltipMessage() : undefined}
-            className="button-primary w-full"
-          >
-            {saving ? "Saving..." : "Add to cards"}
-          </button>
         </div>
       </div>
     </section>

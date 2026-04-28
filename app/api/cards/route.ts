@@ -114,12 +114,20 @@ export async function POST(request: NextRequest) {
     original?: string
     translation?: string
     direction?: "en-ru" | "ru-en"
+    translationAlternatives?: string[]
     example?: string | null
     phonetic?: string | null
   }
 
   const original = body.original?.trim()
   const translation = body.translation?.trim()
+  const translationAlternatives = Array.from(
+    new Set(
+      (body.translationAlternatives ?? [])
+        .map((item) => item.trim())
+        .filter((item) => item && item !== translation)
+    )
+  )
   const direction = body.direction
 
   if (!original || !translation || !direction) {
@@ -150,6 +158,7 @@ export async function POST(request: NextRequest) {
           userId: user.id,
           original,
           translation,
+          translationAlternatives,
           direction,
           example: body.example?.trim() || null,
           phonetic: body.phonetic?.trim() || null,

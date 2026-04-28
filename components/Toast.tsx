@@ -49,13 +49,12 @@ export function ToastProvider({
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`pointer-events-auto rounded-[18px] border px-4 py-3 text-[15px] shadow-panel backdrop-blur-xl animate-slide-in ${
-              toast.tone === "success"
+            className={`pointer-events-auto rounded-[18px] border px-4 py-3 text-[15px] shadow-panel backdrop-blur-xl animate-slide-in ${toast.tone === "success"
                 ? "border-line bg-successBg text-successText"
                 : toast.tone === "error"
                   ? "border-line bg-dangerBg text-dangerText"
                   : "border-line bg-bg-primary/90 text-ink"
-            }`}
+              }`}
           >
             {toast.message}
           </div>

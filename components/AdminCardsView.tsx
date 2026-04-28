@@ -62,9 +62,9 @@ export function AdminCardsView() {
       setPayload((current) =>
         current
           ? {
-              ...current,
-              items: current.items.filter((item) => item.id !== selectedCard.id)
-            }
+            ...current,
+            items: current.items.filter((item) => item.id !== selectedCard.id)
+          }
           : current
       )
       setSelectedCard(null)

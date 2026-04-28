@@ -154,6 +154,7 @@ export function CardsPageView() {
           body: JSON.stringify({
             original: card.original,
             translation: card.translation,
+            translationAlternatives: card.translationAlternatives,
             direction: card.direction,
             example: card.example,
             phonetic: card.phonetic
@@ -182,7 +183,11 @@ export function CardsPageView() {
 
       <div className="space-y-4">
         {loading ? (
-          <div className="skeleton h-96 rounded-card" />
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="skeleton h-[140px] rounded-[28px] opacity-70" />
+            ))}
+          </div>
         ) : (
           <CardList
             cards={visibleCards}

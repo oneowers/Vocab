@@ -19,6 +19,7 @@ function createSampleCards(): CardRecord[] {
       userId: "guest-user",
       original: "apple",
       translation: "яблоко",
+      translationAlternatives: [],
       direction: "en-ru",
       example: "She packed an apple for the trip.",
       phonetic: "/ˈæp.əl/",
@@ -34,6 +35,7 @@ function createSampleCards(): CardRecord[] {
       userId: "guest-user",
       original: "river",
       translation: "река",
+      translationAlternatives: [],
       direction: "en-ru",
       example: "The river is calm in the morning.",
       phonetic: "/ˈrɪv.ər/",
@@ -49,6 +51,7 @@ function createSampleCards(): CardRecord[] {
       userId: "guest-user",
       original: "учиться",
       translation: "to study",
+      translationAlternatives: [],
       direction: "ru-en",
       example: "I want to study every day.",
       phonetic: "/ˈstʌd.i/",
@@ -64,6 +67,7 @@ function createSampleCards(): CardRecord[] {
       userId: "guest-user",
       original: "bright",
       translation: "яркий",
+      translationAlternatives: [],
       direction: "en-ru",
       example: "The room feels bright and warm.",
       phonetic: "/braɪt/",
@@ -84,6 +88,7 @@ function canUseStorage() {
 function normalizeGuestCards(cards: CardRecord[]) {
   return cards.map((card) => ({
     ...card,
+    translationAlternatives: card.translationAlternatives ?? [],
     lastReviewResult: card.lastReviewResult ?? "unknown"
   }))
 }

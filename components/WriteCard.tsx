@@ -120,19 +120,17 @@ export function WriteCard({ card, onResolved }: WriteCardProps) {
 
       {result ? (
         <div
-          className={`mt-5 rounded-[16px] px-4 py-4 text-[15px] ${
-            result === "known"
+          className={`mt-5 rounded-[16px] px-4 py-4 text-[15px] ${result === "known"
               ? "bg-successBg text-successText"
               : "bg-dangerBg text-dangerText"
-          }`}
+            }`}
         >
           {result === "known" ? "Correct." : "Not quite."} Right answer:{" "}
           <span
-            className={`font-semibold ${
-              result === "known" && card.cefrLevel
+            className={`font-semibold ${result === "known" && card.cefrLevel
                 ? CEFR_STYLES[card.cefrLevel].dot + " rounded px-1 py-0.5 text-white"
                 : ""
-            }`}
+              }`}
           >
             {expectedAnswer}
           </span>

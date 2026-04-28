@@ -59,11 +59,10 @@ export function AdminShell({ user, children }: AdminShellProps) {
                     href={item.href}
                     prefetch
                     aria-current={active ? "page" : undefined}
-                    className={`flex min-h-[52px] items-center gap-3 rounded-card px-4 text-[17px] font-semibold transition ${
-                      active
-                        ? "bg-bg-primary text-accent shadow-subtle"
-                        : "text-text-secondary hover:bg-bg-primary hover:text-text-primary"
-                    }`}
+                    className={`flex min-h-[52px] items-center gap-3 rounded-card px-4 text-[17px] font-semibold transition ${active
+                      ? "bg-bg-primary text-accent shadow-subtle"
+                      : "text-text-secondary hover:bg-bg-primary hover:text-text-primary"
+                      }`}
                   >
                     <Icon size={20} strokeWidth={active ? 2.4 : 2} />
                     <span>{item.label}</span>
@@ -95,6 +94,14 @@ export function AdminShell({ user, children }: AdminShellProps) {
         <div className="flex min-h-screen min-w-0 flex-1 flex-col">
           <div className="page-with-tabbar flex-1 px-4 py-4 md:px-8 md:py-8">
             <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 md:gap-6">
+              {/* Mobile Back Button */}
+              <div className="md:hidden">
+                <Link href="/" prefetch className="inline-flex items-center gap-2 text-sm font-semibold text-muted transition hover:text-ink">
+                  <ArrowLeft size={16} />
+                  Back to app
+                </Link>
+              </div>
+
               <main className="min-w-0 flex-1">
                 <PageTransition>{children}</PageTransition>
               </main>
