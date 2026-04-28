@@ -130,28 +130,6 @@ function getStageLabel(stage: ReviewStage) {
   return REVIEW_STEPS.find((item) => item.value === stage)?.label ?? "Stage"
 }
 
-function SkeletonPractice() {
-  return (
-    <div className={styles.commandCenter}>
-      <div className="flex justify-center mb-5">
-        <div className="skeleton h-10 w-48 rounded-full" />
-      </div>
-      <div className={styles.heroCard}>
-        <div className="flex items-center gap-4 mb-8">
-          <div className="skeleton h-14 w-14 rounded-2xl" />
-          <div className="space-y-2">
-            <div className="skeleton h-6 w-32 rounded-lg" />
-            <div className="skeleton h-4 w-48 rounded-lg" />
-          </div>
-        </div>
-        <div className="skeleton h-32 w-full rounded-2xl mb-8" />
-        <div className="skeleton h-16 w-full rounded-2xl mb-8" />
-        <div className="skeleton h-14 w-full rounded-2xl" />
-      </div>
-    </div>
-  )
-}
-
 interface ReviewSessionProps {
   initialData?: CardsResponse | null
 }
@@ -522,15 +500,12 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
     return `Pair ${currentPair} of ${totalPairs}`
   }
 
-  if (loading) {
-    return <SkeletonPractice />
-  }
-
   if (sessionStatus === "idle") {
     return (
       <div>
         <PracticeBackground status="idle" />
         <ReviewSessionOverview
+          loading={loading && !cardsPayload && !guestMode}
           currentStage="flip"
           completedStages={[]}
           cardsDue={availableCards.length}

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { ArrowLeftRight, SlidersHorizontal, Volume2 } from "lucide-react"
 
 import { useToast } from "@/components/Toast"
@@ -79,6 +79,7 @@ export function TranslatorPanel({
   guestMode,
   onAddCard
 }: TranslatorPanelProps) {
+  const queryTextareaRef = useRef<HTMLTextAreaElement | null>(null)
   const [query, setQuery] = useState("")
   const [direction, setDirection] = useState<Direction>("en-ru")
   const [translation, setTranslation] = useState("")
@@ -291,6 +292,17 @@ export function TranslatorPanel({
     Boolean(cefrProfile?.segments.length) &&
     ((direction === "en-ru" && query.trim()) || (direction === "ru-en" && translation.trim()))
 
+  useEffect(() => {
+    const textarea = queryTextareaRef.current
+
+    if (!textarea) {
+      return
+    }
+
+    textarea.style.height = "0px"
+    textarea.style.height = `${textarea.scrollHeight}px`
+  }, [query, translation])
+
   return (
     <section className="translate-phone-surface space-y-5">
       <div className="flex items-center justify-between gap-4">
@@ -364,6 +376,7 @@ export function TranslatorPanel({
             <div className="flex items-start justify-between gap-3">
               <div className="w-full">
                 <textarea
+                  ref={queryTextareaRef}
                   id="translation-query"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
@@ -374,7 +387,7 @@ export function TranslatorPanel({
                   spellCheck={false}
                   placeholder={direction === "en-ru" ? "Enter text" : "Введите текст"}
                   rows={translation ? 1 : 3}
-                  className={`w-full resize-none border-0 bg-transparent p-0 font-black tracking-tight text-white outline-none placeholder:text-white/24 ${
+                  className={`w-full overflow-hidden resize-none border-0 bg-transparent p-0 font-black tracking-tight text-white outline-none placeholder:text-white/24 ${
                     translation
                       ? "min-h-[42px] text-[26px] md:text-[32px]"
                       : "min-h-[110px] flex-1 text-[26px] md:text-[32px]"

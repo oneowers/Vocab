@@ -12,6 +12,7 @@ interface ReviewSessionOverviewProps {
   completedStages: string[]
   cardsDue: number
   totalCards: number
+  loading?: boolean
   selectedStatus: CardStatusFilter
   practiceStage: "flip" | "quiz" | "write"
   guestMode: boolean
@@ -65,6 +66,7 @@ export function ReviewSessionOverview({
   completedStages,
   cardsDue,
   totalCards,
+  loading = false,
   selectedStatus,
   practiceStage,
   guestMode,
@@ -144,12 +146,20 @@ export function ReviewSessionOverview({
 
               <div className={styles.heroStats} style={{ marginBottom: "2.5rem", padding: "1.5rem" }}>
                 <div className={styles.heroStatItem}>
-                  <span className={styles.heroStatValue}>{cardsDue}</span>
+                  {loading ? (
+                    <span className="skeleton skeleton-soft h-9 w-14 rounded-lg" />
+                  ) : (
+                    <span className={styles.heroStatValue}>{cardsDue}</span>
+                  )}
                   <span className={styles.heroStatLabel}>Words Due</span>
                 </div>
                 <div className={styles.heroStatDivider} style={{ height: "2.5rem" }} />
                 <div className={styles.heroStatItem}>
-                  <span className={styles.heroStatValue}>3</span>
+                  {loading ? (
+                    <span className="skeleton skeleton-soft h-9 w-10 rounded-lg" />
+                  ) : (
+                    <span className={styles.heroStatValue}>3</span>
+                  )}
                   <span className={styles.heroStatLabel}>Stages</span>
                 </div>
               </div>
@@ -174,11 +184,17 @@ export function ReviewSessionOverview({
                 <button
                   type="button"
                   onClick={onStartDue}
-                  disabled={!cardsDue}
-                  className={styles.glassButtonPrimary}
+                  disabled={loading || !cardsDue}
+                  className={`${styles.glassButtonPrimary} ${loading ? "pointer-events-none opacity-70" : ""}`}
                 >
-                  <Play size={18} fill="currentColor" />
-                  Continue Journey
+                  {loading ? (
+                    <span className="skeleton skeleton-soft h-5 w-36 rounded-lg" />
+                  ) : (
+                    <>
+                      <Play size={18} fill="currentColor" />
+                      Continue Journey
+                    </>
+                  )}
                 </button>
               </div>
             </motion.div>
