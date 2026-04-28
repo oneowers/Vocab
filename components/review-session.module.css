@@ -392,7 +392,11 @@
 
 @media (max-width: 640px) {
   .floatingSessionHeader {
-    width: calc(100% - 1.25rem);
+    left: 0.625rem;
+    right: 0.625rem;
+    transform: none;
+    width: auto;
+    max-width: none;
     padding: 0.75rem 0.875rem;
   }
 
