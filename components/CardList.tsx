@@ -7,7 +7,7 @@ import { getTooltipMessage } from "@/lib/config"
 import { matchesCardStatus } from "@/lib/spaced-repetition"
 import { speakText, canSpeak } from "@/lib/tts"
 import type { CardRecord, CardStatusFilter, CefrLevel } from "@/lib/types"
-import { Download, Ellipsis, Trash2, Upload, Volume2 } from "lucide-react"
+import { Check, Download, Ellipsis, Trash2, Upload, X } from "lucide-react"
 
 const CEFR_STYLES: Record<CefrLevel, { badge: string; dot: string }> = {
   A1: {
@@ -48,11 +48,14 @@ interface CardListProps {
   onExport: () => void
   onImport: () => void
   onDeleteRequest: (card: CardRecord) => void
+  onDeleteManyRequest: (cards: CardRecord[]) => void
   guestMode: boolean
   variant?: "list" | "grid"
   title?: string
   description?: string
 }
+
+const LONG_PRESS_MS = 420
 
 export function CardList({
   cards,
@@ -66,14 +69,21 @@ export function CardList({
   onExport,
   onImport,
   onDeleteRequest,
+  onDeleteManyRequest,
   guestMode,
   variant = "list",
   title = "Your saved cards",
   description
 }: CardListProps) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [selectionMode, setSelectionMode] = useState(false)
+  const [selectedCardIds, setSelectedCardIds] = useState<string[]>([])
   const menuRef = useRef<HTMLDivElement | null>(null)
+  const longPressTimerRef = useRef<number | null>(null)
+  const longPressTriggeredRef = useRef(false)
   const prefersReducedMotion = useReducedMotion()
+
+  const selectedCards = cards.filter((card) => selectedCardIds.includes(card.id))
 
   useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
@@ -97,6 +107,46 @@ export function CardList({
     }
   }, [])
 
+  useEffect(() => () => clearLongPressTimer(), [])
+
+  useEffect(() => {
+    setSelectedCardIds((current) => current.filter((cardId) => cards.some((card) => card.id === cardId)))
+  }, [cards])
+
+  useEffect(() => {
+    if (!selectedCardIds.length) {
+      setSelectionMode(false)
+    }
+  }, [selectedCardIds])
+
+  function clearLongPressTimer() {
+    if (longPressTimerRef.current !== null) {
+      window.clearTimeout(longPressTimerRef.current)
+      longPressTimerRef.current = null
+    }
+  }
+
+  function toggleCardSelection(cardId: string) {
+    setSelectedCardIds((current) =>
+      current.includes(cardId)
+        ? current.filter((id) => id !== cardId)
+        : [...current, cardId]
+    )
+  }
+
+  function enterSelectionMode(cardId: string) {
+    setMenuOpen(false)
+    longPressTriggeredRef.current = true
+    setSelectionMode(true)
+    setSelectedCardIds((current) => (current.includes(cardId) ? current : [...current, cardId]))
+  }
+
+  function exitSelectionMode() {
+    clearLongPressTimer()
+    setSelectionMode(false)
+    setSelectedCardIds([])
+  }
+
   return (
     <section className="space-y-3">
       <div className="flex items-start justify-between gap-3">
@@ -109,54 +159,77 @@ export function CardList({
           ) : null}
         </div>
 
-        <div ref={menuRef} className="relative">
-          <button
-            type="button"
-            onClick={() => setMenuOpen((current) => !current)}
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-[#28282f] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition hover:bg-[#303039]"
-            aria-label="Deck actions"
-            aria-expanded={menuOpen}
-          >
-            <Ellipsis size={18} />
-          </button>
+        {selectionMode ? (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onDeleteManyRequest(selectedCards)}
+              disabled={!selectedCards.length || guestMode}
+              title={guestMode ? getTooltipMessage() : undefined}
+              className="inline-flex h-11 items-center gap-2 rounded-full bg-dangerBg px-4 text-[13px] font-bold text-dangerText transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Trash2 size={16} />
+              Delete
+            </button>
+            <button
+              type="button"
+              onClick={exitSelectionMode}
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#28282f] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition hover:bg-[#303039]"
+              aria-label="Exit selection mode"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        ) : (
+          <div ref={menuRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setMenuOpen((current) => !current)}
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-[#28282f] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition hover:bg-[#303039]"
+              aria-label="Deck actions"
+              aria-expanded={menuOpen}
+            >
+              <Ellipsis size={18} />
+            </button>
 
-          <AnimatePresence>
-            {menuOpen ? (
-              <motion.div
-                initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: -4, scale: 0.985 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: -3, scale: 0.99 }}
-                transition={{ duration: prefersReducedMotion ? 0 : 0.1, ease: [0.22, 1, 0.36, 1] }}
-                className="absolute right-1 top-[3.35rem] z-30 min-w-[172px] rounded-[26px] bg-[#202028]/98 p-2 shadow-[0_20px_44px_rgba(0,0,0,0.38),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl"
-              >
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMenuOpen(false)
-                    onExport()
-                  }}
-                  className="flex w-full items-center gap-3 rounded-[20px] px-3 py-2.5 text-left text-[14px] font-semibold text-text-primary transition hover:bg-white/[0.06]"
+            <AnimatePresence>
+              {menuOpen ? (
+                <motion.div
+                  initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: -4, scale: 0.985 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: -3, scale: 0.99 }}
+                  transition={{ duration: prefersReducedMotion ? 0 : 0.1, ease: [0.22, 1, 0.36, 1] }}
+                  className="absolute right-1 top-[3.35rem] z-30 min-w-[172px] rounded-[26px] bg-[#202028]/98 p-2 shadow-[0_20px_44px_rgba(0,0,0,0.38),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl"
                 >
-                  <Download size={16} />
-                  Export JSON
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMenuOpen(false)
-                    onImport()
-                  }}
-                  disabled={guestMode}
-                  title={guestMode ? getTooltipMessage() : "Import JSON"}
-                  className="flex w-full items-center gap-3 rounded-[20px] px-3 py-2.5 text-left text-[14px] font-semibold text-text-primary transition hover:bg-white/[0.06] disabled:opacity-50"
-                >
-                  <Upload size={16} />
-                  Import JSON
-                </button>
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
-        </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false)
+                      onExport()
+                    }}
+                    className="flex w-full items-center gap-3 rounded-[20px] px-3 py-2.5 text-left text-[14px] font-semibold text-text-primary transition hover:bg-white/[0.06]"
+                  >
+                    <Download size={16} />
+                    Export JSON
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false)
+                      onImport()
+                    }}
+                    disabled={guestMode}
+                    title={guestMode ? getTooltipMessage() : "Import JSON"}
+                    className="flex w-full items-center gap-3 rounded-[20px] px-3 py-2.5 text-left text-[14px] font-semibold text-text-primary transition hover:bg-white/[0.06] disabled:opacity-50"
+                  >
+                    <Upload size={16} />
+                    Import JSON
+                  </button>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+          </div>
+        )}
       </div>
 
       <div className="translate-card p-3 md:p-4">
@@ -241,11 +314,39 @@ export function CardList({
             <article
               key={card.id}
               onClick={() => {
+                if (longPressTriggeredRef.current) {
+                  longPressTriggeredRef.current = false
+                  return
+                }
+
+                if (selectionMode) {
+                  toggleCardSelection(card.id)
+                  return
+                }
+
                 if (canSpeak()) {
                   speakText(
                     card.original,
                     card.direction === "en-ru" ? "en-US" : "ru-RU"
                   )
+                }
+              }}
+              onPointerDown={(event) => {
+                if (guestMode || selectionMode || event.pointerType === "mouse" && event.button !== 0) {
+                  return
+                }
+
+                clearLongPressTimer()
+                longPressTimerRef.current = window.setTimeout(() => {
+                  enterSelectionMode(card.id)
+                }, LONG_PRESS_MS)
+              }}
+              onPointerUp={clearLongPressTimer}
+              onPointerLeave={clearLongPressTimer}
+              onPointerCancel={clearLongPressTimer}
+              onContextMenu={(event) => {
+                if (!guestMode) {
+                  event.preventDefault()
                 }
               }}
               className={`group translate-card relative cursor-pointer overflow-hidden px-3 pb-2 transition-all duration-200 active:scale-[0.98] ${variant === "grid" ? "h-full min-h-[90px]" : ""
@@ -282,19 +383,37 @@ export function CardList({
               </div>
 
               <div className="absolute right-2 top-2 z-10 flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    onDeleteRequest(card)
-                  }}
-                  disabled={guestMode}
-                  title={guestMode ? getTooltipMessage() : undefined}
-                  className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white/[0.05] text-text-tertiary transition-all duration-300 hover:scale-110 hover:bg-dangerBg hover:text-dangerText disabled:cursor-not-allowed disabled:opacity-50"
-                  aria-label={`Delete ${card.original}`}
-                >
-                  <Trash2 size={12} />
-                </button>
+                {selectionMode ? (
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      toggleCardSelection(card.id)
+                    }}
+                    className={`inline-flex h-8 w-8 items-center justify-center rounded-full border transition-all duration-200 ${
+                      selectedCardIds.includes(card.id)
+                        ? "border-emerald-400 bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.28)]"
+                        : "border-white/[0.08] bg-white/[0.05] text-white/55"
+                    }`}
+                    aria-label={`${selectedCardIds.includes(card.id) ? "Unselect" : "Select"} ${card.original}`}
+                  >
+                    {selectedCardIds.includes(card.id) ? <Check size={14} strokeWidth={3} /> : null}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      onDeleteRequest(card)
+                    }}
+                    disabled={guestMode}
+                    title={guestMode ? getTooltipMessage() : undefined}
+                    className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white/[0.05] text-text-tertiary transition-all duration-300 hover:scale-110 hover:bg-dangerBg hover:text-dangerText disabled:cursor-not-allowed disabled:opacity-50"
+                    aria-label={`Delete ${card.original}`}
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                )}
               </div>
             </article>
           ))

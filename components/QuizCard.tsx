@@ -132,9 +132,6 @@ export function QuizCard({
             Find {targetCount} translation{targetCount === 1 ? "" : "s"}
           </h2>
         </div>
-        <div className="rounded-2xl border border-white/[0.08] bg-white/[0.07] px-4 py-1.5 text-[10px] font-black text-white/55">
-          Batch {batchIndex + 1} of {totalBatches}
-        </div>
       </div>
 
       <div className="relative z-10 grid grid-cols-2 gap-4">

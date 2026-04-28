@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowRight, Calendar, Flame, LogOut, Shield, User as UserIcon } from "lucide-react"
+import { ArrowRight, ChevronDown, LogOut, Shield, User as UserIcon } from "lucide-react"
 
 import { CEFR_LEVELS } from "@/lib/catalog"
 import { useToast } from "@/components/Toast"
@@ -247,33 +247,41 @@ export function ProfileView({ user, initialActivity = null }: ProfileViewProps) 
         )}
       </section>
 
-
-      <section className="panel p-4">
-        <p className="section-label">Target Level</p>
-
-        <div className="mt-4 grid grid-cols-6 gap-1.5">
-          {CEFR_LEVELS.map((value) => (
-            <button
-              key={value}
-              type="button"
-              disabled={guestActive || savingLevel}
-              onClick={() => void handleCefrLevelChange(value)}
-              className={`flex h-10 items-center justify-center rounded-xl border text-[13px] font-bold transition-all ${(guestActive ? "A1" : cefrLevel) === value
-                ? "border-white/10 bg-white text-black"
-                : "border-transparent bg-white/[0.04] text-text-secondary hover:bg-white/[0.08]"
-                } ${guestActive || savingLevel ? "cursor-not-allowed opacity-40" : ""}`}
-            >
-              {value}
-            </button>
-          ))}
-        </div>
-        <p className="mt-3 text-[12px] leading-relaxed text-text-tertiary">
-          Determines the difficulty of recommended catalog words.
-        </p>
-      </section>
-
       <section className="panel overflow-hidden p-2">
         <div className="space-y-0.5">
+          <div className="rounded-[16px] border border-white/[0.04] bg-white/[0.02] px-3 py-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Target level</p>
+                <p className="mt-1 text-[12px] leading-relaxed text-text-tertiary">
+                  Determines the difficulty of recommended catalog words.
+                </p>
+              </div>
+              {savingLevel ? (
+                <span className="text-[11px] font-bold text-white/45">Saving...</span>
+              ) : null}
+            </div>
+
+            <div className="relative mt-3">
+              <select
+                value={guestActive ? "A1" : cefrLevel}
+                disabled={guestActive || savingLevel}
+                onChange={(event) => void handleCefrLevelChange(event.target.value as CefrLevel)}
+                className="h-11 w-full appearance-none rounded-[14px] border border-white/[0.08] bg-white/[0.04] px-4 pr-10 text-[14px] font-bold text-white outline-none transition hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                {CEFR_LEVELS.map((value) => (
+                  <option key={value} value={value} className="bg-[#16161b] text-white">
+                    {value}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                size={16}
+                className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/36"
+              />
+            </div>
+          </div>
+
           <div className="flex min-h-[40px] items-center justify-between rounded-[12px] px-3 transition hover:bg-white/[0.04]">
             <span className="text-[13px] font-semibold text-text-primary">Email</span>
             <span className="text-[12px] text-text-tertiary">{profileUser?.email || "Guest"}</span>

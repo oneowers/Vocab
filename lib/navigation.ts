@@ -1,23 +1,22 @@
 import {
-  BarChart3,
   ChartColumnBig,
   Cog,
   House,
   Library,
+  MessageCircle,
   Shield,
   Sparkles,
   UserRound,
   Users
 } from "lucide-react"
 
-import { canViewStats } from "@/lib/roles"
 import type { NavItem, Role } from "@/lib/types"
 
-const statsNavItem: NavItem = {
-  href: "/stats",
-  label: "Stats",
-  icon: BarChart3,
-  match: (pathname) => pathname === "/stats"
+const aiNavItem: NavItem = {
+  href: "/ai",
+  label: "AI",
+  icon: MessageCircle,
+  match: (pathname) => pathname === "/ai" || pathname === "/stats"
 }
 
 export function getAppSidebarNavItems(role: Role | null): NavItem[] {
@@ -37,7 +36,7 @@ export function getAppSidebarNavItems(role: Role | null): NavItem[] {
       label: "Practice",
       icon: Sparkles
     },
-    ...(canViewStats(role) ? [statsNavItem] : []),
+    aiNavItem,
     {
       href: "/profile",
       label: "Profile",
@@ -66,9 +65,7 @@ export function getAppMobileNavItems(role: Role | null): NavItem[] {
       icon: Sparkles,
       match: (pathname) => pathname === "/practice" || pathname === "/review"
     },
-    ...(canViewStats(role)
-      ? [statsNavItem]
-      : []),
+    aiNavItem,
     {
       href: "/profile",
       label: "Profile",

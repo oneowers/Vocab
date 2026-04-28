@@ -145,8 +145,11 @@ export function ReviewSessionOverview({
                   <Sparkles className="text-white" size={24} />
                 </div>
                 <div className={styles.heroTitleGroup}>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/32">
+                    Daily Journey
+                  </p>
                   <h2 className={styles.heroTitle}>Daily Quest</h2>
-                  <p className={styles.heroSubtitle} style={{ marginTop: "0.25rem" }}>Master your vocabulary step-by-step</p>
+                  <p className={styles.heroSubtitle}>Pick up where you left off and finish the full three-step run.</p>
                 </div>
               </div>
 

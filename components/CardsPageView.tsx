@@ -21,6 +21,7 @@ export function CardsPageView({ initialData = null }: CardsPageViewProps) {
   const [selectedLevel, setSelectedLevel] = useState<CefrLevel | "All">("All")
   const [search, setSearch] = useState("")
   const [cardToDelete, setCardToDelete] = useState<CardRecord | null>(null)
+  const [cardsToDelete, setCardsToDelete] = useState<CardRecord[]>([])
   const [deleting, setDeleting] = useState(false)
   const importRef = useRef<HTMLInputElement | null>(null)
   const { showToast } = useToast()
@@ -86,30 +87,36 @@ export function CardsPageView({ initialData = null }: CardsPageViewProps) {
   }
 
   async function handleDeleteConfirmed() {
-    if (!cardToDelete) {
+    if (!cardToDelete && !cardsToDelete.length) {
       return
     }
 
     setDeleting(true)
 
     try {
-      const response = await fetch(`/api/cards/${cardToDelete.id}`, {
-        method: "DELETE"
-      })
+      const targets = cardsToDelete.length ? cardsToDelete : cardToDelete ? [cardToDelete] : []
 
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as
-          | { error?: string }
-          | null
-        throw new Error(payload?.error || "Delete failed.")
+      for (const card of targets) {
+        const response = await fetch(`/api/cards/${card.id}`, {
+          method: "DELETE"
+        })
+
+        if (!response.ok) {
+          const payload = (await response.json().catch(() => null)) as
+            | { error?: string }
+            | null
+          throw new Error(payload?.error || "Delete failed.")
+        }
       }
 
-      setCards((current) => current.filter((card) => card.id !== cardToDelete.id))
-      showToast("Card deleted.", "success")
+      const targetIds = new Set(targets.map((card) => card.id))
+      setCards((current) => current.filter((card) => !targetIds.has(card.id)))
+      showToast(targets.length === 1 ? "Card deleted." : `${targets.length} cards deleted.`, "success")
       setCardToDelete(null)
+      setCardsToDelete([])
     } catch (error) {
       showToast(
-        error instanceof Error ? error.message : "Could not delete the card.",
+        error instanceof Error ? error.message : "Could not delete the selected cards.",
         "error"
       )
     } finally {
@@ -236,6 +243,7 @@ export function CardsPageView({ initialData = null }: CardsPageViewProps) {
             onExport={handleExport}
             onImport={() => importRef.current?.click()}
             onDeleteRequest={setCardToDelete}
+            onDeleteManyRequest={setCardsToDelete}
             guestMode={guestMode}
             variant="grid"
             title="Your saved cards"
@@ -244,14 +252,19 @@ export function CardsPageView({ initialData = null }: CardsPageViewProps) {
       </div>
 
       <ConfirmModal
-        open={Boolean(cardToDelete)}
-        title="Delete this card?"
+        open={Boolean(cardToDelete) || cardsToDelete.length > 0}
+        title={cardsToDelete.length > 1 ? "Delete selected cards?" : "Delete this card?"}
         description={
-          cardToDelete
+          cardsToDelete.length
+            ? `This will remove ${cardsToDelete.length} selected cards from the deck.`
+            : cardToDelete
             ? `This will remove "${cardToDelete.original}" from the deck.`
             : ""
         }
-        onCancel={() => setCardToDelete(null)}
+        onCancel={() => {
+          setCardToDelete(null)
+          setCardsToDelete([])
+        }}
         onConfirm={() => void handleDeleteConfirmed()}
         loading={deleting}
       />

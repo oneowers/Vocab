@@ -2,12 +2,20 @@
 .commandCenter {
   max-width: 32rem;
   margin: 0 auto;
+  padding-top: 5.5rem;
 }
 
 .glassSwitcherContainer {
+  position: fixed;
+  top: 0.75rem;
+  left: 50%;
+  z-index: 30;
   display: flex;
   justify-content: center;
-  margin-bottom: 2rem;
+  width: calc(100% - 2rem);
+  max-width: 32rem;
+  transform: translateX(-50%);
+  margin-bottom: 0;
 }
 
 .glassSwitcher {
@@ -56,6 +64,17 @@
   position: relative;
 }
 
+.glassSwitcherContainer::after {
+  position: absolute;
+  top: 100%;
+  left: -1rem;
+  right: -1rem;
+  height: 5rem;
+  content: "";
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.28) 38%, transparent 100%);
+}
+
 .heroCard {
   position: relative;
   border-radius: 2.5rem;
@@ -83,23 +102,29 @@
   display: flex;
   align-items: center;
   gap: 1.25rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1.1rem;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  border: none;
 }
 
 .heroIconWrap {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 3.5rem;
-  height: 3.5rem;
-  background: rgba(74, 158, 255, 0.15);
-  border-radius: 1.25rem;
-  border: 1px solid rgba(74, 158, 255, 0.2);
+  width: 3.15rem;
+  height: 3.15rem;
+  background: rgba(74, 158, 255, 0.1);
+  border-radius: 1rem;
+  border: 1px solid rgba(74, 158, 255, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .heroTitleGroup {
   display: flex;
   flex-direction: column;
+  gap: 0.15rem;
 }
 
 .heroTitle {
@@ -113,13 +138,20 @@
 }
 
 .heroSubtitle {
-  font-size: 0.9375rem;
-  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.92rem;
+  color: rgba(255, 255, 255, 0.46);
   font-weight: 500;
+  max-width: 17.5rem;
+  line-height: 1.5;
 }
 
 .questVisualizer {
-  margin: 2.5rem 0;
+  margin: 2rem 0 2.35rem;
+  padding: 1rem 1rem 0.95rem;
+  border-radius: 2rem;
+  background: linear-gradient(145deg, rgba(18, 32, 50, 0.4), rgba(10, 17, 28, 0.18));
+  border: 1px solid rgba(96, 154, 248, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .heroStats {
@@ -273,7 +305,8 @@
   min-height: calc(100vh - 12rem);
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
+  padding-top: 6.6rem;
   position: relative;
   overflow: hidden;
   isolation: isolate;
@@ -387,10 +420,14 @@
 }
 
 .sessionStageArea {
-  margin-top: 6rem;
+  margin-top: 0;
 }
 
 @media (max-width: 640px) {
+  .sessionContainer {
+    padding-top: 6.2rem;
+  }
+
   .floatingSessionHeader {
     left: 0.625rem;
     right: 0.625rem;
@@ -406,6 +443,25 @@
 
   .sessionCounterGroup {
     gap: 0.35rem;
+  }
+
+  .heroHeader {
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 0;
+  }
+
+  .heroTitle {
+    font-size: 1.55rem;
+  }
+
+  .heroSubtitle {
+    font-size: 0.9rem;
+    max-width: 14rem;
+  }
+
+  .questVisualizer {
+    padding: 0.85rem 0.8rem 0.8rem;
   }
 }
 
@@ -448,10 +504,10 @@
   color: rgba(255, 255, 255, 0.2);
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  padding: 0.25rem 0.6rem;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 0.5rem;
-  background: rgba(255, 255, 255, 0.02);
+  padding: 0.25rem 0.1rem;
+  border: none;
+  border-radius: 0;
+  background: transparent;
   transition: all 0.3s ease;
 }
 .stageLabelCurrent { 

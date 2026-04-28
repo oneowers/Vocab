@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion"
 import { useEffect, useRef, useState } from "react"
-import { ArrowLeftRight, Sparkles, Volume2 } from "lucide-react"
+import { Volume2 } from "lucide-react"
 
 import { useToast } from "@/components/Toast"
 import { updateClientResourceData } from "@/hooks/useClientResource"
@@ -69,8 +69,6 @@ const CEFR_PROFILE_TEXT_STYLES: Record<string, string> = {
   "Off-List": "text-amber-300"
 }
 
-const SWAP_ANIMATION_MS = 520
-
 function mergeTranslationAlternatives(terms: string[], excludedTerms: string[]) {
   const excluded = new Set(excludedTerms.map((term) => term.trim().toLowerCase()).filter(Boolean))
   const seen = new Set<string>()
@@ -92,8 +90,8 @@ function mergeTranslationAlternatives(terms: string[], excludedTerms: string[]) 
 export function TranslatorPanel({
   guestMode,
   onAddCard,
-  dailyCatalog = null,
-  onOpenDailyWords
+  dailyCatalog: _dailyCatalog = null,
+  onOpenDailyWords: _onOpenDailyWords
 }: TranslatorPanelProps) {
   const queryTextareaRef = useRef<HTMLTextAreaElement | null>(null)
   const [query, setQuery] = useState("")
@@ -113,7 +111,6 @@ export function TranslatorPanel({
   const [loading, setLoading] = useState(false)
   const [loadingDetails, setLoadingDetails] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [swapping, setSwapping] = useState(false)
   const { showToast } = useToast()
 
   async function handleTranslate() {
@@ -273,16 +270,14 @@ export function TranslatorPanel({
     }
   }
 
-  function handleSwapDirection() {
-    if (swapping) {
+  function handleDirectionChange(nextDirection: Direction) {
+    if (nextDirection === direction) {
       return
     }
 
-    const nextDirection = direction === "en-ru" ? "ru-en" : "en-ru"
     const nextQuery = translation || query
     const nextTranslation = query
 
-    setSwapping(true)
     setDirection(nextDirection)
     setQuery(nextQuery)
     setTranslation(nextTranslation)
@@ -294,10 +289,6 @@ export function TranslatorPanel({
     setSelectedCefrWord(null)
     setExample(null)
     setPhonetic(null)
-
-    window.setTimeout(() => {
-      setSwapping(false)
-    }, SWAP_ANIMATION_MS)
   }
 
   const ttsLanguage = direction === "en-ru" ? "en-US" : "ru-RU"
@@ -317,12 +308,6 @@ export function TranslatorPanel({
     cefrProfilerEnabled &&
     Boolean(cefrProfile?.segments.length) &&
     ((direction === "en-ru" && query.trim()) || (direction === "ru-en" && translation.trim()))
-  const dailyWordsLabel = dailyCatalog
-    ? dailyCatalog.remainingToday > 0
-      ? `${dailyCatalog.remainingToday} new words`
-      : "Daily words"
-    : "Daily words"
-
   useEffect(() => {
     const textarea = queryTextareaRef.current
 
@@ -336,76 +321,50 @@ export function TranslatorPanel({
 
   return (
     <section className="translate-phone-surface space-y-5">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-[34px] font-black leading-none tracking-tight text-white md:text-[44px]">
-          Translate
-        </h1>
-
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onOpenDailyWords}
-            disabled={!dailyCatalog || !onOpenDailyWords}
-            className={`flex min-h-11 items-center gap-2 rounded-full px-4 text-[13px] font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition ${
-              dailyCatalog && onOpenDailyWords
-                ? "bg-[#28282f] hover:bg-[#303039]"
-                : "cursor-not-allowed bg-[#202027] text-white/38"
-            }`}
-            aria-label="Open daily words"
-          >
-            <Sparkles size={16} className={dailyCatalog?.remainingToday ? "text-[#9ec0ff]" : "text-white/40"} />
-            <span className="hidden sm:inline">{dailyWordsLabel}</span>
-            {dailyCatalog ? (
-              <span className="rounded-full bg-white/[0.08] px-2 py-0.5 text-[11px] font-semibold text-white/72">
-                {dailyCatalog.remainingToday}
-              </span>
-            ) : null}
-          </button>
-          <button
-            type="button"
-            onClick={handleSwapDirection}
-            disabled={swapping}
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-[#28282f] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition hover:bg-[#303039]"
-            aria-label="Swap languages"
-          >
-            <ArrowLeftRight className={swapping ? "translate-swap-icon--active" : ""} size={20} />
-          </button>
+      <div className="fixed left-1/2 top-3 z-30 w-[calc(100%-2rem)] max-w-[38rem] -translate-x-1/2 md:top-6">
+        <div className="relative flex justify-center">
+          <div className="relative flex rounded-full border border-white/[0.06] bg-white/[0.03] p-1 shadow-[0_4px_20px_rgba(0,0,0,0.2)]">
+          <div className="relative grid grid-cols-2 items-center">
+            <motion.div
+              aria-hidden="true"
+              className="pointer-events-none absolute bottom-1 top-1 z-0 w-[calc(50%-0.25rem)] rounded-full border border-white/[0.1] bg-white/[0.08] shadow-[0_2px_8px_rgba(0,0,0,0.1)]"
+              initial={false}
+              animate={{
+                x: direction === "en-ru" ? "0%" : "100%"
+              }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              style={{ left: "0.25rem" }}
+            />
+            <button
+              type="button"
+              onClick={() => handleDirectionChange("en-ru")}
+              className={`relative z-10 flex min-w-[140px] items-center justify-center rounded-full px-5 py-3 text-[14px] font-semibold transition-all duration-300 ${direction === "en-ru"
+                  ? "text-white"
+                  : "text-white/50 hover:text-white"
+                }`}
+            >
+              English
+            </button>
+            <button
+              type="button"
+              onClick={() => handleDirectionChange("ru-en")}
+              className={`relative z-10 flex min-w-[140px] items-center justify-center rounded-full px-5 py-3 text-[14px] font-semibold transition-all duration-300 ${direction === "ru-en"
+                  ? "text-white"
+                  : "text-white/50 hover:text-white"
+                }`}
+            >
+              Russian
+            </button>
+          </div>
+        </div>
+          <div
+            className="pointer-events-none absolute inset-x-[-1rem] top-full h-20 bg-gradient-to-b from-black via-black/30 to-transparent md:inset-x-[-2rem]"
+            aria-hidden="true"
+          />
         </div>
       </div>
 
-      <div className="rounded-[26px] bg-[#19191e] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] md:max-w-[380px]">
-        <div className="grid grid-cols-[1fr_auto_1fr] items-center">
-          <button
-            type="button"
-            onClick={() => setDirection("en-ru")}
-            className={`min-h-10 rounded-[22px] px-3 text-[14px] font-bold transition-all duration-300 ${direction === "en-ru"
-                ? "bg-[#f2f2f4] text-black"
-                : "text-white/48 hover:bg-white/[0.05] hover:text-white"
-              }`}
-          >
-            English
-          </button>
-          <button
-            type="button"
-            onClick={handleSwapDirection}
-            disabled={swapping}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white/38 transition hover:bg-white/[0.05] hover:text-white"
-            aria-label="Swap languages"
-          >
-            <ArrowLeftRight className={swapping ? "translate-swap-icon--active" : ""} size={18} />
-          </button>
-          <button
-            type="button"
-            onClick={() => setDirection("ru-en")}
-            className={`min-h-10 rounded-[22px] px-3 text-[14px] font-bold transition-all duration-300 ${direction === "ru-en"
-                ? "bg-[#f2f2f4] text-black"
-                : "text-white/48 hover:bg-white/[0.05] hover:text-white"
-              }`}
-          >
-            Russian
-          </button>
-        </div>
-      </div>
+      <div className="h-[5.5rem] md:h-[6.75rem]" />
 
       <div className="translate-card-grid grid gap-3 lg:grid-cols-2">
         <motion.div
