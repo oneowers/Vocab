@@ -298,6 +298,14 @@
   z-index: 100;
 }
 
+.sessionHeaderTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+}
+
 .sessionBackButton {
   width: 2.25rem;
   height: 2.25rem;
@@ -333,8 +341,9 @@
 .sessionHeaderStatus {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
-  margin-left: auto;
+  justify-content: flex-end;
+  gap: 1rem;
+  flex-shrink: 0;
 }
 
 .sessionCounterGroup {
@@ -364,6 +373,7 @@
 
 .sessionProgressBar {
   width: 100%;
+  align-self: center;
   height: 0.25rem;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 999px;
@@ -378,6 +388,21 @@
 
 .sessionStageArea {
   margin-top: 6rem;
+}
+
+@media (max-width: 640px) {
+  .floatingSessionHeader {
+    width: calc(100% - 1.25rem);
+    padding: 0.75rem 0.875rem;
+  }
+
+  .sessionHeaderTop {
+    align-items: flex-start;
+  }
+
+  .sessionCounterGroup {
+    gap: 0.35rem;
+  }
 }
 
 /* Animations */

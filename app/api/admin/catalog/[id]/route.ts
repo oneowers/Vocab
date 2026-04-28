@@ -122,9 +122,15 @@ export async function PATCH(
     typeof body.priority === "number" && Number.isInteger(body.priority)
       ? body.priority
       : sourceWord.priority
+  const hasPublishableContent =
+    Boolean(translationForSave.trim()) &&
+    Boolean(exampleForSave.trim()) &&
+    Boolean(phoneticForSave.trim())
   const enrichmentStatus =
     body.enrichmentStatus === "pending" || body.enrichmentStatus === "completed" || body.enrichmentStatus === "failed"
       ? body.enrichmentStatus
+      : hasPublishableContent
+        ? "completed"
       : sourceWord.enrichmentStatus
   const requestedPublished =
     typeof body.isPublished === "boolean" ? body.isPublished : existing.isPublished

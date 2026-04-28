@@ -725,8 +725,8 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
         <PracticeBackground status="idle" />
         <ReviewSessionOverview
           loading={loading && !cardsPayload && !guestMode}
-          currentStage="flip"
-          completedStages={[]}
+          currentStage={resumableSession?.activeStage ?? "flip"}
+          completedStages={resumableSession?.completedStages ?? []}
           cardsDue={availableCards.length}
           totalCards={allAvailableCards.length}
           selectedStatus={selectedStatus}
@@ -864,37 +864,39 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
         animate={{ opacity: 1, y: 0 }}
         className={styles.floatingSessionHeader}
       >
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={handleExitSession}
-            className={styles.sessionBackButton}
-          >
-            <ArrowLeft size={16} />
-          </button>
-          <div className={styles.sessionHeaderMeta}>
-            <span className={styles.sessionHeaderEyebrow}>Stage {activeStageIndex + 1}/3</span>
-            <div className="flex items-center gap-2 mt-0.5">
-              <div className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse" />
-              <h2 className={styles.sessionHeaderTitle} style={{ letterSpacing: "0.02em" }}>{getStageLabel(activeStage)}</h2>
+        <div className={styles.sessionHeaderTop}>
+          <div className="flex items-center gap-3 min-w-0">
+            <button 
+              onClick={handleExitSession}
+              className={styles.sessionBackButton}
+            >
+              <ArrowLeft size={16} />
+            </button>
+            <div className={styles.sessionHeaderMeta}>
+              <span className={styles.sessionHeaderEyebrow}>Stage {activeStageIndex + 1}/3</span>
+              <div className="mt-0.5 flex items-center gap-2">
+                <div className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse" />
+                <h2 className={styles.sessionHeaderTitle} style={{ letterSpacing: "0.02em" }}>{getStageLabel(activeStage)}</h2>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className={styles.sessionHeaderStatus}>
-          <div className={styles.sessionCounterGroup}>
-            <span className={styles.sessionHeaderEyebrow}>{stageCounterLabel}</span>
-            <div className={styles.livesIndicator}>
-              {Array.from({ length: reviewLives }).map((_, i) => (
-                <motion.div 
-                  key={i}
-                  initial={false}
-                  animate={{ 
-                    scale: i < livesRemaining ? 1 : 0.8,
-                    opacity: i < livesRemaining ? 1 : 0.2
-                  }}
-                  className={`${styles.lifePill} ${i < livesRemaining ? styles.lifePillActive : ""}`} 
-                />
-              ))}
+          <div className={styles.sessionHeaderStatus}>
+            <div className={styles.sessionCounterGroup}>
+              <span className={styles.sessionHeaderEyebrow}>{stageCounterLabel}</span>
+              <div className={styles.livesIndicator}>
+                {Array.from({ length: reviewLives }).map((_, i) => (
+                  <motion.div 
+                    key={i}
+                    initial={false}
+                    animate={{ 
+                      scale: i < livesRemaining ? 1 : 0.8,
+                      opacity: i < livesRemaining ? 1 : 0.2
+                    }}
+                    className={`${styles.lifePill} ${i < livesRemaining ? styles.lifePillActive : ""}`} 
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </div>

@@ -93,6 +93,7 @@ export function ReviewSessionOverview({
   const [activeTab, setActiveTab] = useState<"daily" | "practice">("daily")
   const dueSessionCount = Math.min(cardsDue, sessionLimit)
   const librarySessionCount = Math.min(totalCards, sessionLimit)
+  const hasSavedJourney = Boolean(resumableSession)
 
   return (
     <motion.section 
@@ -179,36 +180,6 @@ export function ReviewSessionOverview({
               </div>
 
               <div className={styles.heroActions}>
-                {resumableSession && (
-                  <div className="flex w-full flex-col gap-2 rounded-2xl border border-white/[0.08] bg-white/[0.05] p-3">
-                    <div className="flex items-center justify-between gap-3 text-left">
-                      <div>
-                        <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-white/35">
-                          Saved practice
-                        </p>
-                        <p className="mt-1 text-sm font-bold text-white/80">
-                          {resumableSession.wordCount} words · continue {resumableSession.activeStage}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={onRestartSession}
-                        className="rounded-xl border border-white/[0.08] px-3 py-2 text-[11px] font-black uppercase tracking-[0.12em] text-white/45 transition hover:bg-white/[0.08] hover:text-white"
-                      >
-                        Restart
-                      </button>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={onResumeSession}
-                      className={styles.glassButtonPrimary}
-                    >
-                      <Play size={18} fill="currentColor" />
-                      Continue {resumableSession.wordCount} words
-                    </button>
-                  </div>
-                )}
-
                 {!guestMode && (dailyCatalog?.remainingToday ?? 0) > 0 && (
                   <button
                     type="button"
@@ -227,8 +198,8 @@ export function ReviewSessionOverview({
 
                 <button
                   type="button"
-                  onClick={onStartDue}
-                  disabled={loading || !cardsDue}
+                  onClick={hasSavedJourney ? onResumeSession : onStartDue}
+                  disabled={loading || (!cardsDue && !hasSavedJourney)}
                   className={`${styles.glassButtonPrimary} ${loading ? "pointer-events-none opacity-70" : ""}`}
                 >
                   {loading ? (
@@ -236,12 +207,24 @@ export function ReviewSessionOverview({
                   ) : (
                     <>
                       <Play size={18} fill="currentColor" />
-                      {cardsDue > sessionLimit
+                      {hasSavedJourney
+                        ? `Continue ${resumableSession?.activeStage ?? "flip"}`
+                        : cardsDue > sessionLimit
                         ? `Start ${dueSessionCount} of ${cardsDue}`
                         : "Continue Journey"}
                     </>
                   )}
                 </button>
+
+                {hasSavedJourney && (
+                  <button
+                    type="button"
+                    onClick={onRestartSession}
+                    className={styles.glassButtonSecondary}
+                  >
+                    Restart Journey
+                  </button>
+                )}
               </div>
             </motion.div>
           ) : (
