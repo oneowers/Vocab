@@ -332,31 +332,33 @@ export function TranslatorPanel({
               <span className="text-[12px] font-bold uppercase tracking-[0.08em] text-white/42">
                 {sourceLabel}
               </span>
+            </div>
+
+            <div className="flex items-start justify-between gap-3">
+              <textarea
+                id="translation-query"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void handleTranslate() } }}
+                autoCapitalize="none"
+                autoCorrect="off"
+                autoComplete="off"
+                spellCheck={false}
+                placeholder={direction === "en-ru" ? "Enter text" : "Введите текст"}
+                rows={translation ? 1 : 3}
+                className={`w-full resize-none border-0 bg-transparent p-0 font-black tracking-tight text-white outline-none placeholder:text-white/24 ${
+                  translation
+                    ? "min-h-[42px] text-[26px] md:text-[32px]"
+                    : "min-h-[110px] flex-1 text-[26px] md:text-[32px]"
+                }`}
+              />
               {direction === "en-ru" && cefrLevel && (
-                <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold ${CEFR_STYLES[cefrLevel].badge}`}>
+                <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[13px] font-bold ${CEFR_STYLES[cefrLevel].badge}`}>
                   <span className={`h-1.5 w-1.5 rounded-full ${CEFR_STYLES[cefrLevel].dot}`} />
-                  {cefrLevel} · {CEFR_STYLES[cefrLevel].label}
+                  {cefrLevel}
                 </span>
               )}
             </div>
-
-            <textarea
-              id="translation-query"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void handleTranslate() } }}
-              autoCapitalize="none"
-              autoCorrect="off"
-              autoComplete="off"
-              spellCheck={false}
-              placeholder={direction === "en-ru" ? "Enter text" : "Введите текст"}
-              rows={translation ? 1 : 3}
-              className={`w-full resize-none border-0 bg-transparent p-0 font-black tracking-tight text-white outline-none placeholder:text-white/24 ${
-                translation
-                  ? "min-h-[42px] text-[26px] md:text-[32px]"
-                  : "min-h-[110px] flex-1 text-[26px] md:text-[32px]"
-              }`}
-            />
 
             {direction === "en-ru" && phonetic && translation ? (
               <p className="mt-1 text-[14px] font-medium text-white/48">{phonetic}</p>
@@ -416,15 +418,17 @@ export function TranslatorPanel({
                   <span className="text-[12px] font-bold uppercase tracking-[0.08em] text-white/42">
                     {targetLabel}
                   </span>
+                </div>
+
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-[30px] font-black tracking-tight text-white md:text-[40px]">{translation}</p>
                   {direction === "ru-en" && cefrLevel && (
-                    <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-semibold ${CEFR_STYLES[cefrLevel].badge}`}>
+                    <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[13px] font-bold ${CEFR_STYLES[cefrLevel].badge}`}>
                       <span className={`h-1.5 w-1.5 rounded-full ${CEFR_STYLES[cefrLevel].dot}`} />
-                      {cefrLevel} · {CEFR_STYLES[cefrLevel].label}
+                      {cefrLevel}
                     </span>
                   )}
                 </div>
-
-                <p className="text-[30px] font-black tracking-tight text-white md:text-[40px]">{translation}</p>
                 {direction === "ru-en" && phonetic && (
                   <p className="mt-2 text-[15px] font-medium text-white/50">{phonetic}</p>
                 )}

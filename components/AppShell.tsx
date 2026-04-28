@@ -86,9 +86,9 @@ export function AppShell({ user, children }: AppShellProps) {
   const mobileNavItems = getAppMobileNavItems(navRole)
 
   return (
-    <div className="min-h-screen bg-shell">
+    <div className="min-h-screen bg-black">
       <div className="mx-auto flex min-h-screen w-full max-w-[1600px]">
-        <aside className="hidden min-h-screen w-[288px] flex-col justify-between border-r border-line bg-bg-primary/80 px-6 py-8 backdrop-blur-xl md:flex">
+        <aside className="hidden min-h-screen w-[288px] flex-col justify-between border-r border-white/[0.06] bg-black/88 px-6 py-8 backdrop-blur-xl md:flex">
           <div className="space-y-8">
             <Link href="/" prefetch className="flex items-center gap-3">
               <div className="brand-mark h-12 w-12 text-lg font-semibold">
@@ -111,9 +111,9 @@ export function AppShell({ user, children }: AppShellProps) {
                     href={item.href}
                     prefetch
                     aria-current={active ? "page" : undefined}
-                    className={`flex min-h-[52px] items-center gap-3 rounded-card px-4 text-[17px] font-semibold transition ${active
-                      ? "bg-bg-primary text-accent shadow-subtle"
-                      : "text-text-secondary hover:bg-bg-primary hover:text-text-primary"
+                    className={`flex min-h-[52px] items-center gap-3 rounded-[22px] px-4 text-[16px] font-semibold transition ${active
+                      ? "bg-[#f2f2f4] text-black"
+                      : "text-text-secondary hover:bg-white/[0.06] hover:text-text-primary"
                       }`}
                   >
                     <Icon size={20} strokeWidth={active ? 2.4 : 2} />
@@ -126,9 +126,9 @@ export function AppShell({ user, children }: AppShellProps) {
                   href="/admin"
                   prefetch
                   aria-current={pathname.startsWith("/admin") ? "page" : undefined}
-                  className={`flex min-h-[52px] items-center gap-3 rounded-card px-4 text-[17px] font-semibold transition ${pathname.startsWith("/admin")
-                    ? "bg-bg-primary text-accent shadow-subtle"
-                    : "text-text-secondary hover:bg-bg-primary hover:text-text-primary"
+                  className={`flex min-h-[52px] items-center gap-3 rounded-[22px] px-4 text-[16px] font-semibold transition ${pathname.startsWith("/admin")
+                    ? "bg-[#f2f2f4] text-black"
+                    : "text-text-secondary hover:bg-white/[0.06] hover:text-text-primary"
                     }`}
                 >
                   <ArrowRight size={20} strokeWidth={pathname.startsWith("/admin") ? 2.4 : 2} />
@@ -140,7 +140,7 @@ export function AppShell({ user, children }: AppShellProps) {
 
           <div className="panel space-y-4 p-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-bg-secondary text-sm font-semibold text-text-primary">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#292930] text-sm font-semibold text-text-primary">
                 {initials}
               </div>
               <div>

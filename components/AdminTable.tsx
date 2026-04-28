@@ -15,7 +15,7 @@ export function AdminTable({
 }: AdminTableProps) {
   return (
     <section className="panel-admin rounded-[2rem] p-0 overflow-visible">
-      <div className="sticky top-[-1px] z-30 flex flex-col gap-5 border-b border-line bg-bg-primary/95 p-6 backdrop-blur-md first:rounded-t-[2rem] md:p-8">
+      <div className="sticky top-[-1px] z-30 flex flex-col gap-5 border-b border-white/[0.06] bg-[#151519]/95 p-6 backdrop-blur-md first:rounded-t-[2rem] md:p-8">
         <div>
           <h2 className="text-[22px] font-bold tracking-tight text-ink">{title}</h2>
           {subtitle ? <p className="mt-1.5 text-[15px] text-muted leading-relaxed">{subtitle}</p> : null}

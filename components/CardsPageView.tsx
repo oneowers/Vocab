@@ -1,12 +1,10 @@
 "use client"
 
-import Link from "next/link"
 import { useEffect, useRef, useState, type ChangeEvent } from "react"
 
 import { CardList } from "@/components/CardList"
 import { ConfirmModal } from "@/components/ConfirmModal"
 import { useToast } from "@/components/Toast"
-import { getTodayDateKey } from "@/lib/date"
 import { getGuestCards, isGuestSessionActive } from "@/lib/guest"
 import { matchesCardStatus, sortDueCards } from "@/lib/spaced-repetition"
 import type { CardRecord, CardsResponse, CardStatusFilter, CefrLevel } from "@/lib/types"
@@ -183,10 +181,45 @@ export function CardsPageView() {
 
       <div className="space-y-4">
         {loading ? (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="skeleton h-[140px] rounded-[28px] opacity-70" />
-            ))}
+          <div className="space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-2">
+                <div className="skeleton skeleton-soft h-8 w-52" />
+              </div>
+              <div className="skeleton dashboard-skeleton-card h-11 w-11 rounded-full" style={{ ["--skeleton-delay" as string]: "80ms" }} />
+            </div>
+
+            <div className="skeleton dashboard-skeleton-card rounded-[26px] p-3 md:p-4" style={{ ["--skeleton-delay" as string]: "120ms" }}>
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div className="skeleton skeleton-soft h-11 w-full max-w-sm rounded-[18px]" />
+                <div className="flex flex-col gap-2">
+                  <div className="flex flex-wrap gap-1.5">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="skeleton skeleton-soft h-7 w-20" />
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {["All", "A1", "A2", "B1", "B2"].map((label, index) => (
+                      <div
+                        key={label}
+                        className="skeleton skeleton-soft h-7 w-12"
+                        style={{ ["--skeleton-delay" as string]: `${160 + index * 30}ms` }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div
+                  key={i}
+                  className="skeleton dashboard-skeleton-card h-[148px] rounded-[26px]"
+                  style={{ ["--skeleton-delay" as string]: `${180 + i * 45}ms` }}
+                />
+              ))}
+            </div>
           </div>
         ) : (
           <CardList
@@ -202,8 +235,7 @@ export function CardsPageView() {
             onDeleteRequest={setCardToDelete}
             guestMode={guestMode}
             variant="grid"
-            title="All cards"
-            description="Browse every saved card in a compact grid."
+            title="Your saved cards"
           />
         )}
       </div>

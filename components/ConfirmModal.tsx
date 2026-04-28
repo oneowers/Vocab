@@ -66,12 +66,12 @@ export function ConfirmModal({
           <motion.div
             role="dialog"
             aria-modal="true"
-            className="panel fixed inset-x-0 bottom-0 mx-auto w-full max-w-lg rounded-t-sheet border-b-0 p-5 md:static md:rounded-[20px] md:border md:p-6"
+            className="panel m-3 fixed inset-x-0 bottom-0 max-w-lg rounded-t-sheet border-b-0 p-5 md:static md:rounded-[20px] md:border md:p-6"
             initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 96 }}
             animate={{ opacity: 1, y: 0 }}
             exit={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 72 }}
             transition={{
-              duration: prefersReducedMotion ? 0 : 0.32,
+              duration: prefersReducedMotion ? 0 : 0.01,
               ease: [0.25, 0.46, 0.45, 0.94]
             }}
             onClick={(event) => event.stopPropagation()}

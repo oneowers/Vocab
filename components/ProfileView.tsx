@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowRight, Heart, LogOut, Shield } from "lucide-react"
+import { ArrowRight, Calendar, Flame, LogOut, Shield, User as UserIcon } from "lucide-react"
 
 import { CEFR_LEVELS } from "@/lib/catalog"
 import { useToast } from "@/components/Toast"
@@ -23,9 +23,7 @@ export function ProfileView({ user }: ProfileViewProps) {
   const { showToast } = useToast()
   const [guestActive, setGuestActive] = useState(false)
   const [profileUser, setProfileUser] = useState(user)
-  const [reviewLives, setReviewLives] = useState(user?.reviewLives ?? DEFAULT_GUEST_REVIEW_LIVES)
   const [cefrLevel, setCefrLevel] = useState<CefrLevel>(user?.cefrLevel ?? "A1")
-  const [savingLives, setSavingLives] = useState(false)
   const [savingLevel, setSavingLevel] = useState(false)
   const fallbackActivity = useMemo(() => buildEmptyProfileActivity(), [])
   const {
@@ -58,7 +56,6 @@ export function ProfileView({ user }: ProfileViewProps) {
 
   useEffect(() => {
     setProfileUser(user)
-    setReviewLives(user?.reviewLives ?? DEFAULT_GUEST_REVIEW_LIVES)
     setCefrLevel(user?.cefrLevel ?? "A1")
   }, [user])
 
@@ -92,8 +89,8 @@ export function ProfileView({ user }: ProfileViewProps) {
     ? "Guest mode"
     : getRoleLabel(profileUser?.role ?? null)
   const heatmapDays = useMemo(() => resolvedActivity.days, [resolvedActivity.days])
-  const heatmapCellSize = 12
-  const heatmapGap = 4
+  const heatmapCellSize = 10
+  const heatmapGap = 3
   const heatmapWeekCount = Math.max(
     1,
     ...resolvedActivity.months.map((month) => month.weekIndex + 1),
@@ -102,7 +99,7 @@ export function ProfileView({ user }: ProfileViewProps) {
   const heatmapWidth =
     heatmapWeekCount * heatmapCellSize + Math.max(heatmapWeekCount - 1, 0) * heatmapGap
   const visibleMonths = useMemo(() => {
-    const minLabelSpacing = 28
+    const minLabelSpacing = 24
     let lastLeft = -Infinity
 
     return resolvedActivity.months.filter((month) => {
@@ -116,45 +113,6 @@ export function ProfileView({ user }: ProfileViewProps) {
       return true
     })
   }, [resolvedActivity.months, heatmapCellSize, heatmapGap])
-
-  async function handleReviewLivesChange(nextLives: number) {
-    if (guestActive || !profileUser || savingLives || nextLives === reviewLives) {
-      return
-    }
-
-    setSavingLives(true)
-
-    try {
-      const response = await fetch("/api/profile", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          reviewLives: nextLives
-        })
-      })
-
-      if (!response.ok) {
-        throw new Error("Could not update review lives.")
-      }
-
-      const payload = (await response.json()) as {
-        user: AppUserRecord
-      }
-
-      setProfileUser(payload.user)
-      setReviewLives(payload.user.reviewLives)
-      showToast("Review lives updated.", "success")
-    } catch (error) {
-      showToast(
-        error instanceof Error ? error.message : "Could not update review lives.",
-        "error"
-      )
-    } finally {
-      setSavingLives(false)
-    }
-  }
 
   async function handleCefrLevelChange(nextLevel: CefrLevel) {
     if (guestActive || !profileUser || savingLevel || nextLevel === cefrLevel) {
@@ -197,187 +155,148 @@ export function ProfileView({ user }: ProfileViewProps) {
 
   return (
     <div className="space-y-4">
-      <section className="panel p-6">
-        <p className="section-label">Profile</p>
-        <h1 className="mt-2 text-[28px] font-bold tracking-[-0.5px] text-text-primary">{name}</h1>
-        <p className="mt-2 text-[15px] text-text-secondary">{subtitle}</p>
+      <section className="panel overflow-hidden border-none bg-gradient-to-br from-[#2b2b31] to-[#1b1b20] p-4 shadow-xl">
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/[0.08] backdrop-blur-md">
+              <UserIcon size={24} className="text-white/40" />
+            </div>
+          </div>
+          <div className="flex-1">
+            <h1 className="text-[20px] font-black tracking-tight text-white">
+              {name}
+            </h1>
+            <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5">
+              <span className="text-[12px] font-semibold text-white/50">{subtitle}</span>
+              {profileUser?.createdAt && (
+                <span className="text-[12px] font-medium text-white/20">
+                  Joined {new Date(profileUser.createdAt).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-3 gap-2">
+          <div className="rounded-[16px] bg-white/[0.04] p-3">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Streak</p>
+            <p className="text-[18px] font-black text-white">
+              {guestActive ? 0 : profileUser?.streak ?? 0}
+              <span className="ml-1 text-[11px] font-medium text-text-tertiary">d</span>
+            </p>
+          </div>
+          <div className="rounded-[16px] bg-white/[0.04] p-3">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Active</p>
+            <p className="text-[18px] font-black text-white">
+              {resolvedActivity.activeDaysLastYear}
+              <span className="ml-1 text-[11px] font-medium text-text-tertiary">d</span>
+            </p>
+          </div>
+          <div className="rounded-[16px] bg-white/[0.04] p-3">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Status</p>
+            <p className="truncate text-[15px] font-black text-white">
+              {guestActive ? "Guest" : "Pro"}
+            </p>
+          </div>
+        </div>
       </section>
 
       <section className="panel p-4">
-        <div className="divide-y divide-separator">
-          <div className="flex min-h-[52px] items-center justify-between py-1">
-            <span className="text-[17px] font-semibold text-text-primary">Email</span>
-            <span className="text-[15px] text-text-tertiary">{profileUser?.email || "Guest session"}</span>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="section-label">Activity</p>
+            <h2 className="mt-1 text-[17px] font-bold text-white">
+              {resolvedActivity.activeDaysLastYear} days
+            </h2>
           </div>
-          <div className="flex min-h-[52px] items-center justify-between py-1">
-            <span className="text-[17px] font-semibold text-text-primary">Role</span>
-            <span className="text-[15px] text-text-tertiary">{subtitle}</span>
+          <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
+            <div className="flex gap-0.5">
+              {[0, 1, 2, 3, 4].map((level) => (
+                <div key={level} className="h-2 w-2 rounded-[1px]" style={{ backgroundColor: `var(--activity-level-${level})` }} aria-hidden="true" />
+              ))}
+            </div>
           </div>
-          {profileUser?.role === "ADMIN" ? (
-            <Link href="/admin" prefetch className="flex min-h-[52px] items-center justify-between py-1">
-              <span className="inline-flex items-center gap-2 text-[17px] font-semibold text-text-primary">
-                <Shield size={18} />
-                Admin
-              </span>
-              <ArrowRight size={18} className="text-text-tertiary" />
-            </Link>
-          ) : null}
         </div>
+
+        {activityLoading ? (
+          <div className="mt-4 skeleton h-[100px] rounded-[16px]" />
+        ) : (
+          <div className={`mt-4 overflow-x-auto pb-1 hide-scrollbar native-scroll ${activityRefreshing ? "opacity-70" : ""}`}>
+            <div className="min-w-fit">
+              <div className="relative ml-6 h-4 text-[9px] font-bold uppercase tracking-widest text-text-tertiary" style={{ width: `${heatmapWidth}px` }}>
+                {visibleMonths.map((month) => (
+                  <span key={`${month.label}-${month.weekIndex}`} className="absolute top-0" style={{ left: `${month.weekIndex * (heatmapCellSize + heatmapGap)}px` }}>{month.label}</span>
+                ))}
+              </div>
+              <div className="mt-1 flex gap-2">
+                <div className="grid grid-rows-7 gap-[3px] text-[8px] font-bold text-text-tertiary">
+                  {["", "M", "", "W", "", "F", ""].map((label, index) => (
+                    <span key={`${label}-${index}`} className="flex h-[10px] items-center">{label}</span>
+                  ))}
+                </div>
+                <div className="grid grid-flow-col grid-rows-7 gap-[3px]" style={{ width: `${heatmapWidth}px` }}>
+                  {heatmapDays.map((day) => (
+                    <div key={day.date} className="h-[10px] w-[10px] rounded-[1px]" style={{ backgroundColor: `var(--activity-level-${day.level})` }} title={`${day.count} reviews on ${day.date}`} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </section>
 
-      <section className="panel p-4 md:p-5">
-        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="section-label">Review lives</p>
-            <h2 className="mt-2 text-[22px] font-bold tracking-[-0.5px] text-text-primary">
-              {guestActive ? DEFAULT_GUEST_REVIEW_LIVES : reviewLives} tries per stage
-            </h2>
-            <p className="mt-1 text-[15px] text-text-secondary">
-              {guestActive
-                ? "Guest mode always uses 3 lives for linked review sessions."
-                : "Choose how many mistakes each review stage allows before it resets."}
-            </p>
-          </div>
-          <div className="flex items-center gap-1 text-dangerText">
-            {Array.from({
-              length: guestActive ? DEFAULT_GUEST_REVIEW_LIVES : reviewLives
-            }).map((_, index) => (
-              <Heart key={`profile-heart-${index}`} size={16} fill="currentColor" />
-            ))}
-          </div>
-        </div>
 
-        <div className="mt-5 flex flex-wrap gap-2">
-          {[1, 2, 3, 4, 5].map((value) => (
-            <button
-              key={value}
-              type="button"
-              disabled={guestActive || savingLives}
-              onClick={() => void handleReviewLivesChange(value)}
-              className={`min-w-[56px] rounded-[1rem] border px-4 py-3 text-sm font-semibold transition ${(guestActive ? DEFAULT_GUEST_REVIEW_LIVES : reviewLives) === value
-                  ? "border-accent bg-accent text-accentForeground"
-                  : "border-separator bg-bg-primary text-text-primary hover:border-accent"
-                } ${guestActive || savingLives ? "cursor-not-allowed opacity-70" : ""}`}
-            >
-              {value}
-            </button>
-          ))}
-        </div>
-      </section>
+      <section className="panel p-4">
+        <p className="section-label">Target Level</p>
 
-      <section className="panel p-4 md:p-5">
-        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="section-label">Learning level</p>
-            <h2 className="mt-2 text-[22px] font-bold tracking-[-0.5px] text-text-primary">
-              {guestActive ? "A1" : cefrLevel}
-            </h2>
-            <p className="mt-1 text-[15px] text-text-secondary">
-              {guestActive
-                ? "Guest mode keeps the beginner level."
-                : "Choose which CEFR level the shared word catalog should use for daily words."}
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-5 flex flex-wrap gap-2">
+        <div className="mt-4 grid grid-cols-6 gap-1.5">
           {CEFR_LEVELS.map((value) => (
             <button
               key={value}
               type="button"
               disabled={guestActive || savingLevel}
               onClick={() => void handleCefrLevelChange(value)}
-              className={`min-w-[64px] rounded-[1rem] border px-4 py-3 text-sm font-semibold transition ${(guestActive ? "A1" : cefrLevel) === value
-                  ? "border-accent bg-accent text-accentForeground"
-                  : "border-separator bg-bg-primary text-text-primary hover:border-accent"
-                } ${guestActive || savingLevel ? "cursor-not-allowed opacity-70" : ""}`}
+              className={`flex h-10 items-center justify-center rounded-xl border text-[13px] font-bold transition-all ${(guestActive ? "A1" : cefrLevel) === value
+                  ? "border-white/10 bg-white text-black"
+                  : "border-transparent bg-white/[0.04] text-text-secondary hover:bg-white/[0.08]"
+                } ${guestActive || savingLevel ? "cursor-not-allowed opacity-40" : ""}`}
             >
               {value}
             </button>
           ))}
         </div>
+        <p className="mt-3 text-[12px] leading-relaxed text-text-tertiary">
+          Determines the difficulty of recommended catalog words.
+        </p>
       </section>
 
-      <section className="panel p-4 md:p-5">
-        <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="section-label">Activity</p>
-            <h2 className="mt-2 text-[22px] font-bold tracking-[-0.5px] text-text-primary">
-              {resolvedActivity.activeDaysLastYear} active days this year
-            </h2>
-            <p className="mt-1 text-[15px] text-text-secondary">
-              {guestActive
-                ? "Guest mode does not keep a year-to-date activity history yet."
-                : `${resolvedActivity.totalReviewsLastYear} review attempts recorded since January 1.`}
-            </p>
+      <section className="panel overflow-hidden p-2">
+        <div className="space-y-0.5">
+          <div className="flex min-h-[40px] items-center justify-between rounded-[12px] px-3 transition hover:bg-white/[0.04]">
+            <span className="text-[13px] font-semibold text-text-primary">Email</span>
+            <span className="text-[12px] text-text-tertiary">{profileUser?.email || "Guest"}</span>
           </div>
-          <div className="flex items-center gap-2 text-[13px] text-text-tertiary">
-            <span>Less</span>
-            {[0, 1, 2, 3, 4].map((level) => (
-              <span key={level} className="activity-cell" data-level={level} aria-hidden="true" />
-            ))}
-            <span>More</span>
-          </div>
-        </div>
-
-        {activityLoading ? (
-          <div className="mt-5 skeleton h-[240px] rounded-[1.5rem]" />
-        ) : null}
-
-        <div
-          className={`mt-5 overflow-x-auto pb-1 hide-scrollbar native-scroll transition-opacity ${activityLoading ? "hidden" : activityRefreshing ? "opacity-70" : "opacity-100"
-            }`}
-        >
-          <div className="min-w-[760px]">
-            <div
-              className="relative ml-12 h-6 text-[12px] leading-none text-text-tertiary"
-              style={{ width: `${heatmapWidth}px` }}
-            >
-              {visibleMonths.map((month) => (
-                <span
-                  key={`${month.label}-${month.weekIndex}`}
-                  className="absolute top-0"
-                  style={{
-                    left: `${month.weekIndex * (heatmapCellSize + heatmapGap)}px`
-                  }}
-                >
-                  {month.label}
-                </span>
-              ))}
-            </div>
-
-            <div className="mt-3 flex gap-3">
-              <div className="grid grid-rows-7 gap-1 pt-[1px] text-[12px] text-text-tertiary">
-                {["", "Mon", "", "Wed", "", "Fri", ""].map((label, index) => (
-                  <span key={`${label}-${index}`} className="flex h-[12px] items-center">
-                    {label}
-                  </span>
-                ))}
-              </div>
-
-              <div
-                className="grid grid-flow-col grid-rows-7 gap-1"
-                style={{ width: `${heatmapWidth}px` }}
-              >
-                {heatmapDays.map((day) => (
-                  <div
-                    key={day.date}
-                    className="activity-cell"
-                    data-level={day.level}
-                    title={`${day.count} reviews on ${day.date}`}
-                    aria-label={`${day.count} reviews on ${day.date}`}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
+          {profileUser?.role === "ADMIN" ? (
+            <Link href="/admin" prefetch className="flex min-h-[40px] items-center justify-between rounded-[12px] px-3 transition hover:bg-white/[0.04]">
+              <span className="inline-flex items-center gap-3 text-[13px] font-semibold text-text-primary">
+                <Shield size={14} className="text-emerald-400" />
+                Admin Dashboard
+              </span>
+              <ArrowRight size={14} className="text-text-tertiary" />
+            </Link>
+          ) : null}
+          <button
+            type="button"
+            onClick={handleExit}
+            className="flex min-h-[40px] w-full items-center justify-between rounded-[12px] px-3 text-[13px] font-bold text-dangerText transition hover:bg-white/[0.04] active:scale-[0.98]"
+          >
+            <span className="inline-flex items-center gap-3">
+              <LogOut size={14} />
+              {guestActive ? "Exit guest mode" : "Sign out"}
+            </span>
+          </button>
         </div>
       </section>
-
-      <button type="button" onClick={handleExit} className="button-secondary w-full">
-        <LogOut size={18} />
-        {guestActive ? "Exit guest mode" : profileUser ? "Sign out" : "Open login"}
-      </button>
     </div>
   )
 }

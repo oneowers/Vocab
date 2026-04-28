@@ -139,7 +139,7 @@ export function WriteCard({ card, onResolved }: WriteCardProps) {
               <span
                 className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${CEFR_STYLES[card.cefrLevel].badge}`}
               >
-                {card.cefrLevel} · {CEFR_STYLES[card.cefrLevel].label}
+                {card.cefrLevel}
               </span>
             </div>
           ) : null}

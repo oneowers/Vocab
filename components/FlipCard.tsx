@@ -68,7 +68,7 @@ export function FlipCard({ card, onAnswer }: FlipCardProps) {
           <span
             className={`inline-flex items-center rounded-full border px-3 py-1 text-[12px] font-semibold ${CEFR_STYLES[card.cefrLevel].badge}`}
           >
-            {card.cefrLevel} · {CEFR_STYLES[card.cefrLevel].label}
+            {card.cefrLevel}
           </span>
         </div>
       ) : null}
