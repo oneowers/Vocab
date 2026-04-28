@@ -1,6 +1,6 @@
 "use client"
 
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence, type Variants } from "framer-motion"
 import { Sparkles, Trophy, Play, Settings2, Plus, LayoutGrid, CalendarDays } from "lucide-react"
 import { useState } from "react"
 import { ReviewStageStepper } from "@/components/ReviewStageStepper"
@@ -38,7 +38,7 @@ const containerVariants = {
       staggerChildren: 0.05
     }
   }
-}
+} satisfies Variants
 
 const cardVariants = {
   initial: { opacity: 0, y: 20, scale: 0.98 },
@@ -47,7 +47,7 @@ const cardVariants = {
     y: 0, 
     scale: 1,
     transition: {
-      type: "spring",
+      type: "spring" as const,
       stiffness: 400,
       damping: 25
     }
@@ -58,7 +58,7 @@ const cardVariants = {
     scale: 0.98,
     transition: { duration: 0.15 }
   }
-}
+} satisfies Variants
 
 export function ReviewSessionOverview({
   currentStage,

@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion"
 import { useEffect, useState } from "react"
+import { Sparkles } from "lucide-react"
 import { levenshtein } from "@/lib/levenshtein"
 import { speakText, canSpeak } from "@/lib/tts"
 import type { CardRecord, ReviewResult } from "@/lib/types"

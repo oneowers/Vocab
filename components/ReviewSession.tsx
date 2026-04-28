@@ -122,7 +122,7 @@ function buildQuizBatches(cards: CardRecord[]) {
           id: `right-${batchIndex}-${index}-${card.id}`,
           sourceCardId: card.id,
           text: getEnglishAnswer(card),
-          cefrLevel: card.cefrLevel
+          cefrLevel: card.cefrLevel ?? undefined
         }))
       )
     })
