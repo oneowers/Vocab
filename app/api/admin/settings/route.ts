@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 
 import { getOptionalAuthUser } from "@/lib/auth"
-import { getOrCreateAppSettings, isTranslationProvider } from "@/lib/catalog"
+import { getOrCreateAppSettings, isTranslationEngine, isTranslationProvider } from "@/lib/catalog"
 import { getPrisma } from "@/lib/prisma"
 import { serializeAppSettings } from "@/lib/serializers"
 
@@ -49,32 +49,52 @@ export async function PATCH(request: NextRequest) {
   const body = (await request.json()) as {
     dailyNewCardsLimit?: number
     reviewLives?: number
-    translationProvider?: string
+    translationPriority?: string[]
+  }
+
+  const currentSettings = await getOrCreateAppSettings(getPrisma())
+
+  const nextDailyNewCardsLimit =
+    typeof body.dailyNewCardsLimit === "number"
+      ? body.dailyNewCardsLimit
+      : currentSettings.dailyNewCardsLimit
+  const nextReviewLives =
+    typeof body.reviewLives === "number"
+      ? body.reviewLives
+      : currentSettings.reviewLives
+  const nextTranslationPriority = Array.isArray(body.translationPriority)
+    ? body.translationPriority
+    : currentSettings.translationPriority
+
+  if (
+    !Number.isInteger(nextDailyNewCardsLimit) ||
+    nextDailyNewCardsLimit < 1 ||
+    nextDailyNewCardsLimit > 100
+  ) {
+    return NextResponse.json({ error: "Invalid daily card limit." }, { status: 400 })
   }
 
   if (
-    typeof body.dailyNewCardsLimit !== "number" ||
-    !Number.isInteger(body.dailyNewCardsLimit) ||
-    body.dailyNewCardsLimit < 1 ||
-    body.dailyNewCardsLimit > 100
+    !Number.isInteger(nextReviewLives) ||
+    nextReviewLives < 1 ||
+    nextReviewLives > 7
   ) {
-    return NextResponse.json({ error: "Invalid payload" }, { status: 400 })
+    return NextResponse.json({ error: "Invalid hearts value." }, { status: 400 })
   }
 
-  if (
-    typeof body.reviewLives !== "number" ||
-    !Number.isInteger(body.reviewLives) ||
-    body.reviewLives < 1 ||
-    body.reviewLives > 7
-  ) {
-    return NextResponse.json({ error: "Invalid payload" }, { status: 400 })
+  const normalizedPriority = Array.from(new Set(nextTranslationPriority.filter(isTranslationEngine)))
+
+  if (normalizedPriority.length < 1) {
+    return NextResponse.json({ error: "Invalid translator priority." }, { status: 400 })
   }
 
-  if (
-    typeof body.translationProvider !== "string" ||
-    !isTranslationProvider(body.translationProvider)
-  ) {
-    return NextResponse.json({ error: "Invalid payload" }, { status: 400 })
+  const nextTranslationProvider =
+    normalizedPriority.length === 1 && normalizedPriority[0] === "catalog"
+      ? "catalog-only"
+      : "auto"
+
+  if (!isTranslationProvider(nextTranslationProvider)) {
+    return NextResponse.json({ error: "Invalid translation source." }, { status: 400 })
   }
 
   const settings = await getPrisma().appSettings.upsert({
@@ -82,15 +102,17 @@ export async function PATCH(request: NextRequest) {
       id: "app"
     },
     update: {
-      dailyNewCardsLimit: body.dailyNewCardsLimit,
-      reviewLives: body.reviewLives,
-      translationProvider: body.translationProvider
+      dailyNewCardsLimit: nextDailyNewCardsLimit,
+      reviewLives: nextReviewLives,
+      translationProvider: nextTranslationProvider,
+      translationPriority: normalizedPriority
     },
     create: {
       id: "app",
-      dailyNewCardsLimit: body.dailyNewCardsLimit,
-      reviewLives: body.reviewLives,
-      translationProvider: body.translationProvider
+      dailyNewCardsLimit: nextDailyNewCardsLimit,
+      reviewLives: nextReviewLives,
+      translationProvider: nextTranslationProvider,
+      translationPriority: normalizedPriority
     }
   })
 

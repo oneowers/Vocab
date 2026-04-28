@@ -134,5 +134,6 @@ model AppSettings {
   dailyNewCardsLimit Int      @default(5)
   reviewLives        Int      @default(3)
   translationProvider String  @default("auto")
+  translationPriority String[] @default(["catalog", "deepl", "langeek"])
   updatedAt          DateTime @updatedAt
 }

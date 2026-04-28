@@ -1,11 +1,12 @@
 import type { CefrLevel, PrismaClient } from "@prisma/client"
 import { fetchDictionaryDetails } from "@/lib/dictionary"
-import type { TranslationProvider } from "@/lib/types"
+import type { TranslationEngine, TranslationProvider, TranslationSource } from "@/lib/types"
 
 const APP_SETTINGS_ID = "app"
 export const DEFAULT_DAILY_NEW_CARDS_LIMIT = 5
 export const DEFAULT_REVIEW_LIVES = 3
 export const DEFAULT_TRANSLATION_PROVIDER: TranslationProvider = "auto"
+export const DEFAULT_TRANSLATION_PRIORITY: TranslationEngine[] = ["catalog", "deepl", "langeek"]
 export const CEFR_LEVELS: CefrLevel[] = ["A1", "A2", "B1", "B2", "C1", "C2"]
 
 interface ResolveTranslationOptions {
@@ -18,6 +19,7 @@ interface ResolveTranslationOptions {
 export interface TranslationResolution {
   translation: string | null
   translationAlternatives: string[]
+  source: TranslationSource
 }
 
 function normalizeValue(value: string) {
@@ -38,13 +40,18 @@ export async function getOrCreateAppSettings(prisma: PrismaClient) {
       id: APP_SETTINGS_ID,
       dailyNewCardsLimit: DEFAULT_DAILY_NEW_CARDS_LIMIT,
       reviewLives: DEFAULT_REVIEW_LIVES,
-      translationProvider: DEFAULT_TRANSLATION_PROVIDER
+      translationProvider: DEFAULT_TRANSLATION_PROVIDER,
+      translationPriority: DEFAULT_TRANSLATION_PRIORITY
     }
   })
 }
 
 export function isTranslationProvider(value: string): value is TranslationProvider {
-  return value === "auto" || value === "catalog-only" || value === "deepl-only"
+  return value === "auto" || value === "catalog-only"
+}
+
+export function isTranslationEngine(value: string): value is TranslationEngine {
+  return value === "catalog" || value === "deepl" || value === "langeek"
 }
 
 export function isCefrLevel(value: string): value is CefrLevel {
@@ -84,7 +91,8 @@ export async function findCatalogTranslation({
       translation: entry.translation.trim(),
       translationAlternatives: entry.translationAlternatives
         .map((item) => item.trim())
-        .filter(Boolean)
+        .filter(Boolean),
+      source: "catalog"
     }
   }
 
@@ -107,7 +115,8 @@ export async function findCatalogTranslation({
 
     return {
       translation: entry.word.trim(),
-      translationAlternatives: []
+      translationAlternatives: [],
+      source: "catalog"
     }
   }
 
@@ -210,8 +219,128 @@ export async function translateWithDeepL({
     translation,
     translationAlternatives: (payload.translations?.[0]?.alternatives ?? [])
       .map((item) => item.text?.trim() || "")
-      .filter((item) => Boolean(item) && item !== translation)
+      .filter((item) => Boolean(item) && item !== translation),
+    source: "deepl"
   }
+}
+
+function pickLanGeekTranslation(payload: unknown, query: string) {
+  if (!Array.isArray(payload) || payload.length === 0) {
+    return null
+  }
+
+  const normalizedQuery = query.trim().toLowerCase()
+  const exactEntry =
+    payload.find((item) => {
+      if (!item || typeof item !== "object") {
+        return false
+      }
+
+      const entry = (item as { entry?: unknown }).entry
+      return typeof entry === "string" && entry.trim().toLowerCase() === normalizedQuery
+    }) ?? payload[0]
+
+  if (!exactEntry || typeof exactEntry !== "object") {
+    return null
+  }
+
+  const record = exactEntry as {
+    translation?: {
+      localizedProperties?: {
+        translation?: unknown
+      }
+    }
+    localizedData?: unknown
+  }
+
+  const primary =
+    typeof record.translation?.localizedProperties?.translation === "string"
+      ? record.translation.localizedProperties.translation
+          .split(",")
+          .map((item) => item.trim())
+          .find(Boolean) ?? null
+      : null
+
+  const alternatives = Array.isArray(record.localizedData)
+    ? Array.from(
+        new Set(
+          record.localizedData
+            .flatMap((item) =>
+              typeof item === "string"
+                ? item.split(",").map((part) => part.trim())
+                : []
+            )
+            .filter((item) => item && item !== primary)
+        )
+      )
+    : []
+
+  if (!primary) {
+    return null
+  }
+
+  return {
+    translation: primary,
+    translationAlternatives: alternatives,
+    source: "langeek" as const
+  }
+}
+
+export async function translateWithLanGeek({
+  query,
+  sourceLang,
+  targetLang
+}: Omit<ResolveTranslationOptions, "prisma">): Promise<TranslationResolution | null> {
+  if (sourceLang !== "EN" || targetLang !== "RU") {
+    return null
+  }
+
+  const response = await fetch(
+    `https://api.langeek.co/v1/cs/en/ru/word/?term=${encodeURIComponent(normalizeValue(query))}&filter=,inCategory,photo`,
+    {
+      headers: {
+        Accept: "application/json"
+      },
+      cache: "no-store"
+    }
+  ).catch(() => null)
+
+  if (!response?.ok) {
+    return null
+  }
+
+  const payload = (await response.json().catch(() => null)) as unknown
+
+  if (!payload) {
+    return null
+  }
+
+  const resolved = pickLanGeekTranslation(payload, query)
+
+  if (!resolved?.translation) {
+    return null
+  }
+
+  return resolved
+}
+
+async function resolveExternalTranslation(
+  priority: TranslationEngine[],
+  options: Omit<ResolveTranslationOptions, "prisma">
+) {
+  const chain = priority
+    .filter((engine) => engine !== "catalog")
+    .map((engine) => (engine === "deepl" ? translateWithDeepL : translateWithLanGeek))
+
+  for (const translator of chain) {
+    const resolved = await translator(options)
+
+    if (resolved?.translation) {
+      return resolved
+    }
+  }
+
+  return null
 }
 
 export async function resolveTranslationDetails(options: ResolveTranslationOptions) {
@@ -219,8 +348,18 @@ export async function resolveTranslationDetails(options: ResolveTranslationOptio
   const provider = isTranslationProvider(settings.translationProvider)
     ? settings.translationProvider
     : DEFAULT_TRANSLATION_PROVIDER
+  const translationPriority = Array.from(
+    new Set(
+      (settings.translationPriority as string[])
+        .filter(isTranslationEngine)
+    )
+  )
+  const priority =
+    translationPriority.length > 0
+      ? translationPriority
+      : DEFAULT_TRANSLATION_PRIORITY
 
-  if (provider !== "deepl-only") {
+  if (provider === "auto" && priority.includes("catalog")) {
     const catalogTranslation = await findCatalogTranslation(options)
 
     if (catalogTranslation) {
@@ -228,11 +367,11 @@ export async function resolveTranslationDetails(options: ResolveTranslationOptio
     }
   }
 
-  if (provider === "catalog-only") {
+  if (provider === "catalog-only" || priority.every((engine) => engine === "catalog")) {
     return null
   }
 
-  return translateWithDeepL(options)
+  return resolveExternalTranslation(priority, options)
 }
 
 export async function resolveTranslation(options: ResolveTranslationOptions) {
@@ -269,7 +408,8 @@ export async function ensureCatalogWordLocalized(
     currentTranslation
       ? Promise.resolve<TranslationResolution>({
           translation: currentTranslation,
-          translationAlternatives: currentTranslationAlternatives
+          translationAlternatives: currentTranslationAlternatives,
+          source: "catalog"
         })
       : resolveTranslationDetails({
           prisma,

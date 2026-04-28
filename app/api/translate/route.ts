@@ -81,23 +81,12 @@ export async function GET(request: NextRequest) {
         ? localizedDirectCatalogWord.translation.trim()
         : localizedDirectCatalogWord.word.trim()
       : null
-  const resolved =
-    directCatalogTranslation
-      ? {
-          translation: directCatalogTranslation,
-          translationAlternatives:
-            sourceLang === "EN" && targetLang === "RU"
-              ? localizedDirectCatalogWord?.translationAlternatives
-                    .map((item) => item.trim())
-                    .filter(Boolean) ?? []
-              : []
-        }
-      : await resolveTranslationDetails({
-          prisma,
-          query,
-          sourceLang,
-          targetLang
-        })
+  const resolved = await resolveTranslationDetails({
+    prisma,
+    query,
+    sourceLang,
+    targetLang
+  })
 
   if (!resolved?.translation) {
     return NextResponse.json(
@@ -106,7 +95,8 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  let cefrLevel: CefrLevel | null = localizedDirectCatalogWord?.cefrLevel ?? null
+  let cefrLevel: CefrLevel | null =
+    resolved.source === "catalog" ? localizedDirectCatalogWord?.cefrLevel ?? null : null
 
   if (!cefrLevel && sourceLang === "RU" && targetLang === "EN") {
     const resolvedEnglishCatalogWord = await findCatalogWordByWord(
@@ -127,6 +117,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     translation: resolved.translation,
     translationAlternatives: resolved.translationAlternatives,
-    cefrLevel
+    cefrLevel,
+    source: resolved.source
   })
 }

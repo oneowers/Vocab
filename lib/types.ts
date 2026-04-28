@@ -7,7 +7,11 @@ export type CardStatusFilter = "All" | "known" | "unknown"
 export type CefrLevel = "A1" | "A2" | "B1" | "B2" | "C1" | "C2"
 export type CatalogEnrichmentStatus = "pending" | "completed" | "failed"
 export type CatalogReviewStatus = "draft" | "approved"
-export type TranslationProvider = "auto" | "catalog-only" | "deepl-only"
+export type TranslationProvider =
+  | "auto"
+  | "catalog-only"
+export type TranslationEngine = "catalog" | "deepl" | "langeek"
+export type TranslationSource = TranslationEngine
 
 export interface NavItem {
   href: string
@@ -78,6 +82,7 @@ export interface AppSettingsRecord {
   dailyNewCardsLimit: number
   reviewLives: number
   translationProvider: TranslationProvider
+  translationPriority: TranslationEngine[]
   updatedAt: string
 }
 
@@ -240,6 +245,7 @@ export interface TranslationPayload {
   translation: string
   translationAlternatives: string[]
   cefrLevel: CefrLevel | null
+  source: TranslationSource
 }
 
 export interface DictionaryPayload {

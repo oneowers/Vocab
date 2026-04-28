@@ -73,6 +73,7 @@ export function TranslatorPanel({
   const [direction, setDirection] = useState<Direction>("en-ru")
   const [translation, setTranslation] = useState("")
   const [translationAlternatives, setTranslationAlternatives] = useState<string[]>([])
+  const [translationSource, setTranslationSource] = useState<TranslationPayload["source"] | null>(null)
   const [cefrLevel, setCefrLevel] = useState<CefrLevel | null>(null)
   const [example, setExample] = useState<string | null>(null)
   const [phonetic, setPhonetic] = useState<string | null>(null)
@@ -89,6 +90,7 @@ export function TranslatorPanel({
 
     setLoading(true)
     setTranslationAlternatives([])
+    setTranslationSource(null)
     setCefrLevel(null)
 
     try {
@@ -113,6 +115,7 @@ export function TranslatorPanel({
         [translated, query.trim()]
       )
       setTranslationAlternatives(nextTranslationAlternatives)
+      setTranslationSource(translationPayload.source)
       setCefrLevel(translationPayload.cefrLevel)
 
       const dictionaryWord = direction === "en-ru" ? query.trim() : translated
@@ -216,6 +219,7 @@ export function TranslatorPanel({
       setQuery(nextQuery)
       setTranslation(nextTranslation)
       setTranslationAlternatives([])
+      setTranslationSource(null)
       setCefrLevel(null)
       setExample(null)
       setPhonetic(null)
@@ -230,6 +234,14 @@ export function TranslatorPanel({
   const translatedLanguage = direction === "en-ru" ? "ru-RU" : "en-US"
   const sourceLabel = direction === "en-ru" ? "English" : "Russian"
   const targetLabel = direction === "en-ru" ? "Russian" : "English"
+  const translationSourceLabel =
+    translationSource === "catalog"
+      ? "Catalog"
+      : translationSource === "deepl"
+        ? "DeepL"
+        : translationSource === "langeek"
+          ? "LanGeek"
+          : null
 
   return (
     <section className="translate-phone-surface space-y-5">
@@ -383,6 +395,11 @@ export function TranslatorPanel({
                   <span className="text-[12px] font-bold uppercase tracking-[0.08em] text-white/42">
                     {targetLabel}
                   </span>
+                  {translationSourceLabel && (
+                    <span className="rounded-full bg-white/[0.06] px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.08em] text-white/45">
+                      {translationSourceLabel}
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between gap-3">
