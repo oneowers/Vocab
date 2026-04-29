@@ -9,35 +9,38 @@ import styles from "@/components/review-session.module.css"
 import type { CardStatusFilter, DailyCatalogStatus } from "@/lib/types"
 
 interface ReviewSessionOverviewProps {
-  currentStage: "flip" | "quiz" | "write"
+  currentStage: "flip" | "quiz" | "write" | "challenge"
   completedStages: string[]
   cardsDue: number
   totalCards: number
+  weakCardsCount: number
   loading?: boolean
   selectedStatus: CardStatusFilter
-  practiceStage: "flip" | "quiz" | "write"
+  practiceStage: "flip" | "quiz" | "write" | "challenge"
   guestMode: boolean
   claiming: boolean
   dailyCatalog: DailyCatalogStatus | null
   sessionLimit: number
   resumableSession: {
     wordCount: number
-    activeStage: "flip" | "quiz" | "write"
+    activeStage: "flip" | "quiz" | "write" | "challenge"
     completedStages: string[]
   } | null
   onSelectStatus: (status: CardStatusFilter) => void
-  onSelectPracticeStage: (stage: "flip" | "quiz" | "write") => void
+  onSelectPracticeStage: (stage: "flip" | "quiz" | "write" | "challenge") => void
   onClaimDailyWords: () => void
   onStartDue: () => void
   onStartPractice: () => void
   onResumeSession: () => void
   onRestartSession: () => void
+  onStartWeakWords: () => void
 }
 
 const REVIEW_STEPS = [
   { value: "flip", label: "Flip" },
   { value: "quiz", label: "Quiz" },
-  { value: "write", label: "Write" }
+  { value: "write", label: "Write" },
+  { value: "challenge", label: "Challenge" }
 ] as const
 
 const containerVariants = {
@@ -75,6 +78,7 @@ export function ReviewSessionOverview({
   completedStages,
   cardsDue,
   totalCards,
+  weakCardsCount,
   loading = false,
   selectedStatus,
   practiceStage,
@@ -89,7 +93,8 @@ export function ReviewSessionOverview({
   onStartDue,
   onStartPractice,
   onResumeSession,
-  onRestartSession
+  onRestartSession,
+  onStartWeakWords
 }: ReviewSessionOverviewProps) {
   const [activeTab, setActiveTab] = useState<"daily" | "practice">("daily")
   const dueSessionCount = Math.min(cardsDue, sessionLimit)
@@ -170,6 +175,26 @@ export function ReviewSessionOverview({
                   variant="hero"
                 />
               </div>
+
+              {weakCardsCount > 0 && (
+                <div className="mt-6 rounded-2xl border border-rose-500/20 bg-rose-500/5 p-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h3 className="text-[16px] font-bold text-white">Train weak words</h3>
+                      <p className="mt-1 text-[14px] leading-relaxed text-white/60">
+                        You missed {weakCardsCount === 1 ? "this word" : "these words"} multiple times. Let's fix it.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={onStartWeakWords}
+                      className={`${styles.glassButtonPrimary} !w-auto !h-10 px-5 text-[14px] shrink-0 !bg-rose-500/20 !text-rose-400 !border-rose-500/30 hover:!bg-rose-500/30`}
+                    >
+                      Train {weakCardsCount}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className={styles.heroStats} style={{ marginBottom: "2.5rem", padding: "1.5rem" }}>
                 <div className={styles.heroStatItem}>

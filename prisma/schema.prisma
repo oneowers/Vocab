@@ -29,6 +29,9 @@ model User {
   lastActiveAt            DateTime?
   streak                  Int                        @default(0)
   lastReviewDate          String?
+  streakFreezes           Int                        @default(0)
+  lastStreakRecoveryDate  String?
+  firstPracticeDate       String?
   cards                   Card[]
   catalogClaims           UserCatalogWord[]
   reviewLogs              ReviewLog[]
@@ -133,9 +136,19 @@ model AppAnalytics {
   wrongByB1            Int    @default(0)
   wrongByB2            Int    @default(0)
   wrongByC1            Int    @default(0)
-  wrongByC2            Int    @default(0)
-  catalogClaimsToday   Int    @default(0)
-  catalogVsCustomRatio Float  @default(0)
+  wrongByC2              Int    @default(0)
+  catalogClaimsToday     Int    @default(0)
+  catalogVsCustomRatio   Float  @default(0)
+  onboardingStarted      Int    @default(0)
+  onboardingCompleted    Int    @default(0)
+  levelTestStarted       Int    @default(0)
+  levelTestCompleted     Int    @default(0)
+  firstWordsSelected     Int    @default(0)
+  firstPracticeStarted   Int    @default(0)
+  firstPracticeCompleted Int    @default(0)
+  aiChallengeStarted     Int    @default(0)
+  aiChallengeCompleted   Int    @default(0)
+  firstPracticeD1Return  Int    @default(0)
 }
 
 model PracticeSessionProgress {
@@ -193,6 +206,7 @@ model WordCatalog {
   enrichmentError         String?
   createdAt               DateTime                @default(now())
   updatedAt               DateTime                @updatedAt
+  search_vector           Unsupported("tsvector")?
   cards                   Card[]
   claims                  UserCatalogWord[]
 

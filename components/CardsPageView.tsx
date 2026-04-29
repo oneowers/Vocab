@@ -188,7 +188,34 @@ export function CardsPageView({ initialData = null }: CardsPageViewProps) {
         onChange={(event) => void handleImportFile(event)}
       />
 
-      <div className="space-y-4">
+      <div className="pt-6 space-y-6">
+        {cardsPayload?.dailyCatalog ? (
+          <div className="panel rounded-[28px] p-4 md:p-5">
+            <div className="flex flex-wrap items-center gap-3 md:gap-5">
+              <div>
+                <p className="section-label">Today</p>
+                <p className="mt-1 text-[24px] font-bold tracking-[-0.04em] text-white">
+                  {cardsPayload.dailyCatalog.todayCount} words
+                </p>
+              </div>
+              <div className="h-10 w-px bg-white/[0.08]" />
+              <div>
+                <p className="section-label">Saved</p>
+                <p className="mt-1 text-[18px] font-semibold text-white">
+                  {cardsPayload.dailyCatalog.savedCount}
+                </p>
+              </div>
+              <div>
+                <p className="section-label">Waiting</p>
+                <p className="mt-1 text-[18px] font-semibold text-text-secondary">
+                  {cardsPayload.dailyCatalog.waitingCount}
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        <div className="space-y-4">
         {loading ? (
           <div className="space-y-3">
             <div className="flex items-start justify-between gap-3">
@@ -250,6 +277,7 @@ export function CardsPageView({ initialData = null }: CardsPageViewProps) {
           />
         )}
       </div>
+    </div>
 
       <ConfirmModal
         open={Boolean(cardToDelete) || cardsToDelete.length > 0}

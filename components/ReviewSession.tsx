@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion"
 import { ArrowLeft, ArrowRight, CheckCircle2, Sparkles, Zap, Trophy, ArrowUpRight, Plus } from "lucide-react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 
 import { FlipCard } from "@/components/FlipCard"
@@ -25,8 +26,9 @@ import {
 } from "@/lib/guest"
 import { getReviewOutcome, matchesCardStatus, sortDueCards } from "@/lib/spaced-repetition"
 import type { CardRecord, CardsResponse, CardStatusFilter, DailyCatalogStatus, DailyClaimResponse, ReviewResult } from "@/lib/types"
+import { trackEvent } from "@/lib/analytics"
 
-type ReviewStage = "flip" | "quiz" | "write"
+type ReviewStage = "flip" | "quiz" | "write" | "challenge"
 type ReviewSessionStatus = "idle" | "active" | "saving" | "save-error" | "success"
 type ReviewFlow = "linked" | "single"
 
@@ -42,7 +44,8 @@ const PRACTICE_SESSION_LIMIT = 20
 const REVIEW_STEPS: Array<{ value: ReviewStage; label: string }> = [
   { value: "flip", label: "Flip" },
   { value: "quiz", label: "Quiz" },
-  { value: "write", label: "Write" }
+  { value: "write", label: "Write" },
+  { value: "challenge", label: "Challenge" }
 ]
 
 interface SavedPracticeSession {
@@ -55,6 +58,7 @@ interface SavedPracticeSession {
   state: {
     mistakes?: number
     stageAttempt?: number
+    results?: Record<string, ReviewResult>
   }
   updatedAt: string
 }
@@ -167,12 +171,15 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
   const [quizSolvedPairs, setQuizSolvedPairs] = useState(0)
   const [writeIndex, setWriteIndex] = useState(0)
   const [mistakes, setMistakes] = useState(0)
+  const [sessionResults, setSessionResults] = useState<Record<string, ReviewResult>>({})
   const [claiming, setClaiming] = useState(false)
   const [dailyCatalog, setDailyCatalog] = useState<DailyCatalogStatus | null>(null)
   const [dailyModalOpen, setDailyModalOpen] = useState(false)
   const [lastActionStatus, setLastActionStatus] = useState<"idle" | "correct" | "incorrect" | "active">("idle")
   const [savedPracticeSession, setSavedPracticeSession] = useState<SavedPracticeSession | null>(null)
   const [challengeDismissed, setChallengeDismissed] = useState(false)
+  const searchParams = useSearchParams()
+  const isRecoveryMode = searchParams.get("mode") === "recovery"
   const { showToast } = useToast()
   const todayKey = getTodayDateKey()
   const {
@@ -270,12 +277,16 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
     [dueCards, selectedStatus]
   )
   const dailyDueCards = useMemo(() => {
-    const dailyTarget = dailyCatalog?.dailyTarget ?? 10
+    const dailyTarget = isRecoveryMode ? 7 : (dailyCatalog?.dailyTarget ?? 10)
     return availableCards.slice(0, dailyTarget)
-  }, [availableCards, dailyCatalog?.dailyTarget])
+  }, [availableCards, dailyCatalog?.dailyTarget, isRecoveryMode])
   const allAvailableCards = useMemo(
     () => allCards.filter((card) => matchesCardStatus(card, selectedStatus)),
     [allCards, selectedStatus]
+  )
+  const weakCards = useMemo(
+    () => allCards.filter((card) => (card.wrongCount * 2 - card.correctCount) >= 3),
+    [allCards]
   )
   const activeStage = REVIEW_STEPS[activeStageIndex]?.value ?? "flip"
   const currentCard = useMemo(
@@ -395,7 +406,8 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
           flow,
           state: {
             mistakes,
-            stageAttempt
+            stageAttempt,
+            results: sessionResults
           }
         })
       })
@@ -426,6 +438,10 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
     const startIndex = REVIEW_STEPS.findIndex((item) => item.value === startStage)
     const sessionDeck = (options.preserveOrder ? cards : shuffleItems(cards)).slice(0, PRACTICE_SESSION_LIMIT)
 
+    if (cardsPayload?.summary.isFirstPractice && !guestMode) {
+      trackEvent("first_practice_started")
+    }
+
     setSessionCards(sessionDeck)
     setQuizBatches(buildQuizBatches(sessionDeck))
     setActiveStageIndex(startIndex >= 0 ? startIndex : 0)
@@ -436,6 +452,7 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
     setQuizSolvedPairs(0)
     setWriteIndex(0)
     setMistakes(options.restoreState?.mistakes ?? 0)
+    setSessionResults(options.restoreState?.results ?? {})
     setStageAttempt(options.restoreState?.stageAttempt ?? 0)
     setSessionFlow(flow)
     setSessionStatus("active")
@@ -540,6 +557,15 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
         stages: nextCompletedStages,
         stage: "write"
       })
+      return
+    }
+
+    if (stage === "write") {
+      setActiveStageIndex(3)
+      void savePracticeProgress({
+        stages: nextCompletedStages,
+        stage: "challenge"
+      })
     }
   }
 
@@ -566,9 +592,10 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
+            isRecovery: isRecoveryMode,
             reviews: Array.from(new Set(sessionCards.map((card) => card.id))).map((cardId) => ({
               cardId,
-              result: "known"
+              result: sessionResults[cardId] === "unknown" ? "unknown" : "known"
             }))
           })
         })
@@ -587,7 +614,8 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
             return card
           }
 
-          const outcome = getReviewOutcome("known", todayKey)
+          const cardResult = sessionResults[card.id] === "unknown" ? "unknown" : "known"
+          const outcome = getReviewOutcome(cardResult, todayKey)
 
           return {
             ...card,
@@ -617,6 +645,8 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
   function handleFlipResolved(result: ReviewResult) {
     if (result === "unknown") {
       setLastActionStatus("incorrect")
+      const cardId = sessionCards[flipIndex].id
+      setSessionResults((current) => ({ ...current, [cardId]: "unknown" }))
       if (spendLife()) return
     } else {
       setLastActionStatus("correct")
@@ -634,8 +664,11 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
     setFlipIndex((current) => current + 1)
   }
 
-  function handleQuizLifeLost() {
+  function handleQuizLifeLost(cardId?: string) {
     setLastActionStatus("incorrect")
+    if (cardId) {
+      setSessionResults((current) => ({ ...current, [cardId]: "unknown" }))
+    }
     spendLife()
   }
 
@@ -656,13 +689,19 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
   function handleWriteResolved(result: ReviewResult) {
     if (result === "unknown") {
       setLastActionStatus("incorrect")
+      const cardId = sessionCards[writeIndex].id
+      setSessionResults((current) => ({ ...current, [cardId]: "unknown" }))
       if (spendLife()) return
     } else {
       setLastActionStatus("correct")
     }
 
     if (writeIndex + 1 >= sessionCards.length) {
-      void commitSession()
+      if (sessionFlow === "single") {
+        void commitSession()
+        return
+      }
+      advanceToNextStage("write")
       return
     }
 
@@ -682,6 +721,10 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
       return Math.round((writeIndex / sessionCards.length) * 100)
     }
 
+    if (activeStage === "challenge") {
+      return 100
+    }
+
     const completedPairs = quizBatches
       .slice(0, quizBatchIndex)
       .reduce((total, batch) => total + batch.targetCount, 0)
@@ -697,6 +740,10 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
 
     if (activeStage === "write") {
       return `Card ${Math.min(writeIndex + 1, sessionCards.length)} of ${sessionCards.length}`
+    }
+
+    if (activeStage === "challenge") {
+      return "Final Challenge"
     }
 
     const totalPairs = sessionCards.length
@@ -740,6 +787,7 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
           completedStages={resumableSession?.completedStages ?? []}
           cardsDue={dailyDueCards.length}
           totalCards={allAvailableCards.length}
+          weakCardsCount={weakCards.length}
           selectedStatus={selectedStatus}
           practiceStage={practiceStage}
           guestMode={guestMode}
@@ -754,6 +802,7 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
           onStartPractice={() => startNewSession(allAvailableCards, practiceStage, "single")}
           onResumeSession={resumeSavedSession}
           onRestartSession={restartSavedSession}
+          onStartWeakWords={() => startNewSession(weakCards, "flip", "single")}
         />
         <DailyWordsModal
           open={dailyModalOpen}
@@ -819,9 +868,6 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
   }
 
   if (sessionStatus === "success") {
-    const shouldOfferWritingChallenge =
-      !guestMode && sessionFlow === "linked" && sessionCards.length > 0 && !challengeDismissed
-
     return (
       <div className={`${styles.sessionContainer} flex items-center justify-center`}>
         <motion.div 
@@ -839,8 +885,14 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
             </div>
           </div>
 
-          <h1 className={styles.heroTitle} style={{ fontSize: "1.75rem" }}>Session Complete!</h1>
-          <p className={styles.heroSubtitle}>You've made significant progress today.</p>
+          <h1 className={styles.heroTitle} style={{ fontSize: "1.75rem" }}>
+            {isRecoveryMode ? "Streak Restored!" : "Session Complete!"}
+          </h1>
+          <p className={styles.heroSubtitle}>
+            {isRecoveryMode 
+              ? "Your learning streak is safe. Good to have you back." 
+              : "Good. Tomorrow we’ll test the words you almost forgot."}
+          </p>
 
           <div className={styles.heroStats} style={{ marginTop: "2rem", marginBottom: "2rem" }}>
             <div className={styles.heroStatItem}>
@@ -860,19 +912,12 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
               Return to Dashboard
             </Link>
           </div>
-
-          {shouldOfferWritingChallenge ? (
-            <PracticeWritingChallenge
-              targetCards={sessionCards}
-              onSkip={() => setChallengeDismissed(true)}
-            />
-          ) : null}
         </motion.div>
       </div>
     )
   }
 
-  if (!currentCard && activeStage !== "quiz") {
+  if (!currentCard && activeStage !== "quiz" && activeStage !== "challenge") {
     return null
   }
 
@@ -932,43 +977,54 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
         </div>
       </motion.header>
 
-      <div className={styles.sessionStageArea}>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={`${activeStage}-${stageAttempt}-${currentCard?.id ?? quizBatchIndex}`}
-            initial={{ opacity: 0, scale: 0.98, y: 5 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.98, y: -5 }}
-            transition={{ duration: 0.1, ease: "easeOut" }}
-          >
-            {activeStage === "flip" && (
-              <FlipCard
-                card={currentCard as CardRecord}
-                onAnswer={handleFlipResolved}
-              />
-            )}
+      <div className={`${styles.sessionStageArea} px-4`}>
+        <div className="mx-auto w-full max-w-[40rem]">
+          {activeStage !== "challenge" ? (
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`${activeStage}-${stageAttempt}-${currentCard?.id ?? quizBatchIndex}`}
+                initial={{ opacity: 0, scale: 0.98, y: 5 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.98, y: -5 }}
+                transition={{ duration: 0.15, ease: "easeOut" }}
+              >
+                {activeStage === "flip" && (
+                  <FlipCard
+                    card={currentCard as CardRecord}
+                    onAnswer={handleFlipResolved}
+                  />
+                )}
 
-            {activeStage === "quiz" && currentQuizBatch && (
-              <QuizCard
-                leftItems={currentQuizBatch.leftItems}
-                rightItems={currentQuizBatch.rightItems}
-                batchIndex={quizBatchIndex}
-                totalBatches={quizBatches.length}
-                targetCount={currentQuizBatch.targetCount}
-                onLifeLost={handleQuizLifeLost}
-                onBatchCompleted={handleQuizBatchCompleted}
-                onProgressChange={setQuizSolvedPairs}
-              />
-            )}
+                {activeStage === "quiz" && currentQuizBatch && (
+                  <QuizCard
+                    leftItems={currentQuizBatch.leftItems}
+                    rightItems={currentQuizBatch.rightItems}
+                    batchIndex={quizBatchIndex}
+                    totalBatches={quizBatches.length}
+                    targetCount={currentQuizBatch.targetCount}
+                    onLifeLost={handleQuizLifeLost}
+                    onBatchCompleted={handleQuizBatchCompleted}
+                    onProgressChange={setQuizSolvedPairs}
+                  />
+                )}
 
-            {activeStage === "write" && (
-              <WriteCard
-                card={currentCard as CardRecord}
-                onResolved={handleWriteResolved}
+                {activeStage === "write" && (
+                  <WriteCard
+                    card={currentCard as CardRecord}
+                    onResolved={handleWriteResolved}
+                  />
+                )}
+              </motion.div>
+            </AnimatePresence>
+          ) : (
+            <div style={{ opacity: 1 }}>
+              <PracticeWritingChallenge
+                targetCards={sessionCards}
+                onSkip={() => void commitSession()}
               />
-            )}
-          </motion.div>
-        </AnimatePresence>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

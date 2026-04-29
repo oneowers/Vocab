@@ -1,6 +1,6 @@
 "use client"
 
-import { Check, HelpCircle, Layers3, Lock, PenLine } from "lucide-react"
+import { Check, HelpCircle, Layers3, Lock, PenLine, Sparkles } from "lucide-react"
 import { motion } from "framer-motion"
 import styles from "@/components/review-session.module.css"
 
@@ -17,7 +17,8 @@ interface ReviewStageStepperProps {
 const STAGE_ICONS: Record<string, typeof Layers3> = {
   flip: Layers3,
   quiz: HelpCircle,
-  write: PenLine
+  write: PenLine,
+  challenge: Sparkles
 }
 
 export function ReviewStageStepper({

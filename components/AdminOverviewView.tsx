@@ -59,6 +59,45 @@ export function AdminOverviewView() {
         ))}
       </section>
 
+      <section className="grid grid-cols-4 gap-2 md:gap-4">
+        <article className="panel-admin flex flex-col items-center justify-center gap-1.5 rounded-2xl p-2.5 text-center md:items-start md:justify-start md:gap-3 md:rounded-[2rem] md:p-6 md:text-left">
+          <p className="truncate text-[10px] font-bold uppercase tracking-wide text-quiet md:text-[11px] md:tracking-[0.15em]">
+            Onboarding Completed
+          </p>
+          <p className="truncate text-lg font-bold text-ink md:mt-1 md:text-3xl">
+            {data.onboarding.onboardingStarted ? Math.round((data.onboarding.onboardingCompleted / data.onboarding.onboardingStarted) * 100) : 0}%
+          </p>
+          <p className="text-xs text-muted">{data.onboarding.onboardingCompleted} / {data.onboarding.onboardingStarted}</p>
+        </article>
+        <article className="panel-admin flex flex-col items-center justify-center gap-1.5 rounded-2xl p-2.5 text-center md:items-start md:justify-start md:gap-3 md:rounded-[2rem] md:p-6 md:text-left">
+          <p className="truncate text-[10px] font-bold uppercase tracking-wide text-quiet md:text-[11px] md:tracking-[0.15em]">
+            First Practice Done
+          </p>
+          <p className="truncate text-lg font-bold text-ink md:mt-1 md:text-3xl">
+            {data.onboarding.firstPracticeStarted ? Math.round((data.onboarding.firstPracticeCompleted / data.onboarding.firstPracticeStarted) * 100) : 0}%
+          </p>
+          <p className="text-xs text-muted">{data.onboarding.firstPracticeCompleted} / {data.onboarding.firstPracticeStarted}</p>
+        </article>
+        <article className="panel-admin flex flex-col items-center justify-center gap-1.5 rounded-2xl p-2.5 text-center md:items-start md:justify-start md:gap-3 md:rounded-[2rem] md:p-6 md:text-left">
+          <p className="truncate text-[10px] font-bold uppercase tracking-wide text-quiet md:text-[11px] md:tracking-[0.15em]">
+            D1 Return (Post-Practice)
+          </p>
+          <p className="truncate text-lg font-bold text-ink md:mt-1 md:text-3xl">
+            {data.onboarding.firstPracticeCompleted ? Math.round((data.onboarding.firstPracticeD1Return / data.onboarding.firstPracticeCompleted) * 100) : 0}%
+          </p>
+          <p className="text-xs text-muted">{data.onboarding.firstPracticeD1Return} / {data.onboarding.firstPracticeCompleted}</p>
+        </article>
+        <article className="panel-admin flex flex-col items-center justify-center gap-1.5 rounded-2xl p-2.5 text-center md:items-start md:justify-start md:gap-3 md:rounded-[2rem] md:p-6 md:text-left">
+          <p className="truncate text-[10px] font-bold uppercase tracking-wide text-quiet md:text-[11px] md:tracking-[0.15em]">
+            AI Challenge Used
+          </p>
+          <p className="truncate text-lg font-bold text-ink md:mt-1 md:text-3xl">
+            {data.onboarding.aiChallengeStarted ? Math.round((data.onboarding.aiChallengeCompleted / data.onboarding.aiChallengeStarted) * 100) : 0}%
+          </p>
+          <p className="text-xs text-muted">{data.onboarding.aiChallengeCompleted} / {data.onboarding.aiChallengeStarted}</p>
+        </article>
+      </section>
+
       <SeedCatalogSection data={data.seedCatalog} />
 
       <div className="grid gap-5 xl:grid-cols-2">

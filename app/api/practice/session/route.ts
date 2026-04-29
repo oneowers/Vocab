@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { getOptionalAuthUser } from "@/lib/auth"
 import { getPrisma } from "@/lib/prisma"
 
-const REVIEW_STAGES = new Set(["flip", "quiz", "write"])
+const REVIEW_STAGES = new Set(["flip", "quiz", "write", "challenge"])
 const REVIEW_FLOWS = new Set(["linked", "single"])
 const STATUS_FILTERS = new Set(["All", "known", "unknown"])
 

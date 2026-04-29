@@ -187,7 +187,8 @@ async function buildCardsPageData(userId: string): Promise<CardsResponse> {
       select: {
         streak: true,
         cefrLevel: true,
-        dailyWordTarget: true
+        dailyWordTarget: true,
+        firstPracticeDate: true
       }
     }),
     prisma.userCatalogWord.count({
@@ -207,15 +208,19 @@ async function buildCardsPageData(userId: string): Promise<CardsResponse> {
   const rawDueToday = serializedCards.filter((card) => card.nextReviewDate <= today).length
   const todayCount = Math.min(rawDueToday, dailyTarget)
   const waitingCount = Math.max(serializedCards.length - todayCount, 0)
+  const weakCards = serializedCards.filter((card) => (card.wrongCount * 2 - card.correctCount) >= 3)
 
   return {
     cards: serializedCards,
+    weakCards,
     summary: {
       streak: user.streak,
       reviewLives: settings.reviewLives,
       totalCards,
       dueToday: todayCount,
-      mastered: serializedCards.filter((card) => card.reviewCount >= 3).length
+      mastered: serializedCards.filter((card) => card.reviewCount >= 3).length,
+      weakCardsCount: weakCards.length,
+      isFirstPractice: !user.firstPracticeDate
     },
     dailyCatalog: {
       dailyTarget,
@@ -530,7 +535,14 @@ export async function buildAdminAnalytics(): Promise<AdminAnalyticsPayload> {
     prisma.appAnalytics.aggregate({
       _sum: {
         totalReviews: true,
-        totalSessions: true
+        totalSessions: true,
+        onboardingStarted: true,
+        onboardingCompleted: true,
+        firstPracticeStarted: true,
+        firstPracticeCompleted: true,
+        firstPracticeD1Return: true,
+        aiChallengeStarted: true,
+        aiChallengeCompleted: true
       }
     }),
     prisma.user.count(),
@@ -720,6 +732,15 @@ export async function buildAdminAnalytics(): Promise<AdminAnalyticsPayload> {
       totalSessions: totalsAggregate._sum.totalSessions ?? 0,
       reviewsToday: analyticsByDate.get(today)?.totalReviews ?? 0,
       activeUsersLast7Days
+    },
+    onboarding: {
+      onboardingStarted: totalsAggregate._sum.onboardingStarted ?? 0,
+      onboardingCompleted: totalsAggregate._sum.onboardingCompleted ?? 0,
+      firstPracticeStarted: totalsAggregate._sum.firstPracticeStarted ?? 0,
+      firstPracticeCompleted: totalsAggregate._sum.firstPracticeCompleted ?? 0,
+      firstPracticeD1Return: totalsAggregate._sum.firstPracticeD1Return ?? 0,
+      aiChallengeStarted: totalsAggregate._sum.aiChallengeStarted ?? 0,
+      aiChallengeCompleted: totalsAggregate._sum.aiChallengeCompleted ?? 0
     },
     retention,
     wrongByCefr,

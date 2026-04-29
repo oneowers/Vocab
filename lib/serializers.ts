@@ -41,6 +41,8 @@ export function serializeUser(user: User): AppUserRecord {
     cefrLevel: user.cefrLevel,
     reviewLives: user.reviewLives,
     streak: user.streak,
+    streakFreezes: user.streakFreezes,
+    lastStreakRecoveryDate: user.lastStreakRecoveryDate,
     createdAt: user.createdAt.toISOString(),
     lastActiveAt: user.lastActiveAt?.toISOString() ?? null,
     lastReviewDate: user.lastReviewDate

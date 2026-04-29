@@ -19,6 +19,7 @@ export async function POST(request: NextRequest) {
       cardId?: string
       result?: "known" | "unknown"
     }>
+    isRecovery?: boolean
   }
 
   if (!Array.isArray(body.reviews) || !body.reviews.length) {
@@ -55,12 +56,26 @@ export async function POST(request: NextRequest) {
   const today = getTodayDateKey()
   const yesterday = getYesterdayDateKey(today)
   const firstReviewToday = user.lastReviewDate !== today
-  const nextStreak =
-    user.lastReviewDate === today
-      ? user.streak
-      : user.lastReviewDate === yesterday
-        ? user.streak + 1
-        : 1
+
+  const isRecovery = body.isRecovery === true
+  let nextStreak = user.streak
+  let usedFreeze = false
+
+  if (user.lastReviewDate !== today) {
+    if (user.lastReviewDate === yesterday) {
+      nextStreak = user.streak + 1
+    } else if (isRecovery) {
+      // Recovery session restores the streak
+      nextStreak = user.streak + 1
+    } else if (user.streakFreezes > 0) {
+      // Auto-use freeze if available and not a recovery session
+      usedFreeze = true
+      nextStreak = user.streak
+    } else {
+      // Break streak
+      nextStreak = 1
+    }
+  }
 
   const reviewIdsByResult = dedupedReviews.reduce<Record<"known" | "unknown", string[]>>(
     (accumulator, review) => {
@@ -112,8 +127,11 @@ export async function POST(request: NextRequest) {
       },
       data: {
         streak: nextStreak,
+        streakFreezes: usedFreeze ? { decrement: 1 } : undefined,
         lastReviewDate: today,
-        lastActiveAt: new Date()
+        lastActiveAt: new Date(),
+        lastStreakRecoveryDate: isRecovery ? today : undefined,
+        firstPracticeDate: user.firstPracticeDate ? undefined : today
       }
     })
   ])
@@ -121,6 +139,9 @@ export async function POST(request: NextRequest) {
   revalidateTag(userCacheTag.cards(user.id))
   revalidateTag(userCacheTag.stats(user.id))
   revalidateTag(userCacheTag.profile(user.id))
+
+  const isFirstPractice = !user.firstPracticeDate
+  const isD1Return = user.firstPracticeDate === yesterday && firstReviewToday
 
   void prisma.appAnalytics.upsert({
     where: {
@@ -132,12 +153,20 @@ export async function POST(request: NextRequest) {
       },
       totalSessions: {
         increment: firstReviewToday ? 1 : 0
+      },
+      firstPracticeCompleted: {
+        increment: isFirstPractice ? 1 : 0
+      },
+      firstPracticeD1Return: {
+        increment: isD1Return ? 1 : 0
       }
     },
     create: {
       date: today,
       totalReviews: dedupedReviews.length,
-      totalSessions: 1
+      totalSessions: 1,
+      firstPracticeCompleted: isFirstPractice ? 1 : 0,
+      firstPracticeD1Return: isD1Return ? 1 : 0
     }
   }).then(() => {
     revalidateTag(adminCacheTag.analytics)

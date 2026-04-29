@@ -2,7 +2,8 @@
 
 import { ArrowRight, Loader2, RotateCcw } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { trackEvent } from "@/lib/analytics"
 
 import { useToast } from "@/components/Toast"
 import type { DailyWordCandidate, OnboardingWordSelectionPayload } from "@/lib/types"
@@ -17,6 +18,10 @@ export function OnboardingWordSelection({ initialSelection }: OnboardingWordSele
   const [items, setItems] = useState(initialSelection.items)
   const [busyWordId, setBusyWordId] = useState<string | null>(null)
   const [starting, setStarting] = useState(false)
+
+  useEffect(() => {
+    trackEvent("first_words_selected")
+  }, [])
 
   async function handleSwap(action: "replace" | "know", item: DailyWordCandidate) {
     setBusyWordId(item.id)
@@ -83,6 +88,7 @@ export function OnboardingWordSelection({ initialSelection }: OnboardingWordSele
         throw new Error(payload?.error || "Could not start practice.")
       }
 
+      trackEvent("onboarding_completed")
       router.push("/practice")
       router.refresh()
     } catch (error) {

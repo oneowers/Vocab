@@ -6,10 +6,12 @@ import { useEffect, useRef, useState } from "react"
 import { UserRound, Volume2 } from "lucide-react"
 
 import { useToast } from "@/components/Toast"
+import { StreakCard } from "@/components/StreakCard"
 import { updateClientResourceData } from "@/hooks/useClientResource"
 import { getTooltipMessage } from "@/lib/config"
 import { speakText, canSpeak } from "@/lib/tts"
 import type {
+  AppUserRecord,
   CardRecord,
   CardsResponse,
   CefrLevel,
@@ -21,6 +23,7 @@ import type {
 } from "@/lib/types"
 
 interface TranslatorPanelProps {
+  user: AppUserRecord
   guestMode: boolean
   onAddCard: (card: CardRecord) => void
   dailyCatalog?: DailyCatalogStatus | null
@@ -89,6 +92,7 @@ function mergeTranslationAlternatives(terms: string[], excludedTerms: string[]) 
 }
 
 export function TranslatorPanel({
+  user,
   guestMode,
   onAddCard,
   dailyCatalog: _dailyCatalog = null,
@@ -340,6 +344,7 @@ export function TranslatorPanel({
 
       <div className="fixed left-1/2 top-3 z-30 w-[calc(100%-2rem)] max-w-[38rem] -translate-x-1/2 md:top-6">
         <div className="relative flex items-center justify-center gap-3">
+          <StreakCard user={user} variant="compact" />
           <div className="relative flex rounded-full border border-white/[0.06] bg-white/[0.03] p-1 shadow-[0_4px_20px_rgba(0,0,0,0.2)]">
             <div className="relative grid grid-cols-2 items-center">
               <motion.div

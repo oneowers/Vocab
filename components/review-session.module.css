@@ -334,7 +334,6 @@
   justify-content: flex-start;
   padding-top: 6.6rem;
   position: relative;
-  overflow: hidden;
   isolation: isolate;
   z-index: 10;
 }

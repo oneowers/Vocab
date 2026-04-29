@@ -2,7 +2,8 @@
 
 import { ArrowRight, CheckCircle2, Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useMemo, useState } from "react"
+import { useMemo, useState, useEffect } from "react"
+import { trackEvent } from "@/lib/analytics"
 
 import { useToast } from "@/components/Toast"
 import type { CefrLevel } from "@/lib/types"
@@ -51,6 +52,10 @@ export function VocabularyLevelTest({ initialTest }: VocabularyLevelTestProps) {
     [answers, questions]
   )
 
+  useEffect(() => {
+    trackEvent("level_test_started")
+  }, [])
+
   function handleSelect(questionId: string, optionId: string) {
     setAnswers((current) => ({
       ...current,
@@ -94,6 +99,7 @@ export function VocabularyLevelTest({ initialTest }: VocabularyLevelTestProps) {
 
       const payload = (await response.json()) as { result: VocabularyLevelTestResult }
       setResult(payload.result)
+      trackEvent("level_test_completed")
       router.refresh()
     } catch (error) {
       showToast(

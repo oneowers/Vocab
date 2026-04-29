@@ -50,6 +50,8 @@ export interface AppUserRecord {
   cefrLevel: CefrLevel
   reviewLives: number
   streak: number
+  streakFreezes: number
+  lastStreakRecoveryDate: string | null
   createdAt: string
   lastActiveAt: string | null
   lastReviewDate: string | null
@@ -111,10 +113,13 @@ export interface DashboardSummary {
   totalCards: number
   dueToday: number
   mastered: number
+  weakCardsCount: number
+  isFirstPractice?: boolean
 }
 
 export interface CardsResponse {
   cards: CardRecord[]
+  weakCards: CardRecord[]
   summary: DashboardSummary
   dailyCatalog: DailyCatalogStatus
 }
@@ -311,6 +316,15 @@ export interface AdminAnalyticsPayload {
     totalSessions: number
     reviewsToday: number
     activeUsersLast7Days: number
+  }
+  onboarding: {
+    onboardingStarted: number
+    onboardingCompleted: number
+    firstPracticeStarted: number
+    firstPracticeCompleted: number
+    firstPracticeD1Return: number
+    aiChallengeStarted: number
+    aiChallengeCompleted: number
   }
   retention: {
     activeUsersD1: number

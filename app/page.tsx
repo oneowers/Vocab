@@ -12,7 +12,10 @@ export default async function HomePage() {
 
   return (
     <AppShell user={user ? serializeUser(user) : null}>
-      <DashboardView initialDailyCatalog={cardsData?.dailyCatalog ?? null} />
+      <DashboardView 
+        user={serializeUser(user!)} 
+        initialDailyCatalog={cardsData?.dailyCatalog ?? null} 
+      />
     </AppShell>
   )
 }

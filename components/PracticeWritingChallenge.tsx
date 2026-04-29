@@ -1,10 +1,13 @@
 "use client"
 
-import { ArrowRight, CheckCircle2, Loader2 } from "lucide-react"
-import { useState } from "react"
+import { ArrowRight, CheckCircle2, Loader2, Sparkles } from "lucide-react"
+import { useState, useEffect } from "react"
+import { motion } from "framer-motion"
+import { trackEvent } from "@/lib/analytics"
 
 import { useToast } from "@/components/Toast"
 import type { CardRecord, PracticeWritingChallengeResult } from "@/lib/types"
+import styles from "@/components/review-session.module.css"
 
 interface PracticeWritingChallengeProps {
   targetCards: CardRecord[]
@@ -19,6 +22,10 @@ export function PracticeWritingChallenge({
   const [userText, setUserText] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState<PracticeWritingChallengeResult | null>(null)
+
+  useEffect(() => {
+    trackEvent("ai_challenge_started")
+  }, [])
 
   async function handleSubmit() {
     if (!userText.trim()) {
@@ -49,6 +56,7 @@ export function PracticeWritingChallenge({
         result: PracticeWritingChallengeResult
       }
       setResult(payload.result)
+      trackEvent("ai_challenge_completed")
     } catch (error) {
       showToast(error instanceof Error ? error.message : "Could not check your writing.", "error")
     } finally {
@@ -58,154 +66,174 @@ export function PracticeWritingChallenge({
 
   if (result) {
     return (
-      <div className="mt-6 rounded-[28px] border border-white/[0.08] bg-white/[0.03] p-5 text-left">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-500 text-white">
-            <CheckCircle2 size={22} />
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="relative overflow-hidden border border-white/10 bg-white/[0.03] p-8 shadow-[0_18px_36px_-18px_rgba(0,0,0,0.45)] md:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] rounded-[2rem] md:rounded-[2.5rem]"
+      >
+        <div className={styles.heroCardGlow} style={{ opacity: 0.1 }} />
+        
+        <div className="relative z-10 flex items-center gap-4 mb-8">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+            <CheckCircle2 size={24} strokeWidth={2.5} />
           </div>
           <div>
-            <p className="section-label">AI feedback</p>
-            <h2 className="mt-1 text-[24px] font-bold text-white">Score: {result.score}/100</h2>
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/30">AI feedback</p>
+            <h2 className="mt-1 text-[24px] font-black text-white leading-tight">Score: {result.score}/100</h2>
           </div>
         </div>
 
-        <div className="mt-5 space-y-4">
-          <div>
-            <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-text-tertiary">
-              Feedback
-            </p>
-            <p className="mt-2 text-[15px] leading-7 text-text-secondary">{result.levelFeedback}</p>
+        <div className="relative z-10 mt-5 space-y-6">
+          <div className="rounded-3xl bg-white/[0.04] p-6 border border-white/5 shadow-inner">
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/30 mb-2">Feedback</p>
+            <p className="text-[15px] leading-relaxed text-white/80 font-medium">{result.levelFeedback}</p>
           </div>
 
           <div>
-            <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-text-tertiary">
-              Target words
-            </p>
-            <div className="mt-3 space-y-2">
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/30 mb-3">Target words</p>
+            <div className="space-y-2">
               {result.usedWords.map((item) => (
                 <div
                   key={item.word}
-                  className="rounded-[18px] border border-white/[0.08] bg-black/20 px-4 py-3"
+                  className="rounded-2xl border border-white/5 bg-white/[0.02] px-5 py-4"
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-[15px] font-semibold text-white">{item.word}</span>
-                    <span className="text-[12px] font-semibold text-text-secondary">
-                      {item.used ? (item.correct ? "used well" : "used with issues") : "not used"}
+                  <div className="flex items-center justify-between gap-3 mb-2">
+                    <span className="text-[16px] font-bold text-white">{item.word}</span>
+                    <span className={`text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${
+                      item.used 
+                        ? item.correct ? "bg-emerald-500/20 text-emerald-300" : "bg-warning-soft text-warning" 
+                        : "bg-white/10 text-white/50"
+                    }`}>
+                      {item.used ? (item.correct ? "Used well" : "Has issues") : "Not used"}
                     </span>
                   </div>
-                  <p className="mt-2 text-[13px] leading-6 text-text-secondary">{item.feedback}</p>
+                  <p className="text-[14px] leading-relaxed text-white/60">{item.feedback}</p>
                 </div>
               ))}
             </div>
           </div>
 
-          <div>
-            <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-text-tertiary">
-              What was good
-            </p>
-            <p className="mt-2 text-[15px] leading-7 text-text-secondary">{result.whatWasGood}</p>
-          </div>
+          {result.whatWasGood && (
+            <div>
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/30 mb-2">What was good</p>
+              <p className="text-[15px] leading-relaxed text-white/80">{result.whatWasGood}</p>
+            </div>
+          )}
 
           <div>
-            <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-text-tertiary">
-              Grammar
-            </p>
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/30 mb-3">Grammar</p>
             {result.grammarMistakes.length ? (
-              <div className="mt-3 space-y-2">
+              <div className="space-y-2">
                 {result.grammarMistakes.map((mistake, index) => (
                   <div
                     key={`${mistake.original}-${index}`}
-                    className="rounded-[18px] border border-white/[0.08] bg-black/20 px-4 py-3"
+                    className="rounded-2xl border border-rose-500/20 bg-rose-500/5 px-5 py-4"
                   >
-                    <p className="text-[13px] font-semibold text-white/80">{mistake.original}</p>
-                    <p className="mt-1 text-[14px] font-semibold text-white">{mistake.corrected}</p>
-                    <p className="mt-2 text-[13px] leading-6 text-text-secondary">
+                    <p className="text-[14px] font-medium text-rose-300/80 line-through decoration-rose-500/50">{mistake.original}</p>
+                    <p className="mt-1 text-[16px] font-bold text-emerald-400">{mistake.corrected}</p>
+                    <p className="mt-2 text-[14px] leading-relaxed text-white/60">
                       {mistake.explanationRu}
                     </p>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="mt-2 text-[15px] leading-7 text-text-secondary">
+              <p className="text-[15px] leading-relaxed text-white/80">
                 Грубых грамматических ошибок AI не нашёл.
               </p>
             )}
           </div>
 
-          <div>
-            <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-text-tertiary">
-              Improved version
-            </p>
-            <p className="mt-2 rounded-[18px] border border-white/[0.08] bg-black/20 px-4 py-4 text-[15px] leading-7 text-white/90">
-              {result.improvedText}
-            </p>
-          </div>
+          {result.improvedText && (
+            <div>
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/30 mb-2">Improved version</p>
+              <div className="rounded-3xl bg-blue-500/5 border border-blue-500/20 p-6 shadow-inner">
+                 <p className="text-[15px] leading-relaxed text-blue-100 font-medium">
+                  {result.improvedText}
+                 </p>
+              </div>
+            </div>
+          )}
 
-          <div>
-            <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-text-tertiary">
-              Next task
-            </p>
-            <p className="mt-2 text-[15px] leading-7 text-text-secondary">{result.nextTask}</p>
-          </div>
+          {result.nextTask && (
+            <div>
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/30 mb-2">Next task</p>
+              <p className="text-[15px] leading-relaxed text-white/80">{result.nextTask}</p>
+            </div>
+          )}
         </div>
 
-        <button type="button" onClick={onSkip} className="button-primary mt-6 w-full justify-center">
-          Return to dashboard
-          <ArrowRight size={16} />
-        </button>
-      </div>
+        <div className="relative z-10 mt-8 pt-6 border-t border-white/10">
+          <button type="button" onClick={onSkip} className={styles.glassButtonPrimary}>
+            Finish Session
+            <ArrowRight size={18} />
+          </button>
+        </div>
+      </motion.div>
     )
   }
 
   return (
-    <div className="mt-6 rounded-[28px] border border-white/[0.08] bg-white/[0.03] p-5 text-left">
-      <div className="flex items-start justify-between gap-4">
+    <motion.div 
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="relative overflow-hidden border border-white/10 bg-white/[0.03] p-8 shadow-[0_18px_36px_-18px_rgba(0,0,0,0.45)] md:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] rounded-[2rem] md:rounded-[2.5rem]"
+    >
+      <div className={styles.heroCardGlow} style={{ opacity: 0.05 }} />
+
+      <div className="relative z-10 flex flex-col md:flex-row md:items-start justify-between gap-6 mb-8">
         <div>
-          <p className="section-label">Optional AI challenge</p>
-          <h2 className="mt-2 text-[24px] font-bold text-white">Use these words in a short text</h2>
-          <p className="mt-2 text-[15px] leading-7 text-text-secondary">
-            Write a short English text. AI will check the target words, grammar, naturalness, and
-            give you feedback in Russian.
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles size={16} className="text-blue-400" />
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/30">AI Challenge</p>
+          </div>
+          <h2 className="text-[28px] font-black text-white leading-tight">Use these words</h2>
+          <p className="mt-2 text-[15px] leading-relaxed text-white/60 max-w-[280px]">
+            Write a short text. AI will check words, grammar, and naturalness.
           </p>
         </div>
-        <button type="button" onClick={onSkip} className="button-secondary shrink-0">
+        <button type="button" onClick={onSkip} className={`${styles.glassButtonSecondary} !w-auto !h-10 px-6 shrink-0`}>
           Skip
         </button>
       </div>
 
-      <div className="mt-5 flex flex-wrap gap-2">
+      <div className="relative z-10 mt-6 flex flex-wrap gap-2 mb-6">
         {targetCards.map((card) => (
           <span
             key={card.id}
-            className="rounded-full border border-white/[0.08] bg-black/20 px-3 py-1.5 text-[13px] font-semibold text-white/85"
+            className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[13px] font-bold text-white shadow-inner"
           >
             {card.original}
           </span>
         ))}
       </div>
 
-      <textarea
-        value={userText}
-        onChange={(event) => setUserText(event.target.value)}
-        placeholder="Write 3–6 sentences in English using today's words."
-        className="mt-5 min-h-[180px] w-full rounded-[22px] border border-white/[0.08] bg-black/20 px-4 py-4 text-[15px] leading-7 text-white outline-none transition placeholder:text-text-tertiary focus:border-white/[0.18]"
-      />
+      <div className="relative z-10">
+        <textarea
+          value={userText}
+          onChange={(event) => setUserText(event.target.value)}
+          placeholder="Write 3–6 sentences using today's words..."
+          className="min-h-[200px] w-full resize-y rounded-3xl border border-white/10 bg-black/40 px-6 py-5 text-[16px] leading-relaxed text-white placeholder:text-white/20 focus:border-white/30 focus:bg-black/60 focus:outline-none transition-all duration-300 shadow-inner"
+        />
+      </div>
 
-      <button
-        type="button"
-        onClick={() => void handleSubmit()}
-        disabled={submitting}
-        className="button-primary mt-5 w-full justify-center"
-      >
-        {submitting ? (
-          <>
-            <Loader2 size={16} className="animate-spin" />
-            Checking text
-          </>
-        ) : (
-          "Check my text"
-        )}
-      </button>
-    </div>
+      <div className="relative z-10 mt-6">
+        <button
+          type="button"
+          onClick={() => void handleSubmit()}
+          disabled={submitting}
+          className={styles.glassButtonPrimary}
+        >
+          {submitting ? (
+            <>
+              <Loader2 size={18} className="animate-spin" />
+              Checking...
+            </>
+          ) : (
+            "Check my text"
+          )}
+        </button>
+      </div>
+    </motion.div>
   )
 }

@@ -2,7 +2,8 @@
 
 import { ArrowRight, CheckCircle2 } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { trackEvent } from "@/lib/analytics"
 
 import { BrandLogo } from "@/components/BrandLogo"
 import { useToast } from "@/components/Toast"
@@ -53,6 +54,12 @@ export function OnboardingFlow({
     }) as FlowStep
   )
   const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (currentStep === 1) {
+      trackEvent("onboarding_started")
+    }
+  }, [])
 
   async function saveStep(payload: {
     learningGoal?: LearningGoalValue

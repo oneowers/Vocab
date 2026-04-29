@@ -17,7 +17,7 @@ interface QuizCardProps {
   batchIndex: number
   totalBatches: number
   targetCount: number
-  onLifeLost: () => void
+  onLifeLost: (cardId?: string) => void
   onBatchCompleted: () => void
   onProgressChange: (count: number) => void
 }
@@ -87,7 +87,8 @@ export function QuizCard({
       setRejectedIds([])
       setSelectedLeftId(null)
       setSelectedRightId(null)
-      onLifeLost()
+      const failedCardId = leftItems.find(item => item.id === leftId)?.sourceCardId
+      onLifeLost(failedCardId)
     }, 450)
   }
 

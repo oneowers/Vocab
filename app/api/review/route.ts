@@ -42,12 +42,19 @@ export async function POST(request: NextRequest) {
   const yesterday = getYesterdayDateKey(today)
   const outcome = getReviewOutcome(body.result, today)
   const firstReviewToday = user.lastReviewDate !== today
-  const nextStreak =
-    user.lastReviewDate === today
-      ? user.streak
-      : user.lastReviewDate === yesterday
-        ? user.streak + 1
-        : 1
+  let nextStreak = user.streak
+  let usedFreeze = false
+
+  if (user.lastReviewDate !== today) {
+    if (user.lastReviewDate === yesterday) {
+      nextStreak = user.streak + 1
+    } else if (user.streakFreezes > 0) {
+      usedFreeze = true
+      nextStreak = user.streak
+    } else {
+      nextStreak = 1
+    }
+  }
 
   const [updatedCard] = await prisma.$transaction([
     prisma.card.update({
@@ -82,6 +89,7 @@ export async function POST(request: NextRequest) {
       },
       data: {
         streak: nextStreak,
+        streakFreezes: usedFreeze ? { decrement: 1 } : undefined,
         lastReviewDate: today,
         lastActiveAt: new Date()
       }
