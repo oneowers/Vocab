@@ -43,6 +43,7 @@ export function AiCoachView() {
   const [loading, setLoading] = useState(false)
   const [activeMenu, setActiveMenu] = useState<"chat" | "prompts">("chat")
   const [composerFocused, setComposerFocused] = useState(false)
+  const [keyboardOffset, setKeyboardOffset] = useState(0)
   const scrollerRef = useRef<HTMLDivElement | null>(null)
 
   const canSend = input.trim().length > 0 && !loading
@@ -54,6 +55,42 @@ export function AiCoachView() {
 
     scrollerRef.current.scrollTop = scrollerRef.current.scrollHeight
   }, [messages, loading])
+
+  useEffect(() => {
+    let frame = 0
+    const visualViewport = window.visualViewport
+
+    function syncKeyboardOffset() {
+      if (!composerFocused || !visualViewport) {
+        setKeyboardOffset(0)
+        return
+      }
+
+      const nextOffset = Math.max(
+        0,
+        window.innerHeight - visualViewport.height - visualViewport.offsetTop
+      )
+
+      setKeyboardOffset(Math.round(nextOffset))
+    }
+
+    function scheduleSync() {
+      window.cancelAnimationFrame(frame)
+      frame = window.requestAnimationFrame(syncKeyboardOffset)
+    }
+
+    scheduleSync()
+    visualViewport?.addEventListener("resize", scheduleSync)
+    visualViewport?.addEventListener("scroll", scheduleSync)
+    window.addEventListener("resize", scheduleSync)
+
+    return () => {
+      window.cancelAnimationFrame(frame)
+      visualViewport?.removeEventListener("resize", scheduleSync)
+      visualViewport?.removeEventListener("scroll", scheduleSync)
+      window.removeEventListener("resize", scheduleSync)
+    }
+  }, [composerFocused])
 
   async function sendMessage(value: string) {
     const trimmed = value.trim()
@@ -229,11 +266,12 @@ export function AiCoachView() {
           </div>
 
           <form
-            className={`fixed left-1/2 z-40 w-[calc(100%-2rem)] max-w-[46rem] -translate-x-1/2 transition-[bottom,transform] duration-200 ease-out ${
-              composerFocused
-                ? "bottom-[calc(env(safe-area-inset-bottom)+12px)]"
-                : "bottom-[calc(var(--tab-bar-height)+env(safe-area-inset-bottom)+12px)]"
-            }`}
+            className="fixed left-1/2 z-40 w-[calc(100%-2rem)] max-w-[46rem] -translate-x-1/2 transition-[bottom,transform] duration-200 ease-out"
+            style={{
+              bottom: composerFocused
+                ? `max(calc(var(--tab-bar-height) + 12px), calc(${keyboardOffset}px + env(safe-area-inset-bottom) + 12px))`
+                : "calc(var(--tab-bar-height) + 12px)"
+            }}
             onSubmit={(event) => {
               event.preventDefault()
               void sendMessage(input)
