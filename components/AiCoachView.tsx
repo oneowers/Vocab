@@ -42,6 +42,7 @@ export function AiCoachView() {
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
   const [activeMenu, setActiveMenu] = useState<"chat" | "prompts">("chat")
+  const [composerFocused, setComposerFocused] = useState(false)
   const scrollerRef = useRef<HTMLDivElement | null>(null)
 
   const canSend = input.trim().length > 0 && !loading
@@ -228,7 +229,11 @@ export function AiCoachView() {
           </div>
 
           <form
-            className="fixed bottom-[calc(var(--tab-bar-height)+env(safe-area-inset-bottom)+12px)] left-1/2 z-40 mt-3 w-[calc(100%-2rem)] max-w-[46rem] -translate-x-1/2 md:absolute md:bottom-4 md:left-4 md:right-4 md:w-auto md:max-w-none md:translate-x-0"
+            className={`fixed left-1/2 z-40 mt-3 w-[calc(100%-2rem)] max-w-[46rem] -translate-x-1/2 transition-[bottom,transform] duration-200 ease-out md:absolute md:bottom-4 md:left-4 md:right-4 md:w-auto md:max-w-none md:translate-x-0 ${
+              composerFocused
+                ? "bottom-[calc(env(safe-area-inset-bottom)+12px)]"
+                : "bottom-[calc(var(--tab-bar-height)+env(safe-area-inset-bottom)+12px)]"
+            }`}
             onSubmit={(event) => {
               event.preventDefault()
               void sendMessage(input)
@@ -240,9 +245,11 @@ export function AiCoachView() {
                   <textarea
                     value={input}
                     onChange={(event) => setInput(event.target.value)}
+                    onFocus={() => setComposerFocused(true)}
+                    onBlur={() => setComposerFocused(false)}
                     placeholder="Message AI coach..."
                     rows={1}
-                    className="h-11 max-h-36 w-full resize-none bg-transparent py-2 text-[15px] leading-[1.5] text-white outline-none placeholder:text-white/28"
+                    className="h-11 max-h-36 w-full resize-none bg-transparent py-2 text-[16px] leading-[1.5] text-white outline-none placeholder:text-white/28"
                   />
                 </div>
 
