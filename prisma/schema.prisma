@@ -9,30 +9,31 @@ datasource db {
 }
 
 model User {
-  id                      String                   @id @default(uuid())
-  email                   String                   @unique
+  id                      String                     @id @default(uuid())
+  email                   String                     @unique
   name                    String?
   avatarUrl               String?
-  role                    Role                     @default(USER)
+  role                    Role                       @default(USER)
   learningGoal            LearningGoal?
   dailyWordTarget         Int?
-  onboardingStep          OnboardingStep           @default(QUESTIONS)
+  onboardingStep          OnboardingStep             @default(QUESTIONS)
   onboardingCompletedAt   DateTime?
   levelTestEstimatedLevel CefrLevel?
   levelTestConfidence     Json?
   levelTestCompletedAt    DateTime?
   levelTestMistakes       Int?
   levelTestCorrect        Int?
-  cefrLevel               CefrLevel                @default(A1)
-  reviewLives             Int                      @default(3)
-  createdAt               DateTime                 @default(now())
+  cefrLevel               CefrLevel                  @default(A1)
+  reviewLives             Int                        @default(3)
+  createdAt               DateTime                   @default(now())
   lastActiveAt            DateTime?
-  streak                  Int                      @default(0)
+  streak                  Int                        @default(0)
   lastReviewDate          String?
   cards                   Card[]
   catalogClaims           UserCatalogWord[]
   reviewLogs              ReviewLog[]
   practiceSession         PracticeSessionProgress?
+  writingChallenges       PracticeWritingChallenge[]
 }
 
 enum Role {
@@ -151,6 +152,25 @@ model PracticeSessionProgress {
   updatedAt       DateTime @updatedAt
 
   @@index([userId, updatedAt])
+}
+
+model PracticeWritingChallenge {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cardIds         String[]
+  targetWords     Json
+  userText        String
+  score           Int
+  levelFeedback   String
+  usedWords       Json
+  grammarMistakes Json
+  whatWasGood     String
+  improvedText    String
+  nextTask        String
+  createdAt       DateTime @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
 }
 
 model WordCatalog {

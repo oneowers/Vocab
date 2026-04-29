@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react"
 
 import { FlipCard } from "@/components/FlipCard"
 import { DailyWordsModal } from "@/components/DailyWordsModal"
+import { PracticeWritingChallenge } from "@/components/PracticeWritingChallenge"
 import { QuizCard, type QuizMatchItem } from "@/components/QuizCard"
 import { ReviewSessionOverview } from "@/components/ReviewSessionOverview"
 import { WriteCard } from "@/components/WriteCard"
@@ -171,6 +172,7 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
   const [dailyModalOpen, setDailyModalOpen] = useState(false)
   const [lastActionStatus, setLastActionStatus] = useState<"idle" | "correct" | "incorrect" | "active">("idle")
   const [savedPracticeSession, setSavedPracticeSession] = useState<SavedPracticeSession | null>(null)
+  const [challengeDismissed, setChallengeDismissed] = useState(false)
   const { showToast } = useToast()
   const todayKey = getTodayDateKey()
   const {
@@ -603,6 +605,7 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
       setCompletedStages((current) =>
         current.includes("write") ? current : [...current, "write"]
       )
+      setChallengeDismissed(false)
       void clearSavedPracticeSession()
       setSessionStatus("success")
     } catch {
@@ -816,6 +819,9 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
   }
 
   if (sessionStatus === "success") {
+    const shouldOfferWritingChallenge =
+      !guestMode && sessionFlow === "linked" && sessionCards.length > 0 && !challengeDismissed
+
     return (
       <div className={`${styles.sessionContainer} flex items-center justify-center`}>
         <motion.div 
@@ -854,6 +860,13 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
               Return to Dashboard
             </Link>
           </div>
+
+          {shouldOfferWritingChallenge ? (
+            <PracticeWritingChallenge
+              targetCards={sessionCards}
+              onSkip={() => setChallengeDismissed(true)}
+            />
+          ) : null}
         </motion.div>
       </div>
     )

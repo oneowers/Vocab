@@ -163,6 +163,36 @@ export interface ReviewSummary {
   streak: number
 }
 
+export interface PracticeWritingTargetWord {
+  word: string
+  translation: string
+  cefrLevel: CefrLevel | null
+}
+
+export interface PracticeWritingUsedWord {
+  word: string
+  used: boolean
+  correct: boolean
+  feedback: string
+}
+
+export interface PracticeWritingGrammarMistake {
+  original: string
+  corrected: string
+  explanationRu: string
+}
+
+export interface PracticeWritingChallengeResult {
+  id?: string
+  score: number
+  levelFeedback: string
+  usedWords: PracticeWritingUsedWord[]
+  grammarMistakes: PracticeWritingGrammarMistake[]
+  whatWasGood: string
+  improvedText: string
+  nextTask: string
+}
+
 export interface ChartPoint {
   date: string
   label: string
