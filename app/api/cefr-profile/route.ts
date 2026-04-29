@@ -4,7 +4,7 @@ import { getOptionalAuthUser } from "@/lib/auth"
 import { getOrCreateAppSettings } from "@/lib/catalog"
 import { fetchCefrProfile } from "@/lib/cefr-profile"
 import { getPrisma } from "@/lib/prisma"
-import { isRateLimited } from "@/lib/throttle"
+import { checkRateLimit } from "@/lib/throttle"
 
 type CefrProfileRequestBody = {
   text?: string
@@ -22,7 +22,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  if (isRateLimited(`cefr-profile:${getThrottleKey(request, user?.id ?? null)}`)) {
+  const rateLimit = await checkRateLimit(
+    `cefr-profile:${getThrottleKey(request, user?.id ?? null)}`,
+    1,
+    1
+  )
+
+  if (!rateLimit.allowed) {
     return NextResponse.json({ error: "Slow down a little." }, { status: 429 })
   }
 

@@ -39,6 +39,8 @@ Required keys:
 - `NEXT_PUBLIC_GUEST_MODE`
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
+- `KV_REST_API_URL` or `UPSTASH_REDIS_REST_URL`
+- `KV_REST_API_TOKEN` or `UPSTASH_REDIS_REST_TOKEN`
 
 `NEXT_PUBLIC_GUEST_MODE=true` enables guest mode and keeps Google sign-in visually disabled until OAuth is ready.
 

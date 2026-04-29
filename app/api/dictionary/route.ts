@@ -4,7 +4,7 @@ import { getOptionalAuthUser } from "@/lib/auth"
 import { findCatalogWordByWord } from "@/lib/catalog"
 import { fetchDictionaryDetails } from "@/lib/dictionary"
 import { getPrisma } from "@/lib/prisma"
-import { isRateLimited } from "@/lib/throttle"
+import { checkRateLimit } from "@/lib/throttle"
 
 function getThrottleKey(request: NextRequest, userId: string | null) {
   const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
@@ -24,7 +24,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Missing word" }, { status: 400 })
   }
 
-  if (isRateLimited(`dictionary:${getThrottleKey(request, user?.id ?? null)}`)) {
+  const rateLimit = await checkRateLimit(
+    `dictionary:${getThrottleKey(request, user?.id ?? null)}`,
+    1,
+    1
+  )
+
+  if (!rateLimit.allowed) {
     return NextResponse.json({ error: "Slow down a little." }, { status: 429 })
   }
 

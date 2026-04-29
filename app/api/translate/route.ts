@@ -12,7 +12,7 @@ import {
   resolveTranslationDetails
 } from "@/lib/catalog"
 import { getPrisma } from "@/lib/prisma"
-import { isRateLimited } from "@/lib/throttle"
+import { checkRateLimit } from "@/lib/throttle"
 
 type SupportedLanguage = "EN" | "RU"
 
@@ -54,7 +54,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Missing query" }, { status: 400 })
   }
 
-  if (isRateLimited(`translate:${getThrottleKey(request, user?.id ?? null)}`)) {
+  const rateLimit = await checkRateLimit(
+    `translate:${getThrottleKey(request, user?.id ?? null)}`,
+    1,
+    1
+  )
+
+  if (!rateLimit.allowed) {
     return NextResponse.json({ error: "Slow down a little." }, { status: 429 })
   }
 

@@ -5,7 +5,7 @@ import { findCatalogWordByWord, getOrCreateAppSettings, resolveTranslationDetail
 import { fetchCefrProfile } from "@/lib/cefr-profile"
 import { fetchDictionaryDetails } from "@/lib/dictionary"
 import { getPrisma } from "@/lib/prisma"
-import { isRateLimited } from "@/lib/throttle"
+import { checkRateLimit } from "@/lib/throttle"
 
 type AiChatRequestBody = {
   message?: string
@@ -340,7 +340,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  if (isRateLimited(`ai-chat:${getThrottleKey(request, user.id)}`)) {
+  const rateLimit = await checkRateLimit(
+    `ai-chat:${getThrottleKey(request, user.id)}`,
+    1,
+    1
+  )
+
+  if (!rateLimit.allowed) {
     return NextResponse.json({ error: "Slow down a little." }, { status: 429 })
   }
 
