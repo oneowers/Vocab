@@ -92,6 +92,7 @@ export async function GET(request: NextRequest) {
     prisma.userCatalogWord.count({
       where: {
         userId: user.id,
+        status: "ACTIVE",
         createdAt: {
           gte: todayStart,
           lt: tomorrowStart

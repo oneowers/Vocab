@@ -134,6 +134,12 @@ export interface DailyWordCandidate {
   cefrLevel: CefrLevel
 }
 
+export interface OnboardingWordSelectionPayload {
+  items: DailyWordCandidate[]
+  estimatedLevel: CefrLevel
+  confidenceByLevel: Record<CefrLevel, number>
+}
+
 export interface DailyWordsPreviewPayload {
   items: DailyWordCandidate[]
   claimedToday: number

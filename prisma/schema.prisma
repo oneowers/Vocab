@@ -65,6 +65,11 @@ enum CefrLevel {
   C2
 }
 
+enum UserCatalogWordStatus {
+  ACTIVE
+  KNOWN
+}
+
 enum CatalogEnrichmentStatus {
   pending
   completed
@@ -177,15 +182,16 @@ model WordCatalog {
 }
 
 model UserCatalogWord {
-  id            String      @id @default(uuid())
+  id            String                @id @default(uuid())
   userId        String
   wordCatalogId String
-  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  wordCatalog   WordCatalog @relation(fields: [wordCatalogId], references: [id], onDelete: Cascade)
-  createdAt     DateTime    @default(now())
+  status        UserCatalogWordStatus @default(ACTIVE)
+  user          User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wordCatalog   WordCatalog           @relation(fields: [wordCatalogId], references: [id], onDelete: Cascade)
+  createdAt     DateTime              @default(now())
 
   @@unique([userId, wordCatalogId])
-  @@index([userId, createdAt])
+  @@index([userId, status, createdAt])
 }
 
 model AppSettings {

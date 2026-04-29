@@ -20,6 +20,7 @@ async function getDailyWordsContext(userId: string, cefrLevel: CefrLevel) {
   const claimedToday = await prisma.userCatalogWord.count({
     where: {
       userId,
+      status: "ACTIVE",
       createdAt: {
         gte: todayStart,
         lt: tomorrowStart
@@ -197,8 +198,10 @@ export async function POST(request: NextRequest) {
     prisma.userCatalogWord.createMany({
       data: readyWords.map((word) => ({
         userId: user.id,
-        wordCatalogId: word.id
-      }))
+        wordCatalogId: word.id,
+        status: "ACTIVE"
+      })),
+      skipDuplicates: true
     }),
     ...cardCreateOperations,
     prisma.appAnalytics.upsert({

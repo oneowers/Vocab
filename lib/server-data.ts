@@ -196,6 +196,7 @@ async function buildCardsPageData(userId: string): Promise<CardsResponse> {
     prisma.userCatalogWord.count({
       where: {
         userId,
+        status: "ACTIVE",
         createdAt: {
           gte: todayStart,
           lt: tomorrowStart
@@ -576,6 +577,7 @@ export async function buildAdminAnalytics(): Promise<AdminAnalyticsPayload> {
     `),
     prisma.userCatalogWord.count({
       where: {
+        status: "ACTIVE",
         createdAt: {
           gte: todayStart,
           lt: tomorrowStart
