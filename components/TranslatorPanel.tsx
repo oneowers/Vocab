@@ -1,8 +1,9 @@
 "use client"
 
+import Link from "next/link"
 import { motion } from "framer-motion"
 import { useEffect, useRef, useState } from "react"
-import { Volume2 } from "lucide-react"
+import { UserRound, Volume2 } from "lucide-react"
 
 import { useToast } from "@/components/Toast"
 import { updateClientResourceData } from "@/hooks/useClientResource"
@@ -321,46 +322,54 @@ export function TranslatorPanel({
 
   return (
     <section className="translate-phone-surface space-y-5">
+      <div
+        className="pointer-events-none fixed inset-x-0 top-0 z-20 h-[14rem] bg-gradient-to-b from-black via-black/78 to-transparent"
+        aria-hidden="true"
+      />
+
       <div className="fixed left-1/2 top-3 z-30 w-[calc(100%-2rem)] max-w-[38rem] -translate-x-1/2 md:top-6">
-        <div className="relative flex justify-center">
+        <div className="relative flex items-center justify-center gap-3">
           <div className="relative flex rounded-full border border-white/[0.06] bg-white/[0.03] p-1 shadow-[0_4px_20px_rgba(0,0,0,0.2)]">
-          <div className="relative grid grid-cols-2 items-center">
-            <motion.div
-              aria-hidden="true"
-              className="pointer-events-none absolute bottom-1 top-1 z-0 w-[calc(50%-0.25rem)] rounded-full border border-white/[0.1] bg-white/[0.08] shadow-[0_2px_8px_rgba(0,0,0,0.1)]"
-              initial={false}
-              animate={{
-                x: direction === "en-ru" ? "0%" : "100%"
-              }}
-              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              style={{ left: "0.25rem" }}
-            />
-            <button
-              type="button"
-              onClick={() => handleDirectionChange("en-ru")}
-              className={`relative z-10 flex min-w-[140px] items-center justify-center rounded-full px-5 py-3 text-[14px] font-semibold transition-all duration-300 ${direction === "en-ru"
-                  ? "text-white"
-                  : "text-white/50 hover:text-white"
-                }`}
-            >
-              English
-            </button>
-            <button
-              type="button"
-              onClick={() => handleDirectionChange("ru-en")}
-              className={`relative z-10 flex min-w-[140px] items-center justify-center rounded-full px-5 py-3 text-[14px] font-semibold transition-all duration-300 ${direction === "ru-en"
-                  ? "text-white"
-                  : "text-white/50 hover:text-white"
-                }`}
-            >
-              Russian
-            </button>
+            <div className="relative grid grid-cols-2 items-center">
+              <motion.div
+                aria-hidden="true"
+                className="pointer-events-none absolute bottom-1 top-1 z-0 w-[calc(50%-0.25rem)] rounded-full border border-white/[0.1] bg-white/[0.08] shadow-[0_2px_8px_rgba(0,0,0,0.1)]"
+                initial={false}
+                animate={{
+                  x: direction === "en-ru" ? "0%" : "100%"
+                }}
+                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                style={{ left: "0.25rem" }}
+              />
+              <button
+                type="button"
+                onClick={() => handleDirectionChange("en-ru")}
+                className={`relative z-10 flex min-w-[140px] items-center justify-center rounded-full px-5 py-3 text-[14px] font-semibold transition-all duration-300 ${direction === "en-ru"
+                    ? "text-white"
+                    : "text-white/50 hover:text-white"
+                  }`}
+              >
+                English
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDirectionChange("ru-en")}
+                className={`relative z-10 flex min-w-[140px] items-center justify-center rounded-full px-5 py-3 text-[14px] font-semibold transition-all duration-300 ${direction === "ru-en"
+                    ? "text-white"
+                    : "text-white/50 hover:text-white"
+                  }`}
+              >
+                Russian
+              </button>
+            </div>
           </div>
-        </div>
-          <div
-            className="pointer-events-none absolute inset-x-[-1rem] top-full h-20 bg-gradient-to-b from-black via-black/30 to-transparent md:inset-x-[-2rem]"
-            aria-hidden="true"
-          />
+          <Link
+            href="/profile"
+            aria-label="Open profile"
+            className="flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-full border border-white/[0.06] bg-white/[0.03] text-white/74 shadow-[0_4px_20px_rgba(0,0,0,0.2)] transition hover:bg-white/[0.06] hover:text-white"
+          >
+            <UserRound size={20} />
+          </Link>
         </div>
       </div>
 

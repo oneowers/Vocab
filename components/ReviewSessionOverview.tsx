@@ -1,7 +1,8 @@
 "use client"
 
+import Link from "next/link"
 import { motion, AnimatePresence, type Variants } from "framer-motion"
-import { Sparkles, Trophy, Play, Settings2, Plus, LayoutGrid, CalendarDays } from "lucide-react"
+import { Sparkles, Trophy, Play, Settings2, Plus, LayoutGrid, CalendarDays, UserRound } from "lucide-react"
 import { useState } from "react"
 import { ReviewStageStepper } from "@/components/ReviewStageStepper"
 import styles from "@/components/review-session.module.css"
@@ -102,28 +103,35 @@ export function ReviewSessionOverview({
       initial="hidden"
       animate="visible"
     >
+      <div className={styles.topGradientOverlay} aria-hidden="true" />
+
       {/* Top Glass Switcher */}
       <div className={styles.glassSwitcherContainer}>
-        <div className={styles.glassSwitcher}>
-          <button
-            onClick={() => setActiveTab("daily")}
-            className={`${styles.switcherTab} ${activeTab === "daily" ? styles.switcherTabActive : ""}`}
-          >
-            <CalendarDays size={14} />
-            Daily Path
-          </button>
-          <button
-            onClick={() => setActiveTab("practice")}
-            className={`${styles.switcherTab} ${activeTab === "practice" ? styles.switcherTabActive : ""}`}
-          >
-            <LayoutGrid size={14} />
-            Library
-          </button>
-          <motion.div 
-            className={styles.switcherSlider}
-            animate={{ x: activeTab === "daily" ? "0%" : "100%" }}
-            transition={{ type: "spring", bounce: 0.15, duration: 0.3 }}
-          />
+        <div className={styles.switcherCluster}>
+          <div className={styles.glassSwitcher}>
+            <button
+              onClick={() => setActiveTab("daily")}
+              className={`${styles.switcherTab} ${activeTab === "daily" ? styles.switcherTabActive : ""}`}
+            >
+              <CalendarDays size={14} />
+              Daily Path
+            </button>
+            <button
+              onClick={() => setActiveTab("practice")}
+              className={`${styles.switcherTab} ${activeTab === "practice" ? styles.switcherTabActive : ""}`}
+            >
+              <LayoutGrid size={14} />
+              Library
+            </button>
+            <motion.div 
+              className={styles.switcherSlider}
+              animate={{ x: activeTab === "daily" ? "0%" : "100%" }}
+              transition={{ type: "spring", bounce: 0.15, duration: 0.3 }}
+            />
+          </div>
+          <Link href="/profile" aria-label="Open profile" className={styles.switcherProfileButton}>
+            <UserRound size={20} />
+          </Link>
         </div>
       </div>
 

@@ -21,10 +21,10 @@ interface AiChatResponse {
 }
 
 const starterPrompts = [
-  "Translate understand",
   "Explain the word evidence",
-  "Как переводится progress",
-  "Translate this phrase: keep going"
+  "Give me examples with progress",
+  "Help me remember keep going",
+  "Check the CEFR level of this sentence"
 ]
 
 const initialMessages: ChatMessage[] = [
@@ -32,7 +32,7 @@ const initialMessages: ChatMessage[] = [
     id: "welcome",
     role: "assistant",
     content:
-      "I’m your AI study coach. Ask for a translation, a short explanation, pronunciation help, synonyms, or CEFR feedback."
+      "I’m your AI study coach. Ask for a short explanation, pronunciation help, synonyms, examples, or CEFR feedback."
   }
 ]
 
@@ -87,14 +87,13 @@ export function AiCoachView() {
       }
 
       const payload = (await response.json()) as AiChatResponse
-      const sourceLabel = payload.source ? `\n\nSource: ${payload.source}` : ""
 
       setMessages((current) => [
         ...current,
         {
           id: `assistant-${Date.now()}`,
           role: "assistant",
-          content: `${payload.reply}${sourceLabel}`
+          content: payload.reply
         }
       ])
     } catch (error) {
@@ -107,6 +106,11 @@ export function AiCoachView() {
   return (
     <div className="translate-page-shell -mx-4 -my-4 px-4 py-4 pb-[calc(92px+env(safe-area-inset-bottom))] md:-mx-8 md:-my-8 md:px-8 md:py-8 md:pb-8">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
+        <div
+          className="pointer-events-none fixed inset-x-0 top-0 z-20 h-[14rem] bg-gradient-to-b from-black via-black/78 to-transparent"
+          aria-hidden="true"
+        />
+
         <div className="fixed left-1/2 top-3 z-30 w-[calc(100%-2rem)] max-w-[38rem] -translate-x-1/2 md:top-6">
           <div className="relative flex items-center justify-center gap-3">
             <div className="relative flex rounded-full border border-white/[0.06] bg-white/[0.03] p-1 shadow-[0_4px_20px_rgba(0,0,0,0.2)]">
@@ -145,10 +149,6 @@ export function AiCoachView() {
             >
               <UserRound size={20} />
             </Link>
-            <div
-              className="pointer-events-none absolute inset-x-[-1rem] top-full h-24 bg-gradient-to-b from-black via-black/35 to-transparent md:inset-x-[-2rem]"
-              aria-hidden="true"
-            />
           </div>
         </div>
 
@@ -157,7 +157,7 @@ export function AiCoachView() {
         <section className="relative flex min-h-[calc(100dvh-10.5rem-env(safe-area-inset-bottom))] flex-col p-0 md:min-h-[72vh]">
           <div
             ref={scrollerRef}
-            className="flex-1 space-y-4 overflow-y-auto px-0 py-0 pb-[176px] md:pb-[132px]"
+            className="relative z-0 flex-1 space-y-4 overflow-y-auto px-0 py-0 pb-[176px] md:pb-[132px]"
           >
             {activeMenu === "prompts" ? (
               <div className="grid gap-3 pb-1">
