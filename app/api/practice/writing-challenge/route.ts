@@ -86,14 +86,13 @@ async function fetchGeminiWritingReview(prompt: string) {
     throw new Error("GEMINI_API_KEY is not configured.")
   }
 
-  const model = (process.env.GEMINI_MODEL?.trim() || "gemini-2.5-flash").replace(/^models\//, "")
+  const model = (process.env.GEMINI_MODEL?.trim() || "gemini-1.5-flash").replace(/^models\//, "")
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+    `https://generativelanguage.googleapis.com/v1/models/${encodeURIComponent(model)}:generateContent?key=${apiKey}`,
     {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": apiKey
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
         contents: [
@@ -104,8 +103,7 @@ async function fetchGeminiWritingReview(prompt: string) {
         ],
         generationConfig: {
           temperature: 0.2,
-          maxOutputTokens: 1200,
-          responseMimeType: "application/json"
+          maxOutputTokens: 1200
         }
       })
     }
@@ -126,7 +124,11 @@ async function fetchGeminiWritingReview(prompt: string) {
     throw new Error("Gemini returned an empty writing review.")
   }
 
+  // Clean up potential markdown blocks if AI decided to wrap JSON
   return text
+    .replace(/^```json\n?/, "")
+    .replace(/\n?```$/, "")
+    .trim()
 }
 
 function normalizeResult(parsed: unknown, targetWords: PracticeWritingTargetWord[]): PracticeWritingChallengeResult {
