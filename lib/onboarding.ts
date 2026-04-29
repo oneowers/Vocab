@@ -12,7 +12,7 @@ export const ONBOARDING_DAILY_TARGET_OPTIONS = [5, 10, 15, 20] as const
 
 export type LearningGoalValue = (typeof ONBOARDING_GOAL_OPTIONS)[number]["value"]
 export type DailyWordTargetValue = (typeof ONBOARDING_DAILY_TARGET_OPTIONS)[number]
-export type OnboardingStepValue = "QUESTIONS" | "LEVEL_TEST" | "COMPLETED"
+export type OnboardingStepValue = "QUESTIONS" | "LEVEL_TEST" | "FIRST_WORDS" | "COMPLETED"
 
 export function isLearningGoalValue(value: string): value is LearningGoalValue {
   return ONBOARDING_GOAL_OPTIONS.some((option) => option.value === value)
@@ -23,7 +23,12 @@ export function isDailyWordTargetValue(value: number): value is DailyWordTargetV
 }
 
 export function isOnboardingStepValue(value: string): value is OnboardingStepValue {
-  return value === "QUESTIONS" || value === "LEVEL_TEST" || value === "COMPLETED"
+  return (
+    value === "QUESTIONS" ||
+    value === "LEVEL_TEST" ||
+    value === "FIRST_WORDS" ||
+    value === "COMPLETED"
+  )
 }
 
 export function getOnboardingRouteForUser(
@@ -33,7 +38,15 @@ export function getOnboardingRouteForUser(
     return null
   }
 
-  return user.onboardingStep === "LEVEL_TEST" ? "/onboarding/level-test" : "/onboarding"
+  if (user.onboardingStep === "LEVEL_TEST") {
+    return "/onboarding/level-test"
+  }
+
+  if (user.onboardingStep === "FIRST_WORDS") {
+    return "/onboarding/words"
+  }
+
+  return "/onboarding"
 }
 
 export function getOnboardingProgressStep(user: {
@@ -41,7 +54,11 @@ export function getOnboardingProgressStep(user: {
   dailyWordTarget: number | null
   onboardingStep: OnboardingStep
 }) {
-  if (user.onboardingStep === "LEVEL_TEST" || user.onboardingStep === "COMPLETED") {
+  if (
+    user.onboardingStep === "LEVEL_TEST" ||
+    user.onboardingStep === "FIRST_WORDS" ||
+    user.onboardingStep === "COMPLETED"
+  ) {
     return 3
   }
 

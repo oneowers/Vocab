@@ -17,7 +17,7 @@ import {
 interface OnboardingFlowProps {
   initialGoal: LearningGoalValue | null
   initialDailyWordTarget: number | null
-  initialStep: "QUESTIONS" | "LEVEL_TEST" | "COMPLETED"
+  initialStep: "QUESTIONS" | "LEVEL_TEST" | "FIRST_WORDS" | "COMPLETED"
 }
 
 type FlowStep = 1 | 2 | 3
@@ -116,8 +116,7 @@ export function OnboardingFlow({
       }
 
       await saveStep({
-        onboardingStep: "LEVEL_TEST",
-        complete: true
+        onboardingStep: "LEVEL_TEST"
       })
       router.push("/onboarding/level-test")
       router.refresh()

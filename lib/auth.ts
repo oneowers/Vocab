@@ -97,7 +97,7 @@ export async function requireAdminAppUser() {
 export function redirectToOnboardingIfNeeded(
   user: {
     onboardingCompletedAt: Date | null
-    onboardingStep: "QUESTIONS" | "LEVEL_TEST" | "COMPLETED"
+    onboardingStep: "QUESTIONS" | "LEVEL_TEST" | "FIRST_WORDS" | "COMPLETED"
   } | null
 ) {
   const nextRoute = getOnboardingRouteForUser(user)

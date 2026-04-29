@@ -47,13 +47,6 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 })
   }
 
-  if (shouldComplete && (!user.learningGoal || !user.dailyWordTarget)) {
-    return NextResponse.json(
-      { error: "Finish the onboarding questions first." },
-      { status: 400 }
-    )
-  }
-
   const updatedUser = await getPrisma().user.update({
     where: {
       id: user.id
