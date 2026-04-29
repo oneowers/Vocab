@@ -165,6 +165,22 @@ export interface StatsPayload {
   dueByDay: ChartPoint[]
 }
 
+export interface DetailedStatsPayload {
+  summary: {
+    totalCardsLearned: number
+    currentStreak: number
+    activeDays: number
+  }
+  weeklyProgress: ChartPoint[]
+  cardsByCefrLevel: Record<CefrLevel, number>
+  recentMistakes: Array<{
+    id: string
+    cardId: string
+    word: string
+    createdAt: string
+  }>
+}
+
 export interface AdminUserRow extends AppUserRecord {
   cardCount: number
   reviewCount: number

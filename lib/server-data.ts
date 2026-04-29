@@ -23,6 +23,7 @@ import { serializeCard } from "@/lib/serializers"
 import type {
   AdminAnalyticsPayload,
   CardsResponse,
+  DetailedStatsPayload,
   ProfileActivityDay,
   ProfileActivityMonthLabel,
   ProfileActivityPayload,
@@ -328,6 +329,130 @@ export function getUserStatsData(userId: string): Promise<StatsPayload> {
     [`user-stats:${userId}`],
     [userCacheTag.stats(userId), userCacheTag.review(userId), userCacheTag.cards(userId)],
     () => buildUserStats(userId)
+  )
+}
+
+export async function buildDetailedUserStats(userId: string): Promise<DetailedStatsPayload> {
+  const prisma = getPrisma()
+  const today = getTodayDateKey()
+  const last7 = listRecentDateKeys(7, today)
+  const last7Start = parseDateKey(last7[0])
+
+  const [user, totalCardsLearned, reviewDateCounts, cardsByLevel, recentMistakes] =
+    await Promise.all([
+      prisma.user.findUniqueOrThrow({
+        where: { id: userId },
+        select: { streak: true }
+      }),
+      prisma.card.count({
+        where: {
+          userId,
+          reviewCount: {
+            gt: 0
+          }
+        }
+      }),
+      prisma.$queryRaw<Array<{ date: string; value: bigint }>>(Prisma.sql`
+        SELECT
+          TO_CHAR(DATE("createdAt" AT TIME ZONE 'UTC'), 'YYYY-MM-DD') AS date,
+          COUNT(*)::bigint AS value
+        FROM "ReviewLog"
+        WHERE "userId" = ${userId}
+          AND "createdAt" >= ${last7Start}
+        GROUP BY 1
+      `),
+      prisma.card.findMany({
+        where: {
+          userId,
+          catalogWord: {
+            isNot: null
+          }
+        },
+        select: {
+          catalogWord: {
+            select: {
+              cefrLevel: true
+            }
+          }
+        }
+      }),
+      prisma.reviewLog.findMany({
+        where: {
+          userId,
+          result: "unknown"
+        },
+        orderBy: {
+          createdAt: "desc"
+        },
+        take: 10,
+        select: {
+          id: true,
+          cardId: true,
+          createdAt: true
+        }
+      })
+    ])
+
+  const countsByDate = toCountMap(reviewDateCounts)
+  const activeDays = Object.values(countsByDate).filter((count) => count > 0).length
+  const weeklyProgress = toChartPoints(last7, countsByDate)
+  const cardsByCefrLevel = {
+    A1: 0,
+    A2: 0,
+    B1: 0,
+    B2: 0,
+    C1: 0,
+    C2: 0
+  }
+
+  for (const card of cardsByLevel) {
+    const level = card.catalogWord?.cefrLevel
+    if (level) {
+      cardsByCefrLevel[level] += 1
+    }
+  }
+
+  const recentMistakeCardIds = Array.from(new Set(recentMistakes.map((item) => item.cardId)))
+  const recentMistakeCards =
+    recentMistakeCardIds.length === 0
+      ? []
+      : await prisma.card.findMany({
+          where: {
+            id: {
+              in: recentMistakeCardIds
+            }
+          },
+          select: serializedCardSelect
+        })
+  const recentMistakeCardMap = new Map(
+    recentMistakeCards.map((card) => [
+      card.id,
+      card.catalogWord?.word ?? card.original ?? card.translation ?? "Unknown word"
+    ])
+  )
+
+  return {
+    summary: {
+      totalCardsLearned,
+      currentStreak: user.streak,
+      activeDays
+    },
+    weeklyProgress,
+    cardsByCefrLevel,
+    recentMistakes: recentMistakes.map((item) => ({
+      id: item.id,
+      cardId: item.cardId,
+      word: recentMistakeCardMap.get(item.cardId) ?? "Unknown word",
+      createdAt: item.createdAt.toISOString()
+    }))
+  }
+}
+
+export function getDetailedUserStatsData(userId: string): Promise<DetailedStatsPayload> {
+  return cacheUserResource(
+    [`detailed-user-stats:${userId}`],
+    [userCacheTag.stats(userId), userCacheTag.review(userId), userCacheTag.cards(userId)],
+    () => buildDetailedUserStats(userId)
   )
 }
 

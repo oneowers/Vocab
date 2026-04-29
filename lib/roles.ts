@@ -1,7 +1,7 @@
 import type { Role } from "@/lib/types"
 
 export function canViewStats(role: Role | null | undefined) {
-  return role === "PRO" || role === "ADMIN"
+  return role === "USER" || role === "PRO" || role === "ADMIN"
 }
 
 export function getRoleLabel(role: Role | null | undefined) {

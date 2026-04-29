@@ -254,6 +254,15 @@ export function ProfileView({ user, initialActivity = null }: ProfileViewProps) 
             </div>
           </div>
         )}
+
+        <Link
+          href="/stats"
+          prefetch
+          className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-text-primary transition hover:text-white"
+        >
+          <span>View detailed stats</span>
+          <ArrowRight size={14} className="text-text-tertiary" />
+        </Link>
       </section>
 
       <section className="panel overflow-hidden p-2">
