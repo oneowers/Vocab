@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
   const tomorrowStart = new Date(todayStart)
   tomorrowStart.setUTCDate(tomorrowStart.getUTCDate() + 1)
 
-  const [cards, totalCards, dueToday, mastered, settings, claimedToday] = await Promise.all([
+  const [cards, totalCards, mastered, settings, claimedToday] = await Promise.all([
     prisma.card.findMany({
       where: {
         userId: user.id,
@@ -75,14 +75,6 @@ export async function GET(request: NextRequest) {
     prisma.card.count({
       where: {
         userId: user.id,
-        nextReviewDate: {
-          lte: today
-        }
-      }
-    }),
-    prisma.card.count({
-      where: {
-        userId: user.id,
         reviewCount: {
           gte: 3
         }
@@ -102,6 +94,11 @@ export async function GET(request: NextRequest) {
   ])
 
   const serializedCards = cards.map((card) => serializeCard(card))
+  const dailyTarget =
+    typeof user.dailyWordTarget === "number" && user.dailyWordTarget > 0 ? user.dailyWordTarget : 10
+  const rawDueToday = serializedCards.filter((card) => card.nextReviewDate <= today).length
+  const todayCount = Math.min(rawDueToday, dailyTarget)
+  const waitingCount = Math.max(totalCards - todayCount, 0)
 
   return NextResponse.json({
     cards: serializedCards,
@@ -109,10 +106,14 @@ export async function GET(request: NextRequest) {
       streak: user.streak,
       reviewLives: settings.reviewLives,
       totalCards,
-      dueToday,
+      dueToday: todayCount,
       mastered
     },
     dailyCatalog: {
+      dailyTarget,
+      todayCount,
+      savedCount: totalCards,
+      waitingCount,
       claimedToday,
       dailyLimit: settings.dailyNewCardsLimit,
       remainingToday: Math.max(settings.dailyNewCardsLimit - claimedToday, 0),

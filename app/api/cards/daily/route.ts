@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { revalidateTag } from "next/cache"
 
 import { getOptionalAuthUser } from "@/lib/auth"
-import { ensureCatalogWordLocalized, getOrCreateAppSettings } from "@/lib/catalog"
+import { ensureCatalogWordLocalized } from "@/lib/catalog"
 import { serializedCardSelect } from "@/lib/db-selects"
 import { getTodayDateKey } from "@/lib/date"
 import { getPrisma } from "@/lib/prisma"
@@ -16,7 +16,16 @@ async function getDailyWordsContext(userId: string, cefrLevel: CefrLevel) {
   const todayStart = new Date(`${today}T00:00:00.000Z`)
   const tomorrowStart = new Date(todayStart)
   tomorrowStart.setUTCDate(tomorrowStart.getUTCDate() + 1)
-  const settings = await getOrCreateAppSettings(prisma)
+  const user = await prisma.user.findUniqueOrThrow({
+    where: {
+      id: userId
+    },
+    select: {
+      dailyWordTarget: true
+    }
+  })
+  const dailyTarget =
+    typeof user.dailyWordTarget === "number" && user.dailyWordTarget > 0 ? user.dailyWordTarget : 10
   const claimedToday = await prisma.userCatalogWord.count({
     where: {
       userId,
@@ -27,14 +36,31 @@ async function getDailyWordsContext(userId: string, cefrLevel: CefrLevel) {
       }
     }
   })
+  const [totalCards, dueCardCount] = await Promise.all([
+    prisma.card.count({
+      where: {
+        userId
+      }
+    }),
+    prisma.card.count({
+      where: {
+        userId,
+        nextReviewDate: {
+          lte: today
+        }
+      }
+    })
+  ])
 
-  const remainingToday = Math.max(settings.dailyNewCardsLimit - claimedToday, 0)
+  const remainingToday = Math.max(dailyTarget - claimedToday, 0)
 
   if (!remainingToday) {
     return {
       prisma,
       today,
-      settings,
+      dailyTarget,
+      totalCards,
+      dueCardCount,
       claimedToday,
       remainingToday,
       eligibleWords: []
@@ -72,7 +98,9 @@ async function getDailyWordsContext(userId: string, cefrLevel: CefrLevel) {
   return {
     prisma,
     today,
-    settings,
+    dailyTarget,
+    totalCards,
+    dueCardCount,
     claimedToday,
     remainingToday,
     eligibleWords
@@ -86,10 +114,12 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const { settings, claimedToday, remainingToday, eligibleWords } = await getDailyWordsContext(
+  const { dailyTarget, totalCards, dueCardCount, claimedToday, remainingToday, eligibleWords } = await getDailyWordsContext(
     user.id,
     user.cefrLevel
   )
+  const todayCount = Math.min(dueCardCount, dailyTarget)
+  const waitingCount = Math.max(totalCards - todayCount, 0)
 
   return NextResponse.json({
     items: eligibleWords.map((word) => ({
@@ -99,8 +129,12 @@ export async function GET() {
       example: word.example?.trim() || null,
       cefrLevel: word.cefrLevel
     })),
+    dailyTarget,
+    todayCount,
+    savedCount: totalCards,
+    waitingCount,
     claimedToday,
-    dailyLimit: settings.dailyNewCardsLimit,
+    dailyLimit: dailyTarget,
     remainingToday,
     limitReached: remainingToday === 0
   })
@@ -119,15 +153,19 @@ export async function POST(request: NextRequest) {
   const requestedIds = Array.isArray(body?.wordCatalogIds)
     ? Array.from(new Set(body.wordCatalogIds.filter((value): value is string => typeof value === "string")))
     : []
-  const { prisma, today, settings, claimedToday, remainingToday, eligibleWords } =
+  const { prisma, today, dailyTarget, totalCards, dueCardCount, claimedToday, remainingToday, eligibleWords } =
     await getDailyWordsContext(user.id, user.cefrLevel)
 
   if (!remainingToday) {
     return NextResponse.json({
       cards: [],
       createdCount: 0,
+      dailyTarget,
+      todayCount: Math.min(dueCardCount, dailyTarget),
+      savedCount: totalCards,
+      waitingCount: Math.max(totalCards - Math.min(dueCardCount, dailyTarget), 0),
       claimedToday,
-      dailyLimit: settings.dailyNewCardsLimit,
+      dailyLimit: dailyTarget,
       remainingToday: 0,
       limitReached: true
     })
@@ -137,8 +175,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       cards: [],
       createdCount: 0,
+      dailyTarget,
+      todayCount: Math.min(dueCardCount, dailyTarget),
+      savedCount: totalCards,
+      waitingCount: Math.max(totalCards - Math.min(dueCardCount, dailyTarget), 0),
       claimedToday,
-      dailyLimit: settings.dailyNewCardsLimit,
+      dailyLimit: dailyTarget,
       remainingToday,
       limitReached: false
     })
@@ -154,8 +196,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       cards: [],
       createdCount: 0,
+      dailyTarget,
+      todayCount: Math.min(dueCardCount, dailyTarget),
+      savedCount: totalCards,
+      waitingCount: Math.max(totalCards - Math.min(dueCardCount, dailyTarget), 0),
       claimedToday,
-      dailyLimit: settings.dailyNewCardsLimit,
+      dailyLimit: dailyTarget,
       remainingToday,
       limitReached: false
     })
@@ -170,8 +216,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       cards: [],
       createdCount: 0,
+      dailyTarget,
+      todayCount: Math.min(dueCardCount, dailyTarget),
+      savedCount: totalCards,
+      waitingCount: Math.max(totalCards - Math.min(dueCardCount, dailyTarget), 0),
       claimedToday,
-      dailyLimit: settings.dailyNewCardsLimit,
+      dailyLimit: dailyTarget,
       remainingToday,
       limitReached: false
     })
@@ -226,6 +276,8 @@ export async function POST(request: NextRequest) {
   ) as SerializableCard[]
 
   const nextClaimedToday = claimedToday + createdCards.length
+  const nextSavedCount = totalCards + createdCards.length
+  const nextTodayCount = Math.min(dueCardCount + createdCards.length, dailyTarget)
 
   if (createdCards.length) {
     revalidateTag(userCacheTag.cards(user.id))
@@ -237,9 +289,13 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({
     cards: createdCards.map((card) => serializeCard(card)),
     createdCount: createdCards.length,
+    dailyTarget,
+    todayCount: nextTodayCount,
+    savedCount: nextSavedCount,
+    waitingCount: Math.max(nextSavedCount - nextTodayCount, 0),
     claimedToday: nextClaimedToday,
-    dailyLimit: settings.dailyNewCardsLimit,
-    remainingToday: Math.max(settings.dailyNewCardsLimit - nextClaimedToday, 0),
-    limitReached: nextClaimedToday >= settings.dailyNewCardsLimit
+    dailyLimit: dailyTarget,
+    remainingToday: Math.max(dailyTarget - nextClaimedToday, 0),
+    limitReached: nextClaimedToday >= dailyTarget
   })
 }

@@ -120,6 +120,10 @@ export interface CardsResponse {
 }
 
 export interface DailyCatalogStatus {
+  dailyTarget: number
+  todayCount: number
+  savedCount: number
+  waitingCount: number
   claimedToday: number
   dailyLimit: number
   remainingToday: number
@@ -142,6 +146,10 @@ export interface OnboardingWordSelectionPayload {
 
 export interface DailyWordsPreviewPayload {
   items: DailyWordCandidate[]
+  dailyTarget: number
+  todayCount: number
+  savedCount: number
+  waitingCount: number
   claimedToday: number
   dailyLimit: number
   remainingToday: number
@@ -237,6 +245,10 @@ export interface AdminSettingsPayload {
 export interface DailyClaimResponse {
   cards: CardRecord[]
   createdCount: number
+  dailyTarget: number
+  todayCount: number
+  savedCount: number
+  waitingCount: number
   claimedToday: number
   dailyLimit: number
   remainingToday: number

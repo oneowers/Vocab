@@ -155,6 +155,10 @@ function toChartPoints(dates: string[], counts: Record<string, number>) {
   }))
 }
 
+function getDailyTarget(value: number | null | undefined) {
+  return typeof value === "number" && value > 0 ? value : 10
+}
+
 async function buildCardsPageData(userId: string): Promise<CardsResponse> {
   const prisma = getPrisma()
   const today = getTodayDateKey()
@@ -162,7 +166,7 @@ async function buildCardsPageData(userId: string): Promise<CardsResponse> {
   const tomorrowStart = new Date(todayStart)
   tomorrowStart.setUTCDate(tomorrowStart.getUTCDate() + 1)
 
-  const [cards, totalCards, dueToday, settings, user, claimedToday] = await Promise.all([
+  const [cards, totalCards, settings, user, claimedToday] = await Promise.all([
     prisma.card.findMany({
       where: {
         userId
@@ -175,14 +179,6 @@ async function buildCardsPageData(userId: string): Promise<CardsResponse> {
         userId
       }
     }),
-    prisma.card.count({
-      where: {
-        userId,
-        nextReviewDate: {
-          lte: today
-        }
-      }
-    }),
     getOrCreateAppSettings(prisma),
     prisma.user.findUniqueOrThrow({
       where: {
@@ -190,7 +186,8 @@ async function buildCardsPageData(userId: string): Promise<CardsResponse> {
       },
       select: {
         streak: true,
-        cefrLevel: true
+        cefrLevel: true,
+        dailyWordTarget: true
       }
     }),
     prisma.userCatalogWord.count({
@@ -206,6 +203,10 @@ async function buildCardsPageData(userId: string): Promise<CardsResponse> {
   ])
 
   const serializedCards = cards.map((card) => serializeCard(card))
+  const dailyTarget = getDailyTarget(user.dailyWordTarget)
+  const rawDueToday = serializedCards.filter((card) => card.nextReviewDate <= today).length
+  const todayCount = Math.min(rawDueToday, dailyTarget)
+  const waitingCount = Math.max(serializedCards.length - todayCount, 0)
 
   return {
     cards: serializedCards,
@@ -213,10 +214,14 @@ async function buildCardsPageData(userId: string): Promise<CardsResponse> {
       streak: user.streak,
       reviewLives: settings.reviewLives,
       totalCards,
-      dueToday,
+      dueToday: todayCount,
       mastered: serializedCards.filter((card) => card.reviewCount >= 3).length
     },
     dailyCatalog: {
+      dailyTarget,
+      todayCount,
+      savedCount: totalCards,
+      waitingCount,
       claimedToday,
       dailyLimit: settings.dailyNewCardsLimit,
       remainingToday: Math.max(settings.dailyNewCardsLimit - claimedToday, 0),

@@ -95,6 +95,7 @@ export function ReviewSessionOverview({
   const dueSessionCount = Math.min(cardsDue, sessionLimit)
   const librarySessionCount = Math.min(totalCards, sessionLimit)
   const hasSavedJourney = Boolean(resumableSession)
+  const waitingCount = dailyCatalog?.waitingCount ?? Math.max(totalCards - cardsDue, 0)
 
   return (
     <motion.section 
@@ -177,16 +178,16 @@ export function ReviewSessionOverview({
                   ) : (
                     <span className={styles.heroStatValue}>{cardsDue}</span>
                   )}
-                  <span className={styles.heroStatLabel}>Words Due</span>
+                  <span className={styles.heroStatLabel}>Today</span>
                 </div>
                 <div className={styles.heroStatDivider} style={{ height: "2.5rem" }} />
                 <div className={styles.heroStatItem}>
                   {loading ? (
                     <span className="skeleton skeleton-soft h-9 w-10 rounded-lg" />
                   ) : (
-                    <span className={styles.heroStatValue}>3</span>
+                    <span className={styles.heroStatValue}>{waitingCount}</span>
                   )}
-                  <span className={styles.heroStatLabel}>Stages</span>
+                  <span className={styles.heroStatLabel}>Waiting</span>
                 </div>
               </div>
 

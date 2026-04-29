@@ -251,6 +251,11 @@ export function TranslatorPanel({
         }
 
         const nextCards = [payload.card, ...current.cards.filter((card) => card.id !== payload.card.id)]
+        const dailyTarget = current.dailyCatalog.dailyTarget || 10
+        const todayCount = Math.min(
+          nextCards.filter((card) => card.nextReviewDate <= new Date().toISOString().slice(0, 10)).length,
+          dailyTarget
+        )
 
         return {
           ...current,
@@ -258,7 +263,13 @@ export function TranslatorPanel({
           summary: {
             ...current.summary,
             totalCards: nextCards.length,
-            dueToday: nextCards.filter((card) => card.nextReviewDate <= new Date().toISOString().slice(0, 10)).length
+            dueToday: todayCount
+          },
+          dailyCatalog: {
+            ...current.dailyCatalog,
+            todayCount,
+            savedCount: nextCards.length,
+            waitingCount: Math.max(nextCards.length - todayCount, 0)
           }
         }
       })

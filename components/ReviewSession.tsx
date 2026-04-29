@@ -267,6 +267,10 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
     () => dueCards.filter((card) => matchesCardStatus(card, selectedStatus)),
     [dueCards, selectedStatus]
   )
+  const dailyDueCards = useMemo(() => {
+    const dailyTarget = dailyCatalog?.dailyTarget ?? 10
+    return availableCards.slice(0, dailyTarget)
+  }, [availableCards, dailyCatalog?.dailyTarget])
   const allAvailableCards = useMemo(
     () => allCards.filter((card) => matchesCardStatus(card, selectedStatus)),
     [allCards, selectedStatus]
@@ -312,6 +316,10 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
 
   function handleDailyClaimed(payload: DailyClaimResponse) {
     setDailyCatalog({
+      dailyTarget: payload.dailyTarget,
+      todayCount: payload.todayCount,
+      savedCount: payload.savedCount,
+      waitingCount: payload.waitingCount,
       claimedToday: payload.claimedToday,
       dailyLimit: payload.dailyLimit,
       remainingToday: payload.remainingToday,
@@ -727,7 +735,7 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
           loading={loading && !cardsPayload && !guestMode}
           currentStage={resumableSession?.activeStage ?? "flip"}
           completedStages={resumableSession?.completedStages ?? []}
-          cardsDue={availableCards.length}
+          cardsDue={dailyDueCards.length}
           totalCards={allAvailableCards.length}
           selectedStatus={selectedStatus}
           practiceStage={practiceStage}
@@ -739,7 +747,7 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
           onSelectStatus={setSelectedStatus}
           onSelectPracticeStage={setPracticeStage}
           onClaimDailyWords={handleClaimDailyWords}
-          onStartDue={() => startNewSession(availableCards, "flip", "linked")}
+          onStartDue={() => startNewSession(dailyDueCards, "flip", "linked")}
           onStartPractice={() => startNewSession(allAvailableCards, practiceStage, "single")}
           onResumeSession={resumeSavedSession}
           onRestartSession={restartSavedSession}
