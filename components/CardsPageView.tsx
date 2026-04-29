@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, type ChangeEvent } from "react"
+import { Flame } from "lucide-react"
 
 import { CardList } from "@/components/CardList"
 import { ConfirmModal } from "@/components/ConfirmModal"
@@ -8,13 +9,15 @@ import { useToast } from "@/components/Toast"
 import { useClientResource } from "@/hooks/useClientResource"
 import { getGuestCards, isGuestSessionActive } from "@/lib/guest"
 import { matchesCardStatus, sortDueCards } from "@/lib/spaced-repetition"
-import type { CardRecord, CardsResponse, CardStatusFilter, CefrLevel } from "@/lib/types"
+import { getTodayDateKey, getYesterdayDateKey } from "@/lib/date"
+import type { CardRecord, CardsResponse, CardStatusFilter, CefrLevel, AppUserRecord } from "@/lib/types"
 
 interface CardsPageViewProps {
   initialData?: CardsResponse | null
+  user?: AppUserRecord | null
 }
 
-export function CardsPageView({ initialData = null }: CardsPageViewProps) {
+export function CardsPageView({ initialData = null, user = null }: CardsPageViewProps) {
   const [guestMode, setGuestMode] = useState(false)
   const [cards, setCards] = useState<CardRecord[]>([])
   const [selectedStatus, setSelectedStatus] = useState<CardStatusFilter>("All")
@@ -23,6 +26,7 @@ export function CardsPageView({ initialData = null }: CardsPageViewProps) {
   const [cardToDelete, setCardToDelete] = useState<CardRecord | null>(null)
   const [cardsToDelete, setCardsToDelete] = useState<CardRecord[]>([])
   const [deleting, setDeleting] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const importRef = useRef<HTMLInputElement | null>(null)
   const { showToast } = useToast()
   const {
@@ -50,6 +54,7 @@ export function CardsPageView({ initialData = null }: CardsPageViewProps) {
   })
 
   useEffect(() => {
+    setMounted(true)
     const guestActive = isGuestSessionActive()
     setGuestMode(guestActive)
 
@@ -189,6 +194,26 @@ export function CardsPageView({ initialData = null }: CardsPageViewProps) {
       />
 
       <div className="pt-6 space-y-6">
+        {mounted && user && (user.lastReviewDate !== getTodayDateKey() && user.lastReviewDate !== getYesterdayDateKey()) && user.lastStreakRecoveryDate !== getTodayDateKey() && (
+          <div className="panel rounded-[28px] p-6 bg-gradient-to-br from-orange-500/10 to-transparent border border-orange-500/20 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+              <Flame size={80} className="text-orange-500" />
+            </div>
+            <div className="relative z-10">
+              <h3 className="text-xl font-bold text-ink">You’re back.</h3>
+              <p className="mt-1 text-muted max-w-md">
+                Let’s recover your progress in 3 minutes. Complete a quick review session to restore your streak.
+              </p>
+              <button 
+                onClick={() => window.location.href = "/practice?mode=recovery"}
+                className="mt-5 pill-glass bg-orange-500 text-white px-6 py-2.5 font-bold hover:scale-105 active:scale-95 transition-all"
+              >
+                Start Recovery Session
+              </button>
+            </div>
+          </div>
+        )}
+
         {cardsPayload?.dailyCatalog ? (
           <div className="panel rounded-[28px] p-4 md:p-5">
             <div className="flex flex-wrap items-center gap-3 md:gap-5">
