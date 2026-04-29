@@ -51,7 +51,7 @@ export function LoginCard({ guestModeEnabled }: LoginCardProps) {
         <BrandLogo />
       </div>
       <p className="mt-5 text-xs font-semibold uppercase tracking-[0.32em] text-quiet">
-        Wlingo
+        LexiFlow
       </p>
       <h1 className="mt-3 text-[34px] font-bold tracking-[-0.5px] text-text-primary">
         Learn English with rhythm.

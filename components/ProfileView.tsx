@@ -87,7 +87,7 @@ export function ProfileView({ user, initialActivity = null }: ProfileViewProps) 
 
   const resolvedActivity = activity ?? initialActivity ?? fallbackActivity
   const hasActivityData = Boolean(activity || initialActivity || guestActive || !profileUser)
-  const name = guestActive ? "Guest explorer" : profileUser?.name || profileUser?.email || "Wlingo user"
+  const name = guestActive ? "Guest explorer" : profileUser?.name || profileUser?.email || "LexiFlow user"
   const subtitle = guestActive
     ? "Guest mode"
     : getRoleLabel(profileUser?.role ?? null)

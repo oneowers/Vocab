@@ -80,7 +80,7 @@ export function AppShell({ user, children }: AppShellProps) {
   const initials = (user?.name || user?.email || "G").slice(0, 1).toUpperCase()
   const accountLabel = guestActive
     ? "Guest explorer"
-    : user?.name || user?.email || "Wlingo user"
+    : user?.name || user?.email || "LexiFlow user"
   const accountRole = guestActive ? "Guest mode" : getRoleLabel(user?.role ?? null)
   const navRole = guestActive ? null : user?.role ?? null
   const sidebarNavItems = getAppSidebarNavItems(navRole)
@@ -96,7 +96,7 @@ export function AppShell({ user, children }: AppShellProps) {
                 <BrandLogo />
               </div>
               <div>
-                <p className="section-label">Wlingo</p>
+                <p className="section-label">LexiFlow</p>
                 <p className="mt-1 text-[15px] text-muted">Vocabulary practice studio</p>
               </div>
             </Link>

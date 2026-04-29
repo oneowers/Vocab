@@ -136,7 +136,7 @@ export function CardsPageView({ initialData = null }: CardsPageViewProps) {
     const url = URL.createObjectURL(blob)
     const anchor = document.createElement("a")
     anchor.href = url
-    anchor.download = "wlingo-cards.json"
+    anchor.download = "lexiflow-cards.json"
     anchor.click()
     URL.revokeObjectURL(url)
   }

@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client"
 
 declare global {
-  var __wordflowPrisma: PrismaClient | undefined
+  var __lexiflowPrisma: PrismaClient | undefined
 }
 
 export function getPrisma() {
@@ -9,10 +9,9 @@ export function getPrisma() {
     throw new Error("DATABASE_URL is not configured.")
   }
 
-  if (!global.__wordflowPrisma) {
-    global.__wordflowPrisma = new PrismaClient()
+  if (!global.__lexiflowPrisma) {
+    global.__lexiflowPrisma = new PrismaClient()
   }
 
-  return global.__wordflowPrisma
+  return global.__lexiflowPrisma
 }
-

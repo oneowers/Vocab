@@ -7,7 +7,7 @@ import "@/styles/apple-theme.css"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "Wlingo",
+  title: "LexiFlow",
   description: "Spaced repetition vocabulary learning for English and Russian learners."
 }
 

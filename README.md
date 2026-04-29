@@ -1,6 +1,6 @@
-# WordFlow
+# LexiFlow
 
-WordFlow is a Next.js 14 vocabulary learning app for Russian-speaking English learners. It supports Google OAuth with Supabase, a Neon PostgreSQL database through Prisma, spaced repetition review modes, per-user statistics, and an admin panel.
+LexiFlow is a Next.js 14 vocabulary learning app for Russian-speaking English learners. It supports Google OAuth with Supabase, a Neon PostgreSQL database through Prisma, spaced repetition review modes, per-user statistics, and an admin panel.
 
 ## Stack
 

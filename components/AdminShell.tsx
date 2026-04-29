@@ -38,7 +38,7 @@ export function AdminShell({ user, children }: AdminShellProps) {
                 <BrandLogo />
               </div>
               <div>
-                <p className="section-label">Wlingo</p>
+                <p className="section-label">LexiFlow</p>
                 <div className="mt-1 flex items-center gap-2">
                   <p className="text-[15px] text-muted">Administration</p>
                   <span className="rounded-full bg-background-secondary px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-accent">

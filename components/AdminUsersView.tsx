@@ -115,7 +115,7 @@ export function AdminUsersView() {
       const url = URL.createObjectURL(blob)
       const anchor = document.createElement("a")
       anchor.href = url
-      anchor.download = "wlingo-users.csv"
+      anchor.download = "lexiflow-users.csv"
       anchor.click()
       URL.revokeObjectURL(url)
     } catch {

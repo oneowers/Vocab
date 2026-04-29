@@ -6,9 +6,9 @@ import type { CardRecord, GuestReviewLog, ReviewResult } from "@/lib/types"
 
 export const DEFAULT_GUEST_REVIEW_LIVES = 3
 
-const GUEST_MODE_KEY = "wordflow.guest-mode"
-const GUEST_CARDS_KEY = "wordflow.guest-cards"
-const GUEST_REVIEW_LOGS_KEY = "wordflow.guest-review-logs"
+const GUEST_MODE_KEY = "lexiflow.guest-mode"
+const GUEST_CARDS_KEY = "lexiflow.guest-cards"
+const GUEST_REVIEW_LOGS_KEY = "lexiflow.guest-review-logs"
 
 function createSampleCards(): CardRecord[] {
   const today = getTodayDateKey()
