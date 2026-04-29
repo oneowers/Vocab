@@ -58,10 +58,10 @@ npm install
 npm run db:generate
 ```
 
-3. Push the schema to your database:
+3. Apply migrations to your database:
 
 ```bash
-npm run db:push
+npx prisma migrate deploy
 ```
 
 4. Start the development server:
@@ -96,7 +96,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ```bash
 npm run db:generate
-npm run db:push
+npx prisma migrate deploy
 ```
 
 7. When OAuth is ready, set `NEXT_PUBLIC_GUEST_MODE=false` and redeploy.
@@ -109,3 +109,11 @@ The current implementation has been verified with:
 npm run lint
 npm run build
 ```
+
+## Prisma migrations
+
+- The active Prisma history uses a squashed baseline plus legacy no-op placeholders.
+- Read [docs/prisma-migration-baseline.md](/Users/tokiancunin/Downloads/lexiflow_-vocabulary-learning-app/docs/prisma-migration-baseline.md) before creating or resolving migrations.
+- Use `npx prisma migrate dev --name <change_name>` for new schema work.
+- Use `npx prisma migrate deploy` for deploys.
+- Do not use `prisma db push` on shared environments.

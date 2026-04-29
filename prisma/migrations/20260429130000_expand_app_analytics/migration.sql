@@ -1,12 +1,6 @@
-ALTER TABLE "AppAnalytics"
-ADD COLUMN IF NOT EXISTS "activeUsersD1" INTEGER NOT NULL DEFAULT 0,
-ADD COLUMN IF NOT EXISTS "activeUsersD7" INTEGER NOT NULL DEFAULT 0,
-ADD COLUMN IF NOT EXISTS "activeUsersD30" INTEGER NOT NULL DEFAULT 0,
-ADD COLUMN IF NOT EXISTS "wrongByA1" INTEGER NOT NULL DEFAULT 0,
-ADD COLUMN IF NOT EXISTS "wrongByA2" INTEGER NOT NULL DEFAULT 0,
-ADD COLUMN IF NOT EXISTS "wrongByB1" INTEGER NOT NULL DEFAULT 0,
-ADD COLUMN IF NOT EXISTS "wrongByB2" INTEGER NOT NULL DEFAULT 0,
-ADD COLUMN IF NOT EXISTS "wrongByC1" INTEGER NOT NULL DEFAULT 0,
-ADD COLUMN IF NOT EXISTS "wrongByC2" INTEGER NOT NULL DEFAULT 0,
-ADD COLUMN IF NOT EXISTS "catalogClaimsToday" INTEGER NOT NULL DEFAULT 0,
-ADD COLUMN IF NOT EXISTS "catalogVsCustomRatio" DOUBLE PRECISION NOT NULL DEFAULT 0;
+-- Legacy migration preserved as a no-op placeholder.
+-- Its original SQL was archived into:
+-- prisma/migrations_archive_legacy/20260429130000_expand_app_analytics/migration.sql
+--
+-- The replayable behavior now lives in:
+-- prisma/migrations/20260428000000_squashed_baseline/migration.sql

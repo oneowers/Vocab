@@ -3,26 +3,26 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 model User {
-  id             String      @id @default(uuid())
-  email          String      @unique
-  name           String?
-  avatarUrl      String?
-  role           Role        @default(USER)
-  cefrLevel      CefrLevel   @default(A1)
-  reviewLives    Int         @default(3)
-  createdAt      DateTime    @default(now())
-  lastActiveAt   DateTime?
-  streak         Int         @default(0)
-  lastReviewDate String?
-  cards          Card[]
-  catalogClaims  UserCatalogWord[]
-  reviewLogs     ReviewLog[]
+  id              String                   @id @default(uuid())
+  email           String                   @unique
+  name            String?
+  avatarUrl       String?
+  role            Role                     @default(USER)
+  cefrLevel       CefrLevel                @default(A1)
+  reviewLives     Int                      @default(3)
+  createdAt       DateTime                 @default(now())
+  lastActiveAt    DateTime?
+  streak          Int                      @default(0)
+  lastReviewDate  String?
+  cards           Card[]
+  catalogClaims   UserCatalogWord[]
+  reviewLogs      ReviewLog[]
   practiceSession PracticeSessionProgress?
 }
 
@@ -53,23 +53,23 @@ enum CatalogReviewStatus {
 }
 
 model Card {
-  id             String   @id @default(uuid())
-  userId         String
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  catalogWordId  String?
-  catalogWord    WordCatalog? @relation(fields: [catalogWordId], references: [id], onDelete: SetNull)
-  original       String?
-  translation    String?
-  translationAlternatives String[] @default([])
-  direction      String
-  example        String?
-  phonetic       String?
-  dateAdded      DateTime @default(now())
-  nextReviewDate String
-  lastReviewResult String @default("unknown")
-  reviewCount    Int      @default(0)
-  correctCount   Int      @default(0)
-  wrongCount     Int      @default(0)
+  id                      String       @id @default(uuid())
+  userId                  String
+  user                    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  catalogWordId           String?
+  catalogWord             WordCatalog? @relation(fields: [catalogWordId], references: [id], onDelete: SetNull)
+  original                String?
+  translation             String?
+  translationAlternatives String[]     @default([])
+  direction               String
+  example                 String?
+  phonetic                String?
+  dateAdded               DateTime     @default(now())
+  nextReviewDate          String
+  lastReviewResult        String       @default("unknown")
+  reviewCount             Int          @default(0)
+  correctCount            Int          @default(0)
+  wrongCount              Int          @default(0)
 
   @@index([userId, catalogWordId])
   @@index([userId, nextReviewDate, dateAdded(sort: Desc)], map: "idx_card_user_due_added")
@@ -89,23 +89,23 @@ model ReviewLog {
 }
 
 model AppAnalytics {
-  id                 String @id @default(uuid())
-  date               String @unique
-  totalSessions      Int    @default(0)
-  totalReviews       Int    @default(0)
-  newUsers           Int    @default(0)
-  newCards           Int    @default(0)
-  activeUsersD1      Int    @default(0)
-  activeUsersD7      Int    @default(0)
-  activeUsersD30     Int    @default(0)
-  wrongByA1          Int    @default(0)
-  wrongByA2          Int    @default(0)
-  wrongByB1          Int    @default(0)
-  wrongByB2          Int    @default(0)
-  wrongByC1          Int    @default(0)
-  wrongByC2          Int    @default(0)
-  catalogClaimsToday Int    @default(0)
-  catalogVsCustomRatio Float @default(0)
+  id                   String @id @default(uuid())
+  date                 String @unique
+  totalSessions        Int    @default(0)
+  totalReviews         Int    @default(0)
+  newUsers             Int    @default(0)
+  newCards             Int    @default(0)
+  activeUsersD1        Int    @default(0)
+  activeUsersD7        Int    @default(0)
+  activeUsersD30       Int    @default(0)
+  wrongByA1            Int    @default(0)
+  wrongByA2            Int    @default(0)
+  wrongByB1            Int    @default(0)
+  wrongByB2            Int    @default(0)
+  wrongByC1            Int    @default(0)
+  wrongByC2            Int    @default(0)
+  catalogClaimsToday   Int    @default(0)
+  catalogVsCustomRatio Float  @default(0)
 }
 
 model PracticeSessionProgress {
@@ -125,27 +125,27 @@ model PracticeSessionProgress {
 }
 
 model WordCatalog {
-  id           String            @id @default(uuid())
-  word         String            @unique
-  translation  String
-  translationAlternatives String[] @default([])
-  cefrLevel    CefrLevel
-  partOfSpeech String
-  topic        String
-  example      String
-  phonetic     String
-  priority     Int               @default(0)
-  isPublished  Boolean           @default(false)
-  source       String?
-  sourceRef    String?
-  enrichmentStatus CatalogEnrichmentStatus @default(completed)
-  reviewStatus CatalogReviewStatus @default(approved)
-  lastEnrichedAt DateTime?
-  enrichmentError String?
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
-  cards        Card[]
-  claims       UserCatalogWord[]
+  id                      String                  @id @default(uuid())
+  word                    String                  @unique
+  translation             String
+  translationAlternatives String[]                @default([])
+  cefrLevel               CefrLevel
+  partOfSpeech            String
+  topic                   String
+  example                 String
+  phonetic                String
+  priority                Int                     @default(0)
+  isPublished             Boolean                 @default(false)
+  source                  String?
+  sourceRef               String?
+  enrichmentStatus        CatalogEnrichmentStatus @default(completed)
+  reviewStatus            CatalogReviewStatus     @default(approved)
+  lastEnrichedAt          DateTime?
+  enrichmentError         String?
+  createdAt               DateTime                @default(now())
+  updatedAt               DateTime                @updatedAt
+  cards                   Card[]
+  claims                  UserCatalogWord[]
 
   @@index([isPublished, cefrLevel, priority(sort: Desc), createdAt], map: "idx_wordcatalog_pub_level_priority_created")
   @@index([reviewStatus, enrichmentStatus], map: "idx_wordcatalog_review_enrichment")
@@ -153,23 +153,23 @@ model WordCatalog {
 }
 
 model UserCatalogWord {
-  id           String      @id @default(uuid())
-  userId       String
+  id            String      @id @default(uuid())
+  userId        String
   wordCatalogId String
-  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  wordCatalog  WordCatalog @relation(fields: [wordCatalogId], references: [id], onDelete: Cascade)
-  createdAt    DateTime    @default(now())
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wordCatalog   WordCatalog @relation(fields: [wordCatalogId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
 
   @@unique([userId, wordCatalogId])
   @@index([userId, createdAt])
 }
 
 model AppSettings {
-  id                 String   @id @default("app")
-  dailyNewCardsLimit Int      @default(5)
-  reviewLives        Int      @default(3)
-  cefrProfilerEnabled Boolean @default(true)
-  translationProvider String  @default("auto")
+  id                  String   @id @default("app")
+  dailyNewCardsLimit  Int      @default(5)
+  reviewLives         Int      @default(3)
+  cefrProfilerEnabled Boolean  @default(true)
+  translationProvider String   @default("auto")
   translationPriority String[] @default(["catalog", "deepl", "langeek"])
-  updatedAt          DateTime @updatedAt
+  updatedAt           DateTime @updatedAt
 }

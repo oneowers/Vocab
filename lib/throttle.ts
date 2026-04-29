@@ -64,10 +64,10 @@ export async function checkRateLimit(
   limit: number,
   windowSeconds: number
 ): Promise<{ allowed: boolean; remaining: number; resetAt: number }> {
-  const config = getRateLimitConfig()
   const redisKey = `ratelimit:${key}`
 
   try {
+    const config = getRateLimitConfig()
     const count = Number(await callRedis<number>(config, ["INCR", redisKey]))
 
     if (count === 1) {
