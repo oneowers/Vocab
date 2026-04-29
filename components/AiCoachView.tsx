@@ -229,7 +229,7 @@ export function AiCoachView() {
           </div>
 
           <form
-            className={`fixed left-1/2 z-40 mt-3 w-[calc(100%-2rem)] max-w-[46rem] -translate-x-1/2 transition-[bottom,transform] duration-200 ease-out md:absolute md:bottom-4 md:left-4 md:right-4 md:w-auto md:max-w-none md:translate-x-0 ${
+            className={`fixed left-1/2 z-40 w-[calc(100%-2rem)] max-w-[46rem] -translate-x-1/2 transition-[bottom,transform] duration-200 ease-out ${
               composerFocused
                 ? "bottom-[calc(env(safe-area-inset-bottom)+12px)]"
                 : "bottom-[calc(var(--tab-bar-height)+env(safe-area-inset-bottom)+12px)]"
@@ -239,9 +239,9 @@ export function AiCoachView() {
               void sendMessage(input)
             }}
           >
-            <div className="translate-card rounded-[28px] border border-white/[0.06] bg-[#232329]/95 p-2 shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl">
-              <div className="flex items-center gap-2">
-                <div className="min-w-0 flex-1 px-2">
+            <div className="translate-card rounded-full border border-white/[0.06] bg-[#232329]/95 px-3 py-2 shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl">
+              <div className="flex min-h-12 items-center gap-2">
+                <div className="min-w-0 flex-1 px-1">
                   <textarea
                     value={input}
                     onChange={(event) => setInput(event.target.value)}
@@ -249,7 +249,7 @@ export function AiCoachView() {
                     onBlur={() => setComposerFocused(false)}
                     placeholder="Message AI coach..."
                     rows={1}
-                    className="h-11 max-h-36 w-full resize-none bg-transparent py-2 text-[16px] leading-[1.5] text-white outline-none placeholder:text-white/28"
+                    className="block h-7 max-h-28 w-full resize-none bg-transparent py-0.5 text-[16px] leading-[1.35] text-white outline-none placeholder:text-white/34"
                   />
                 </div>
 
@@ -257,7 +257,7 @@ export function AiCoachView() {
                   type="submit"
                   disabled={!canSend}
                   aria-label="Send message"
-                  className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition ${
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition ${
                     canSend
                       ? "bg-white text-black hover:translate-y-[-1px]"
                       : "cursor-not-allowed bg-white/12 text-white/34"

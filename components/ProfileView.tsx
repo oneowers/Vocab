@@ -86,6 +86,7 @@ export function ProfileView({ user, initialActivity = null }: ProfileViewProps) 
   }
 
   const resolvedActivity = activity ?? initialActivity ?? fallbackActivity
+  const hasActivityData = Boolean(activity || initialActivity || guestActive || !profileUser)
   const name = guestActive ? "Guest explorer" : profileUser?.name || profileUser?.email || "Wlingo user"
   const subtitle = guestActive
     ? "Guest mode"
@@ -189,10 +190,14 @@ export function ProfileView({ user, initialActivity = null }: ProfileViewProps) 
           </div>
           <div className="rounded-[16px] bg-white/[0.04] p-3">
             <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Active</p>
-            <p className="text-[18px] font-black text-white">
-              {resolvedActivity.activeDaysLastYear}
-              <span className="ml-1 text-[11px] font-medium text-text-tertiary">d</span>
-            </p>
+            {activityLoading && !hasActivityData ? (
+              <div className="mt-1 skeleton skeleton-soft h-6 w-12" />
+            ) : (
+              <p className="text-[18px] font-black text-white">
+                {resolvedActivity.activeDaysLastYear}
+                <span className="ml-1 text-[11px] font-medium text-text-tertiary">d</span>
+              </p>
+            )}
           </div>
           <div className="rounded-[16px] bg-white/[0.04] p-3">
             <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Status</p>
@@ -207,9 +212,13 @@ export function ProfileView({ user, initialActivity = null }: ProfileViewProps) 
         <div className="flex items-center justify-between">
           <div>
             <p className="section-label">Activity</p>
-            <h2 className="mt-1 text-[17px] font-bold text-white">
-              {resolvedActivity.activeDaysLastYear} days
-            </h2>
+            {activityLoading && !hasActivityData ? (
+              <div className="mt-2 skeleton skeleton-soft h-6 w-20" />
+            ) : (
+              <h2 className="mt-1 text-[17px] font-bold text-white">
+                {resolvedActivity.activeDaysLastYear} days
+              </h2>
+            )}
           </div>
           <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
             <div className="flex gap-0.5">
