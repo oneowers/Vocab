@@ -9,6 +9,11 @@ import { isRateLimited } from "@/lib/throttle"
 
 type AiChatRequestBody = {
   message?: string
+  mode?: string
+  history?: Array<{
+    role?: string
+    content?: string
+  }>
 }
 
 type GeminiGenerateContentResponse = {
@@ -22,6 +27,7 @@ type GeminiGenerateContentResponse = {
 }
 
 type StudyDictionary = Awaited<ReturnType<typeof fetchDictionaryDetails>> | null
+type AiChatMode = "chat" | "prompts" | "story" | "quiz" | "memory" | "roleplay" | "review"
 
 function getThrottleKey(request: NextRequest, userId: string | null) {
   const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
@@ -52,6 +58,46 @@ function isSingleWord(input: string) {
   return input.trim().split(/\s+/).filter(Boolean).length === 1
 }
 
+function isAiChatMode(value: string | undefined): value is AiChatMode {
+  return value === "chat" ||
+    value === "prompts" ||
+    value === "story" ||
+    value === "quiz" ||
+    value === "memory" ||
+    value === "roleplay" ||
+    value === "review"
+}
+
+function isInteractiveMode(mode: AiChatMode) {
+  return mode === "story" ||
+    mode === "quiz" ||
+    mode === "memory" ||
+    mode === "roleplay" ||
+    mode === "review"
+}
+
+function normalizeHistory(history: AiChatRequestBody["history"]) {
+  return (history ?? [])
+    .filter((item) => item.role === "assistant" || item.role === "user")
+    .map((item) => ({
+      role: item.role as "assistant" | "user",
+      content: item.content?.trim().slice(0, 1200) ?? ""
+    }))
+    .filter((item) => item.content)
+    .slice(-10)
+}
+
+function formatHistory(history: ReturnType<typeof normalizeHistory>) {
+  if (!history.length) {
+    return "Conversation so far: none"
+  }
+
+  return [
+    "Conversation so far:",
+    ...history.map((item) => `${item.role === "assistant" ? "Coach" : "Learner"}: ${item.content}`)
+  ].join("\n")
+}
+
 function hasStudyIntent(input: string) {
   const normalized = input.trim().toLowerCase()
 
@@ -75,6 +121,12 @@ function hasStudyIntent(input: string) {
     "example",
     "examples",
     "remember",
+    "quiz",
+    "test",
+    "drill",
+    "roleplay",
+    "story",
+    "review",
     "переведи",
     "переводится",
     "значит",
@@ -86,7 +138,14 @@ function hasStudyIntent(input: string) {
     "произнос",
     "уровень",
     "пример",
-    "запомнить"
+    "запомнить",
+    "тест",
+    "викторин",
+    "задани",
+    "вопрос",
+    "роль",
+    "истори",
+    "проверь"
   ].some((marker) => normalized.includes(marker))
 }
 
@@ -100,13 +159,26 @@ function pickTopLevel(profile: Awaited<ReturnType<typeof fetchCefrProfile>>) {
     .find((bucket) => bucket.percentage > 0)?.level ?? null
 }
 
-function buildGeminiChatPrompt(rawMessage: string) {
+function buildGeminiChatPrompt(rawMessage: string, history: ReturnType<typeof normalizeHistory>, mode: AiChatMode) {
+  const modeInstruction = isInteractiveMode(mode)
+    ? [
+        `Active chat mode: ${mode}.`,
+        "Run this as an in-chat activity. Do not redirect the learner to another page.",
+        "For quizzes, drills, reviews, and roleplays: ask one question or give one task at a time, then wait for the learner's answer.",
+        "When the learner answers, grade or respond using the conversation history, then continue with the next step.",
+        "Keep tasks short enough for a mobile chat bubble."
+      ].join("\n")
+    : "Active chat mode: general coach."
+
   return [
     "You are Lexiflow's friendly AI study coach.",
     "Answer the learner directly in the same language they used.",
     "Do not translate their message unless they explicitly ask for a translation.",
     "If they ask about live/current information such as weather, be honest that you do not have live local data and give a useful general answer.",
     "Keep the answer concise and natural.",
+    modeInstruction,
+    "",
+    formatHistory(history),
     "",
     `Learner message: ${rawMessage}`
   ].join("\n")
@@ -164,6 +236,8 @@ function buildFallbackStudyReply({
 function buildGeminiPrompt({
   rawMessage,
   message,
+  history,
+  mode,
   sourceLang,
   targetLang,
   translatedText,
@@ -173,6 +247,8 @@ function buildGeminiPrompt({
 }: {
   rawMessage: string
   message: string
+  history: ReturnType<typeof normalizeHistory>
+  mode: AiChatMode
   sourceLang: "EN" | "RU"
   targetLang: "EN" | "RU"
   translatedText: string | null
@@ -185,6 +261,11 @@ function buildGeminiPrompt({
     "Answer the learner directly, in the same language they used when possible.",
     "Keep the answer short, practical, and study-focused.",
     "Use the provided app context when it is available. Do not invent dictionary details.",
+    isInteractiveMode(mode)
+      ? "This is an in-chat activity. Ask one task/question at a time and use the conversation history to continue."
+      : "This is a study answer.",
+    "",
+    formatHistory(history),
     "",
     `Learner request: ${rawMessage}`,
     `Normalized study query: ${message}`,
@@ -271,13 +352,15 @@ export async function POST(request: NextRequest) {
   }
 
   const message = extractStudyQuery(rawMessage).slice(0, 400)
+  const mode = isAiChatMode(body?.mode) ? body.mode : "chat"
+  const history = normalizeHistory(body?.history)
 
   if (!message) {
     return NextResponse.json({ error: "Missing message." }, { status: 400 })
   }
 
-  if (!hasStudyIntent(rawMessage)) {
-    const geminiReply = await fetchGeminiStudyReply(buildGeminiChatPrompt(rawMessage)).catch(() => null)
+  if (isInteractiveMode(mode) || !hasStudyIntent(rawMessage)) {
+    const geminiReply = await fetchGeminiStudyReply(buildGeminiChatPrompt(rawMessage, history, mode)).catch(() => null)
 
     return NextResponse.json({
       reply:
@@ -333,6 +416,8 @@ export async function POST(request: NextRequest) {
     buildGeminiPrompt({
       rawMessage,
       message,
+      history,
+      mode,
       sourceLang,
       targetLang,
       translatedText,
