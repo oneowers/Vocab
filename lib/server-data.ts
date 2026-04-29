@@ -506,25 +506,21 @@ export async function buildAdminAnalytics(): Promise<AdminAnalyticsPayload> {
   const today = getTodayDateKey()
   const last30 = listRecentDateKeys(30, today)
   const last7Start = parseDateKey(addDaysToDateKey(today, -6))
+  const todayStart = new Date(`${today}T00:00:00.000Z`)
+  const tomorrowStart = new Date(todayStart)
+  tomorrowStart.setUTCDate(tomorrowStart.getUTCDate() + 1)
   const [
-    analyticsRows,
     totalsAggregate,
     totalUsers,
     totalCards,
     activeUsersLast7Days,
+    retentionCounts,
+    wrongByLevelRows,
+    catalogClaimsToday,
+    catalogLinkedCards,
     recentLogs,
     seedCatalog
   ] = await Promise.all([
-    prisma.appAnalytics.findMany({
-      where: {
-        date: {
-          in: last30
-        }
-      },
-      orderBy: {
-        date: "asc"
-      }
-    }),
     prisma.appAnalytics.aggregate({
       _sum: {
         totalReviews: true,
@@ -543,6 +539,56 @@ export async function buildAdminAnalytics(): Promise<AdminAnalyticsPayload> {
         }
       })
       .then((rows) => rows.length),
+    Promise.all([
+      prisma.$queryRaw<Array<{ value: bigint }>>(Prisma.sql`
+        SELECT COUNT(*)::bigint AS value
+        FROM "User"
+        WHERE "lastActiveAt" IS NOT NULL
+          AND "lastActiveAt" >= "createdAt" + INTERVAL '1 day'
+          AND "lastActiveAt" < "createdAt" + INTERVAL '2 days'
+      `),
+      prisma.$queryRaw<Array<{ value: bigint }>>(Prisma.sql`
+        SELECT COUNT(*)::bigint AS value
+        FROM "User"
+        WHERE "lastActiveAt" IS NOT NULL
+          AND "lastActiveAt" >= "createdAt" + INTERVAL '7 days'
+          AND "lastActiveAt" < "createdAt" + INTERVAL '8 days'
+      `),
+      prisma.$queryRaw<Array<{ value: bigint }>>(Prisma.sql`
+        SELECT COUNT(*)::bigint AS value
+        FROM "User"
+        WHERE "lastActiveAt" IS NOT NULL
+          AND "lastActiveAt" >= "createdAt" + INTERVAL '30 days'
+          AND "lastActiveAt" < "createdAt" + INTERVAL '31 days'
+      `)
+    ]),
+    prisma.$queryRaw<Array<{ level: string; value: bigint }>>(Prisma.sql`
+      SELECT
+        wc."cefrLevel" AS level,
+        COUNT(*)::bigint AS value
+      FROM "ReviewLog" rl
+      INNER JOIN "Card" c ON c."id" = rl."cardId"
+      INNER JOIN "WordCatalog" wc ON wc."id" = c."catalogWordId"
+      WHERE rl."result" = 'unknown'
+        AND rl."createdAt" >= ${todayStart}
+        AND rl."createdAt" < ${tomorrowStart}
+      GROUP BY wc."cefrLevel"
+    `),
+    prisma.userCatalogWord.count({
+      where: {
+        createdAt: {
+          gte: todayStart,
+          lt: tomorrowStart
+        }
+      }
+    }),
+    prisma.card.count({
+      where: {
+        catalogWordId: {
+          not: null
+        }
+      }
+    }),
     prisma.reviewLog.findMany({
       orderBy: {
         createdAt: "desc"
@@ -562,6 +608,73 @@ export async function buildAdminAnalytics(): Promise<AdminAnalyticsPayload> {
     }),
     buildSeedReport(prisma)
   ])
+
+  const retention = {
+    activeUsersD1: Number(retentionCounts[0][0]?.value ?? 0),
+    activeUsersD7: Number(retentionCounts[1][0]?.value ?? 0),
+    activeUsersD30: Number(retentionCounts[2][0]?.value ?? 0)
+  }
+  const wrongByCefr = {
+    A1: 0,
+    A2: 0,
+    B1: 0,
+    B2: 0,
+    C1: 0,
+    C2: 0
+  }
+
+  for (const row of wrongByLevelRows) {
+    const level = row.level as keyof typeof wrongByCefr
+    if (level in wrongByCefr) {
+      wrongByCefr[level] = Number(row.value)
+    }
+  }
+
+  const catalogRatio = totalCards > 0 ? catalogLinkedCards / totalCards : 0
+
+  await prisma.appAnalytics.upsert({
+    where: {
+      date: today
+    },
+    update: {
+      activeUsersD1: retention.activeUsersD1,
+      activeUsersD7: retention.activeUsersD7,
+      activeUsersD30: retention.activeUsersD30,
+      wrongByA1: wrongByCefr.A1,
+      wrongByA2: wrongByCefr.A2,
+      wrongByB1: wrongByCefr.B1,
+      wrongByB2: wrongByCefr.B2,
+      wrongByC1: wrongByCefr.C1,
+      wrongByC2: wrongByCefr.C2,
+      catalogClaimsToday,
+      catalogVsCustomRatio: catalogRatio
+    },
+    create: {
+      date: today,
+      activeUsersD1: retention.activeUsersD1,
+      activeUsersD7: retention.activeUsersD7,
+      activeUsersD30: retention.activeUsersD30,
+      wrongByA1: wrongByCefr.A1,
+      wrongByA2: wrongByCefr.A2,
+      wrongByB1: wrongByCefr.B1,
+      wrongByB2: wrongByCefr.B2,
+      wrongByC1: wrongByCefr.C1,
+      wrongByC2: wrongByCefr.C2,
+      catalogClaimsToday,
+      catalogVsCustomRatio: catalogRatio
+    }
+  })
+
+  const analyticsRows = await prisma.appAnalytics.findMany({
+    where: {
+      date: {
+        in: last30
+      }
+    },
+    orderBy: {
+      date: "asc"
+    }
+  })
 
   const recentCardIds = Array.from(new Set(recentLogs.map((log) => log.cardId)))
   const recentCards =
@@ -600,6 +713,12 @@ export async function buildAdminAnalytics(): Promise<AdminAnalyticsPayload> {
       totalSessions: totalsAggregate._sum.totalSessions ?? 0,
       reviewsToday: analyticsByDate.get(today)?.totalReviews ?? 0,
       activeUsersLast7Days
+    },
+    retention,
+    wrongByCefr,
+    catalogEngagement: {
+      claimsToday: catalogClaimsToday,
+      catalogRatio
     },
     seedCatalog,
     recentActivity: recentLogs.map((log) => ({

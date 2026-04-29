@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 model User {
@@ -88,12 +89,23 @@ model ReviewLog {
 }
 
 model AppAnalytics {
-  id            String @id @default(uuid())
-  date          String @unique
-  totalSessions Int    @default(0)
-  totalReviews  Int    @default(0)
-  newUsers      Int    @default(0)
-  newCards      Int    @default(0)
+  id                 String @id @default(uuid())
+  date               String @unique
+  totalSessions      Int    @default(0)
+  totalReviews       Int    @default(0)
+  newUsers           Int    @default(0)
+  newCards           Int    @default(0)
+  activeUsersD1      Int    @default(0)
+  activeUsersD7      Int    @default(0)
+  activeUsersD30     Int    @default(0)
+  wrongByA1          Int    @default(0)
+  wrongByA2          Int    @default(0)
+  wrongByB1          Int    @default(0)
+  wrongByB2          Int    @default(0)
+  wrongByC1          Int    @default(0)
+  wrongByC2          Int    @default(0)
+  catalogClaimsToday Int    @default(0)
+  catalogVsCustomRatio Float @default(0)
 }
 
 model PracticeSessionProgress {

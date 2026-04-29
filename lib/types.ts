@@ -264,6 +264,16 @@ export interface AdminAnalyticsPayload {
     reviewsToday: number
     activeUsersLast7Days: number
   }
+  retention: {
+    activeUsersD1: number
+    activeUsersD7: number
+    activeUsersD30: number
+  }
+  wrongByCefr: Record<CefrLevel, number>
+  catalogEngagement: {
+    claimsToday: number
+    catalogRatio: number
+  }
   seedCatalog: {
     imported: number
     enriched: number
