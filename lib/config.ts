@@ -2,10 +2,6 @@ export function isLocalDevelopment() {
   return process.env.NODE_ENV === "development"
 }
 
-export function isGuestModeEnabled() {
-  return false
-}
-
 export function hasSupabaseEnv() {
   return Boolean(
     process.env.NEXT_PUBLIC_SUPABASE_URL &&

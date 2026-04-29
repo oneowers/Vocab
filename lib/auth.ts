@@ -2,7 +2,7 @@ import type { User as SupabaseUser } from "@supabase/supabase-js"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 
-import { hasDatabaseEnv, isGuestModeEnabled, isLocalDevelopment } from "@/lib/config"
+import { hasDatabaseEnv, isLocalDevelopment } from "@/lib/config"
 import { getPrisma } from "@/lib/prisma"
 import { createSupabaseServerClient } from "@/lib/supabase-server"
 
@@ -73,10 +73,6 @@ export async function requireSignedInAppUser() {
   const user = await getOptionalAuthUser()
 
   if (!user) {
-    if (isGuestModeEnabled()) {
-      return null
-    }
-
     redirect("/login")
   }
 

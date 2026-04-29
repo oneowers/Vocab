@@ -8,11 +8,7 @@ import { useToast } from "@/components/Toast"
 import { hasSupabaseEnv, isLocalDevelopment } from "@/lib/config"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
 
-interface LoginCardProps {
-  guestModeEnabled: boolean
-}
-
-export function LoginCard({ guestModeEnabled }: LoginCardProps) {
+export function LoginCard() {
   const [loading, setLoading] = useState<"google" | null>(null)
   const router = useRouter()
   const { showToast } = useToast()
