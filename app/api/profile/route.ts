@@ -42,6 +42,13 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 })
   }
 
+  if (nextCefrLevel !== undefined && user.role !== "ADMIN") {
+    return NextResponse.json(
+      { error: "CEFR level is managed by onboarding and tests." },
+      { status: 403 }
+    )
+  }
+
   const updatedUser = await getPrisma().user.update({
     where: {
       id: user.id

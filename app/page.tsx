@@ -1,12 +1,13 @@
 import { AppShell } from "@/components/AppShell"
 import { DashboardView } from "@/components/DashboardView"
 
-import { requireSignedInAppUser } from "@/lib/auth"
+import { redirectToOnboardingIfNeeded, requireSignedInAppUser } from "@/lib/auth"
 import { getUserCardsPageData } from "@/lib/server-data"
 import { serializeUser } from "@/lib/serializers"
 
 export default async function HomePage() {
   const user = await requireSignedInAppUser()
+  redirectToOnboardingIfNeeded(user)
   const cardsData = user ? await getUserCardsPageData(user.id) : null
 
   return (

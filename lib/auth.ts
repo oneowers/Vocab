@@ -3,6 +3,7 @@ import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 
 import { hasDatabaseEnv, isLocalDevelopment } from "@/lib/config"
+import { getOnboardingRouteForUser } from "@/lib/onboarding"
 import { getPrisma } from "@/lib/prisma"
 import { createSupabaseServerClient } from "@/lib/supabase-server"
 
@@ -91,6 +92,29 @@ export async function requireAdminAppUser() {
   }
 
   return user
+}
+
+export function redirectToOnboardingIfNeeded(
+  user: {
+    onboardingCompletedAt: Date | null
+    onboardingStep: "QUESTIONS" | "LEVEL_TEST" | "COMPLETED"
+  } | null
+) {
+  const nextRoute = getOnboardingRouteForUser(user)
+
+  if (nextRoute) {
+    redirect(nextRoute)
+  }
+}
+
+export function redirectAwayFromOnboardingIfCompleted(
+  user: {
+    onboardingCompletedAt: Date | null
+  } | null
+) {
+  if (user?.onboardingCompletedAt) {
+    redirect("/")
+  }
 }
 
 export function getDisplayName(sessionUser: SupabaseUser | null) {

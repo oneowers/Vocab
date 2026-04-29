@@ -1,5 +1,5 @@
 import { AdminShell } from "@/components/AdminShell"
-import { requireAdminAppUser } from "@/lib/auth"
+import { redirectToOnboardingIfNeeded, requireAdminAppUser } from "@/lib/auth"
 import { serializeUser } from "@/lib/serializers"
 
 export default async function AdminLayout({
@@ -8,6 +8,7 @@ export default async function AdminLayout({
   children: React.ReactNode
 }) {
   const user = await requireAdminAppUser()
+  redirectToOnboardingIfNeeded(user)
 
   return <AdminShell user={serializeUser(user)}>{children}</AdminShell>
 }

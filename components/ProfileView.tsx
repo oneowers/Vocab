@@ -91,6 +91,7 @@ export function ProfileView({ user, initialActivity = null }: ProfileViewProps) 
   const subtitle = guestActive
     ? "Guest mode"
     : getRoleLabel(profileUser?.role ?? null)
+  const canManageCefrLevel = profileUser?.role === "ADMIN"
   const heatmapDays = useMemo(() => resolvedActivity.days, [resolvedActivity.days])
   const heatmapCellSize = 10
   const heatmapGap = 3
@@ -267,38 +268,47 @@ export function ProfileView({ user, initialActivity = null }: ProfileViewProps) 
 
       <section className="panel overflow-hidden p-2">
         <div className="space-y-0.5">
-          <div className="rounded-[16px] border border-white/[0.04] bg-white/[0.02] px-3 py-3">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Target level</p>
-                <p className="mt-1 text-[12px] leading-relaxed text-text-tertiary">
-                  Determines the difficulty of recommended catalog words.
-                </p>
+          {canManageCefrLevel ? (
+            <div className="rounded-[16px] border border-white/[0.04] bg-white/[0.02] px-3 py-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Target level</p>
+                  <p className="mt-1 text-[12px] leading-relaxed text-text-tertiary">
+                    Admin-only override for recommendation difficulty.
+                  </p>
+                </div>
+                {savingLevel ? (
+                  <span className="text-[11px] font-bold text-white/45">Saving...</span>
+                ) : null}
               </div>
-              {savingLevel ? (
-                <span className="text-[11px] font-bold text-white/45">Saving...</span>
-              ) : null}
-            </div>
 
-            <div className="relative mt-3">
-              <select
-                value={guestActive ? "A1" : cefrLevel}
-                disabled={guestActive || savingLevel}
-                onChange={(event) => void handleCefrLevelChange(event.target.value as CefrLevel)}
-                className="h-11 w-full appearance-none rounded-[14px] border border-white/[0.08] bg-white/[0.04] px-4 pr-10 text-[14px] font-bold text-white outline-none transition hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-45"
-              >
-                {CEFR_LEVELS.map((value) => (
-                  <option key={value} value={value} className="bg-[#16161b] text-white">
-                    {value}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown
-                size={16}
-                className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/36"
-              />
+              <div className="relative mt-3">
+                <select
+                  value={guestActive ? "A1" : cefrLevel}
+                  disabled={guestActive || savingLevel}
+                  onChange={(event) => void handleCefrLevelChange(event.target.value as CefrLevel)}
+                  className="h-11 w-full appearance-none rounded-[14px] border border-white/[0.08] bg-white/[0.04] px-4 pr-10 text-[14px] font-bold text-white outline-none transition hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-45"
+                >
+                  {CEFR_LEVELS.map((value) => (
+                    <option key={value} value={value} className="bg-[#16161b] text-white">
+                      {value}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown
+                  size={16}
+                  className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/36"
+                />
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="rounded-[16px] border border-white/[0.04] bg-white/[0.02] px-3 py-3">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Vocabulary level</p>
+              <p className="mt-1 text-[12px] leading-relaxed text-text-tertiary">
+                This will be guided by onboarding and the upcoming level test instead of manual selection.
+              </p>
+            </div>
+          )}
 
           <div className="flex min-h-[40px] items-center justify-between rounded-[12px] px-3 transition hover:bg-white/[0.04]">
             <span className="text-[13px] font-semibold text-text-primary">Email</span>

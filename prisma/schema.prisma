@@ -9,27 +9,45 @@ datasource db {
 }
 
 model User {
-  id              String                   @id @default(uuid())
-  email           String                   @unique
-  name            String?
-  avatarUrl       String?
-  role            Role                     @default(USER)
-  cefrLevel       CefrLevel                @default(A1)
-  reviewLives     Int                      @default(3)
-  createdAt       DateTime                 @default(now())
-  lastActiveAt    DateTime?
-  streak          Int                      @default(0)
-  lastReviewDate  String?
-  cards           Card[]
-  catalogClaims   UserCatalogWord[]
-  reviewLogs      ReviewLog[]
-  practiceSession PracticeSessionProgress?
+  id                    String                   @id @default(uuid())
+  email                 String                   @unique
+  name                  String?
+  avatarUrl             String?
+  role                  Role                     @default(USER)
+  learningGoal          LearningGoal?
+  dailyWordTarget       Int?
+  onboardingStep        OnboardingStep           @default(QUESTIONS)
+  onboardingCompletedAt DateTime?
+  cefrLevel             CefrLevel                @default(A1)
+  reviewLives           Int                      @default(3)
+  createdAt             DateTime                 @default(now())
+  lastActiveAt          DateTime?
+  streak                Int                      @default(0)
+  lastReviewDate        String?
+  cards                 Card[]
+  catalogClaims         UserCatalogWord[]
+  reviewLogs            ReviewLog[]
+  practiceSession       PracticeSessionProgress?
 }
 
 enum Role {
   USER
   PRO
   ADMIN
+}
+
+enum LearningGoal {
+  IELTS
+  WORK
+  DAILY_ENGLISH
+  TRAVEL
+  OTHER
+}
+
+enum OnboardingStep {
+  QUESTIONS
+  LEVEL_TEST
+  COMPLETED
 }
 
 enum CefrLevel {

@@ -4,6 +4,7 @@ import { revalidateTag } from "next/cache"
 import { getDisplayName } from "@/lib/auth"
 import { getTodayDateKey } from "@/lib/date"
 import { hasDatabaseEnv } from "@/lib/config"
+import { getOnboardingRouteForUser } from "@/lib/onboarding"
 import { getPrisma } from "@/lib/prisma"
 import { adminCacheTag } from "@/lib/server-cache"
 import { createSupabaseServerClient } from "@/lib/supabase-server"
@@ -83,5 +84,18 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.redirect(new URL(nextPath, request.url))
+  const databaseUser = hasDatabaseEnv()
+    ? await getPrisma().user.findUnique({
+        where: {
+          email: user.email
+        },
+        select: {
+          onboardingCompletedAt: true,
+          onboardingStep: true
+        }
+      })
+    : null
+  const onboardingRoute = getOnboardingRouteForUser(databaseUser)
+
+  return NextResponse.redirect(new URL(onboardingRoute ?? nextPath, request.url))
 }
