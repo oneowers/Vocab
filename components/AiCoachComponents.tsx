@@ -40,7 +40,7 @@ const aiModes: AiMode[] = [
   { id: "roleplay", label: "Roleplay", icon: Theater },
   { id: "review",   label: "Review",   icon: PenLine },
 ]
-
+ 
 interface AiChatApiResponse {
   reply?: string | null
   kind?: "text" | "block" | "error"

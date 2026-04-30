@@ -71,6 +71,17 @@ export function CardsPageView({ initialData = null, user = null }: CardsPageView
     setCards(sortDueCards(cardsPayload.cards))
   }, [cardsPayload, guestMode])
 
+  const todayKey = getTodayDateKey()
+  const waitingCount = cards.filter((c) => c.nextReviewDate <= todayKey).length
+  const learnedCount = cards.length - waitingCount
+  const totalCount = cards.length
+
+  useEffect(() => {
+    if (waitingCount > 0 && selectedStatus === "All") {
+      setSelectedStatus("Waiting")
+    }
+  }, [waitingCount])
+
   const visibleCards = cards.filter((card) => {
     const matchesStatus = matchesCardStatus(card, selectedStatus)
     const matchesLevel = selectedLevel === "All" || card.cefrLevel === selectedLevel
@@ -193,7 +204,43 @@ export function CardsPageView({ initialData = null, user = null }: CardsPageView
         onChange={(event) => void handleImportFile(event)}
       />
 
-      <div className="pt-6 space-y-6">
+      <div className="pt-6 pb-24 space-y-6">
+        <header className="flex flex-col gap-4">
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-[28px] font-black tracking-[-0.8px] text-text-primary">
+                Your saved cards
+              </h1>
+              <p className="mt-1 text-[13px] font-medium text-text-tertiary">
+                {totalCount} total · {waitingCount} waiting · {learnedCount} learned
+              </p>
+            </div>
+            <button
+              onClick={() => showToast("Menu coming soon", "info")}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/[0.05] text-text-secondary active:scale-95 transition-transform"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+            </button>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {waitingCount > 0 ? (
+              <button
+                onClick={() => window.location.href = "/review"}
+                className="flex-1 pill-glass bg-white text-black h-[52px] font-black text-[15px] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+              >
+                Review {waitingCount} cards
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+              </button>
+            ) : (
+              <div className="flex-1 h-[52px] rounded-full border border-white/10 bg-white/[0.03] flex items-center justify-center gap-2 text-[14px] font-bold text-text-tertiary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+                All caught up
+              </div>
+            )}
+          </div>
+        </header>
+
         {mounted && user && (user.lastReviewDate !== getTodayDateKey() && user.lastReviewDate !== getYesterdayDateKey()) && user.lastStreakRecoveryDate !== getTodayDateKey() && (
           <div className="panel rounded-[28px] p-6 bg-gradient-to-br from-orange-500/10 to-transparent border border-orange-500/20 relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
@@ -214,42 +261,9 @@ export function CardsPageView({ initialData = null, user = null }: CardsPageView
           </div>
         )}
 
-        {cardsPayload?.dailyCatalog ? (
-          <div className="panel rounded-[28px] p-4 md:p-5">
-            <div className="flex flex-wrap items-center gap-3 md:gap-5">
-              <div>
-                <p className="section-label">Today</p>
-                <p className="mt-1 text-[24px] font-bold tracking-[-0.04em] text-white">
-                  {cardsPayload.dailyCatalog.todayCount} words
-                </p>
-              </div>
-              <div className="h-10 w-px bg-white/[0.08]" />
-              <div>
-                <p className="section-label">Saved</p>
-                <p className="mt-1 text-[18px] font-semibold text-white">
-                  {cardsPayload.dailyCatalog.savedCount}
-                </p>
-              </div>
-              <div>
-                <p className="section-label">Waiting</p>
-                <p className="mt-1 text-[18px] font-semibold text-text-secondary">
-                  {cardsPayload.dailyCatalog.waitingCount}
-                </p>
-              </div>
-            </div>
-          </div>
-        ) : null}
-
         <div className="space-y-4">
           {loading ? (
             <div className="space-y-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="space-y-2">
-                  <div className="skeleton skeleton-soft h-8 w-52" />
-                </div>
-                <div className="skeleton dashboard-skeleton-card h-11 w-11 rounded-full" style={{ ["--skeleton-delay" as string]: "80ms" }} />
-              </div>
-
               <div className="skeleton dashboard-skeleton-card rounded-[26px] p-3 md:p-4" style={{ ["--skeleton-delay" as string]: "120ms" }}>
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                   <div className="skeleton skeleton-soft h-11 w-full max-w-sm rounded-[18px]" />
@@ -297,8 +311,9 @@ export function CardsPageView({ initialData = null, user = null }: CardsPageView
               onDeleteRequest={setCardToDelete}
               onDeleteManyRequest={setCardsToDelete}
               guestMode={guestMode}
-              variant="grid"
-              title="Your saved cards"
+              waitingCount={waitingCount}
+              learnedCount={learnedCount}
+              totalCount={totalCount}
             />
           )}
         </div>

@@ -29,5 +29,13 @@ export function matchesCardStatus(card: CardRecord, status: CardStatusFilter) {
     return true
   }
 
+  if (status === "Waiting") {
+    return card.nextReviewDate <= getTodayDateKey()
+  }
+
+  if (status === "Learned") {
+    return card.nextReviewDate > getTodayDateKey()
+  }
+
   return card.lastReviewResult === status
 }

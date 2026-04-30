@@ -342,9 +342,14 @@ export function TranslatorPanel({
         aria-hidden="true"
       />
 
-      <div className="fixed left-1/2 top-3 z-30 w-[calc(100%-2rem)] max-w-[38rem] -translate-x-1/2 md:top-6">
-        <div className="relative flex items-center justify-center gap-3">
-          <StreakCard user={user} variant="compact" />
+      <div className="fixed inset-x-0 top-3 z-30 flex justify-center px-4 md:top-6">
+        <div className="relative flex w-full max-w-[38rem] items-center">
+          {/* Left Side: Streak */}
+          <div className="flex flex-1 justify-start">
+            <StreakCard user={user} variant="compact" />
+          </div>
+
+          {/* Center: Language Switcher */}
           <div className="relative flex rounded-full border border-white/[0.06] bg-white/[0.03] p-1 shadow-[0_4px_20px_rgba(0,0,0,0.2)]">
             <div className="relative grid grid-cols-2 items-center">
               <motion.div
@@ -360,7 +365,7 @@ export function TranslatorPanel({
               <button
                 type="button"
                 onClick={() => handleDirectionChange("en-ru")}
-                className={`relative z-10 flex min-w-[140px] items-center justify-center rounded-full px-5 py-3 text-[14px] font-semibold transition-all duration-300 ${direction === "en-ru"
+                className={`relative z-10 flex min-w-[100px] items-center justify-center rounded-full px-4 py-3 text-[13px] font-bold transition-all duration-300 md:min-w-[140px] md:text-[14px] ${direction === "en-ru"
                   ? "text-white"
                   : "text-white/50 hover:text-white"
                   }`}
@@ -370,7 +375,7 @@ export function TranslatorPanel({
               <button
                 type="button"
                 onClick={() => handleDirectionChange("ru-en")}
-                className={`relative z-10 flex min-w-[140px] items-center justify-center rounded-full px-5 py-3 text-[14px] font-semibold transition-all duration-300 ${direction === "ru-en"
+                className={`relative z-10 flex min-w-[100px] items-center justify-center rounded-full px-4 py-3 text-[13px] font-bold transition-all duration-300 md:min-w-[140px] md:text-[14px] ${direction === "ru-en"
                   ? "text-white"
                   : "text-white/50 hover:text-white"
                   }`}
@@ -379,13 +384,17 @@ export function TranslatorPanel({
               </button>
             </div>
           </div>
-          <Link
-            href="/profile"
-            aria-label="Open profile"
-            className="flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-full border border-white/[0.06] bg-white/[0.03] text-white/74 shadow-[0_4px_20px_rgba(0,0,0,0.2)] transition hover:bg-white/[0.06] hover:text-white"
-          >
-            <UserRound size={20} />
-          </Link>
+
+          {/* Right Side: Profile */}
+          <div className="flex flex-1 justify-end">
+            <Link
+              href="/profile"
+              aria-label="Open profile"
+              className="flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-full border border-white/[0.06] bg-white/[0.03] text-white/74 shadow-[0_4px_20px_rgba(0,0,0,0.2)] transition hover:bg-white/[0.06] hover:text-white"
+            >
+              <UserRound size={20} />
+            </Link>
+          </div>
         </div>
       </div>
 
