@@ -104,7 +104,7 @@ export function ReviewSessionOverview({
 
   return (
     <motion.section 
-      className={styles.commandCenter}
+      className={`${styles.commandCenter} !pt-20 pb-28 px-4`}
       variants={containerVariants}
       initial="hidden"
       animate="visible"
@@ -112,19 +112,19 @@ export function ReviewSessionOverview({
       <div className={styles.topGradientOverlay} aria-hidden="true" />
 
       {/* Top Glass Switcher */}
-      <div className={styles.glassSwitcherContainer}>
+      <div className={`${styles.glassSwitcherContainer} !top-4 !max-w-[340px]`}>
         <div className={styles.switcherCluster}>
-          <div className={styles.glassSwitcher}>
+          <div className={`${styles.glassSwitcher} !p-1`}>
             <button
               onClick={() => setActiveTab("daily")}
-              className={`${styles.switcherTab} ${activeTab === "daily" ? styles.switcherTabActive : ""}`}
+              className={`${styles.switcherTab} !px-4 !py-1.5 !text-[13px] ${activeTab === "daily" ? styles.switcherTabActive : ""}`}
             >
               <CalendarDays size={14} />
               Daily Path
             </button>
             <button
               onClick={() => setActiveTab("practice")}
-              className={`${styles.switcherTab} ${activeTab === "practice" ? styles.switcherTabActive : ""}`}
+              className={`${styles.switcherTab} !px-4 !py-1.5 !text-[13px] ${activeTab === "practice" ? styles.switcherTabActive : ""}`}
             >
               <LayoutGrid size={14} />
               Library
@@ -133,10 +133,11 @@ export function ReviewSessionOverview({
               className={styles.switcherSlider}
               animate={{ x: activeTab === "daily" ? "0%" : "100%" }}
               transition={{ type: "spring", bounce: 0.15, duration: 0.3 }}
+              style={{ top: "0.25rem", bottom: "0.25rem", left: "0.25rem" }}
             />
           </div>
-          <Link href="/profile" aria-label="Open profile" className={styles.switcherProfileButton}>
-            <UserRound size={20} />
+          <Link href="/profile" aria-label="Open profile" className={`${styles.switcherProfileButton} !h-10 !w-10`}>
+            <UserRound size={18} />
           </Link>
         </div>
       </div>
@@ -150,118 +151,114 @@ export function ReviewSessionOverview({
               initial="initial"
               animate="animate"
               exit="exit"
-              className={styles.heroCard}
+              className={`${styles.heroCard} !p-5 md:!p-10`}
             >
               <div className={styles.heroCardGlow} />
               
-              <div className={styles.heroHeader}>
-                <div className={styles.heroIconWrap}>
-                  <Sparkles className="text-white" size={24} />
-                </div>
-                <div className={styles.heroTitleGroup}>
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/32">
-                    Daily Journey
-                  </p>
-                  <h2 className={styles.heroTitle}>Daily Quest</h2>
-                  <p className={styles.heroSubtitle}>Pick up where you left off and finish the full three-step run.</p>
-                </div>
-              </div>
-
-              <div className={styles.questVisualizer} style={{ margin: "2.5rem 0 3rem" }}>
-                <ReviewStageStepper
-                  items={REVIEW_STEPS.map((item) => ({ ...item }))}
-                  currentStage={currentStage}
-                  completedValues={completedStages}
-                  variant="hero"
-                />
-              </div>
-
-              {weakCardsCount > 0 && (
-                <div className="mt-6 rounded-2xl border border-rose-500/20 bg-rose-500/5 p-5">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <h3 className="text-[16px] font-bold text-white">Train weak words</h3>
-                      <p className="mt-1 text-[14px] leading-relaxed text-white/60">
-                        You missed {weakCardsCount === 1 ? "this word" : "these words"} multiple times. Let's fix it.
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={onStartWeakWords}
-                      className={`${styles.glassButtonPrimary} !w-auto !h-10 px-5 text-[14px] shrink-0 !bg-rose-500/20 !text-rose-400 !border-rose-500/30 hover:!bg-rose-500/30`}
-                    >
-                      Train {weakCardsCount}
-                    </button>
+              <div className="flex flex-col gap-6">
+                {/* Header Section */}
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/20 border border-blue-500/20">
+                    <Sparkles className="text-blue-400" size={20} />
+                  </div>
+                  <div className="flex flex-col">
+                    <h2 className="text-[20px] font-black tracking-tight text-white leading-tight">Daily Quest</h2>
+                    <p className="text-[13px] font-medium text-white/40">
+                      3 steps · {cardsDue} words ready · about 5 min
+                    </p>
                   </div>
                 </div>
-              )}
 
-              <div className={styles.heroStats} style={{ marginBottom: "2.5rem", padding: "1.5rem" }}>
-                <div className={styles.heroStatItem}>
-                  {loading ? (
-                    <span className="skeleton skeleton-soft h-9 w-14 rounded-lg" />
-                  ) : (
-                    <span className={styles.heroStatValue}>{cardsDue}</span>
-                  )}
-                  <span className={styles.heroStatLabel}>Today</span>
+                {/* Step Progress */}
+                <div className="rounded-2xl border border-white/[0.04] bg-white/[0.02] p-4">
+                  <ReviewStageStepper
+                    items={REVIEW_STEPS.slice(0, 3).map((item) => ({ ...item }))}
+                    currentStage={currentStage}
+                    completedValues={completedStages}
+                    variant="hero"
+                  />
                 </div>
-                <div className={styles.heroStatDivider} style={{ height: "2.5rem" }} />
-                <div className={styles.heroStatItem}>
-                  {loading ? (
-                    <span className="skeleton skeleton-soft h-9 w-10 rounded-lg" />
-                  ) : (
-                    <span className={styles.heroStatValue}>{waitingCount}</span>
-                  )}
-                  <span className={styles.heroStatLabel}>Waiting</span>
-                </div>
-              </div>
 
-              <div className={styles.heroActions}>
-                {!guestMode && (dailyCatalog?.remainingToday ?? 0) > 0 && (
+                {/* Training Weak Words (Optional) */}
+                {weakCardsCount > 0 && (
+                  <div className="rounded-2xl border border-rose-500/20 bg-rose-500/5 p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex flex-col">
+                        <h3 className="text-[14px] font-bold text-white">Train weak words</h3>
+                        <p className="text-[12px] text-white/40">
+                          {weakCardsCount} missed multiple times
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={onStartWeakWords}
+                        className="h-8 rounded-full px-3 text-[12px] font-black bg-rose-500/20 text-rose-400 border border-rose-500/20 active:scale-95 transition-transform"
+                      >
+                        Fix
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Stats Row */}
+                <div className="flex items-center justify-center gap-4 py-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-black uppercase tracking-widest text-white/20">Today</span>
+                    <span className="text-[15px] font-black text-white">{dailyCatalog?.todayCount ?? 0}</span>
+                  </div>
+                  <div className="h-3 w-[1px] bg-white/10" />
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-black uppercase tracking-widest text-white/20">Waiting</span>
+                    <span className="text-[15px] font-black text-white">{waitingCount}</span>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex flex-col gap-3">
+                  {!guestMode && (dailyCatalog?.remainingToday ?? 0) > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => void onClaimDailyWords()}
+                      disabled={claiming}
+                      className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-white/[0.04] border border-white/[0.06] text-[14px] font-bold text-white/60 active:scale-[0.98] transition-all"
+                    >
+                      {claiming ? (
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                      ) : (
+                        <Plus size={16} className="text-blue-400" />
+                      )}
+                      {claiming ? "Processing..." : dailyCatalog?.claimedToday ? "Edit daily words" : "Select daily words"}
+                    </button>
+                  )}
+
                   <button
                     type="button"
-                    onClick={() => void onClaimDailyWords()}
-                    disabled={claiming}
-                    className={`${styles.glassButtonSecondary} hover:bg-white/[0.08] transition-all`}
+                    onClick={hasSavedJourney ? onResumeSession : onStartDue}
+                    disabled={loading || (!cardsDue && !hasSavedJourney)}
+                    className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-white text-black text-[16px] font-black shadow-[0_8px_30px_rgba(255,255,255,0.2)] active:scale-[0.98] transition-all disabled:opacity-40 disabled:shadow-none"
                   >
-                    {claiming ? (
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                    {loading ? (
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-black/20 border-t-black" />
                     ) : (
-                      <Plus size={16} className="text-blue-400" />
+                      <>
+                        <Play size={20} fill="currentColor" />
+                        {hasSavedJourney
+                          ? `Continue ${resumableSession?.activeStage ?? "flip"}`
+                          : !cardsDue ? "Select Words First" : "Continue Journey"}
+                      </>
                     )}
-                    <span className="font-bold">{claiming ? "Processing..." : "Choose Daily Words"}</span>
                   </button>
-                )}
 
-                <button
-                  type="button"
-                  onClick={hasSavedJourney ? onResumeSession : onStartDue}
-                  disabled={loading || (!cardsDue && !hasSavedJourney)}
-                  className={`${styles.glassButtonPrimary} ${loading ? "pointer-events-none opacity-70" : ""}`}
-                >
-                  {loading ? (
-                    <span className="skeleton skeleton-soft h-5 w-36 rounded-lg" />
-                  ) : (
-                    <>
-                      <Play size={18} fill="currentColor" />
-                      {hasSavedJourney
-                        ? `Continue ${resumableSession?.activeStage ?? "flip"}`
-                        : cardsDue > sessionLimit
-                        ? `Start ${dueSessionCount} of ${cardsDue}`
-                        : "Continue Journey"}
-                    </>
+                  {hasSavedJourney && (
+                    <button
+                      type="button"
+                      onClick={onRestartSession}
+                      className="text-[13px] font-bold text-white/30 hover:text-white/60 transition-colors"
+                    >
+                      Restart Journey
+                    </button>
                   )}
-                </button>
-
-                {hasSavedJourney && (
-                  <button
-                    type="button"
-                    onClick={onRestartSession}
-                    className={styles.glassButtonSecondary}
-                  >
-                    Restart Journey
-                  </button>
-                )}
+                </div>
               </div>
             </motion.div>
           ) : (
@@ -271,81 +268,92 @@ export function ReviewSessionOverview({
               initial="initial"
               animate="animate"
               exit="exit"
-              className={styles.heroCard}
+              className={`${styles.heroCard} !p-5 md:!p-10`}
             >
               <div className={styles.heroCardGlow} style={{ background: "radial-gradient(circle at 70% 30%, rgba(139, 92, 246, 0.15), transparent 60%)" }} />
               
-              <div className={styles.heroHeader}>
-                <div className={styles.heroIconWrap} style={{ background: "rgba(139, 92, 246, 0.2)" }}>
-                  <LayoutGrid className="text-purple-400" size={24} />
-                </div>
-                <div className={styles.heroTitleGroup}>
-                  <h2 className={styles.heroTitle}>Free Library</h2>
-                  <p className={styles.heroSubtitle} style={{ marginTop: "0.25rem" }}>Practice specific categories and modes</p>
-                </div>
-              </div>
-
-              <div className={styles.practiceOptions}>
-                <div className={styles.optionSection}>
-                  <span className={styles.optionLabel}>Vocabulary Pool</span>
-                  <div className={styles.optionPills}>
-                    {(["All", "known", "unknown"] as CardStatusFilter[]).map((status) => (
-                      <button
-                        key={status}
-                        onClick={() => onSelectStatus(status)}
-                        className={`${styles.pill} ${selectedStatus === status ? styles.pillActive : ""}`}
-                      >
-                        {status === "All" ? "Everything" : status === "known" ? "Mastered" : "Needs Work"}
-                      </button>
-                    ))}
+              <div className="flex flex-col gap-6">
+                {/* Header Section */}
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/20 border border-purple-500/20">
+                    <LayoutGrid className="text-purple-400" size={20} />
+                  </div>
+                  <div className="flex flex-col">
+                    <h2 className="text-[20px] font-black tracking-tight text-white leading-tight">Library</h2>
+                    <p className="text-[13px] font-medium text-white/40">Practice specific modes</p>
                   </div>
                 </div>
 
-                <div className={styles.optionSection}>
-                  <span className={styles.optionLabel}>Training Mode</span>
-                  <div className={styles.optionPills}>
-                    {REVIEW_STEPS.map((step) => (
-                      <button
-                        key={step.value}
-                        onClick={() => onSelectPracticeStage(step.value)}
-                        className={`${styles.pill} ${practiceStage === step.value ? styles.pillActive : ""}`}
-                      >
-                        {step.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className={styles.heroStats}>
-                <div className={styles.heroStatItem}>
-                  <span className={styles.heroStatValue}>{totalCards}</span>
-                  <span className={styles.heroStatLabel}>Available Cards</span>
-                </div>
-                {totalCards > sessionLimit && (
-                  <>
-                    <div className={styles.heroStatDivider} />
-                    <div className={styles.heroStatItem}>
-                      <span className={styles.heroStatValue}>{librarySessionCount}</span>
-                      <span className={styles.heroStatLabel}>This Session</span>
+                <div className="flex flex-col gap-5">
+                  <div className="flex flex-col gap-2.5">
+                    <span className="text-[10px] font-black uppercase tracking-[0.15em] text-white/20">Vocabulary Pool</span>
+                    <div className="flex flex-wrap gap-2">
+                      {(["All", "known", "unknown"] as CardStatusFilter[]).map((status) => (
+                        <button
+                          key={status}
+                          onClick={() => onSelectStatus(status)}
+                          className={`rounded-full px-3 py-1.5 text-[12px] font-bold transition-all ${
+                            selectedStatus === status 
+                              ? "bg-white text-black" 
+                              : "bg-white/[0.04] border border-white/[0.06] text-white/50"
+                          }`}
+                        >
+                          {status === "All" ? "Everything" : status === "known" ? "Mastered" : "Needs Work"}
+                        </button>
+                      ))}
                     </div>
-                  </>
-                )}
-              </div>
+                  </div>
 
-              <div className={styles.heroActions}>
-                <button
-                  type="button"
-                  onClick={onStartPractice}
-                  disabled={!totalCards}
-                  className={styles.glassButtonPrimary}
-                  style={{ background: "#ffffff", color: "#000000" }}
-                >
-                  <Trophy size={18} />
-                  {totalCards > sessionLimit
-                    ? `Start ${librarySessionCount} of ${totalCards}`
-                    : "Launch Training"}
-                </button>
+                  <div className="flex flex-col gap-2.5">
+                    <span className="text-[10px] font-black uppercase tracking-[0.15em] text-white/20">Training Mode</span>
+                    <div className="flex flex-wrap gap-2">
+                      {REVIEW_STEPS.map((step) => (
+                        <button
+                          key={step.value}
+                          onClick={() => onSelectPracticeStage(step.value)}
+                          className={`rounded-full px-3 py-1.5 text-[12px] font-bold transition-all ${
+                            practiceStage === step.value 
+                              ? "bg-white text-black" 
+                              : "bg-white/[0.04] border border-white/[0.06] text-white/50"
+                          }`}
+                        >
+                          {step.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Stats Row */}
+                <div className="flex items-center justify-center gap-4 py-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-black uppercase tracking-widest text-white/20">Available</span>
+                    <span className="text-[15px] font-black text-white">{totalCards}</span>
+                  </div>
+                  {totalCards > sessionLimit && (
+                    <>
+                      <div className="h-3 w-[1px] bg-white/10" />
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-black uppercase tracking-widest text-white/20">Batch</span>
+                        <span className="text-[15px] font-black text-white">{librarySessionCount}</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <button
+                    type="button"
+                    onClick={onStartPractice}
+                    disabled={!totalCards}
+                    className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-white text-black text-[16px] font-black shadow-[0_8px_30px_rgba(255,255,255,0.2)] active:scale-[0.98] transition-all disabled:opacity-40"
+                  >
+                    <Trophy size={20} />
+                    {totalCards > sessionLimit
+                      ? `Start ${librarySessionCount} words`
+                      : "Launch Training"}
+                  </button>
+                </div>
               </div>
             </motion.div>
           )}
