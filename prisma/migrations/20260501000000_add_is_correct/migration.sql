@@ -1,0 +1,1 @@
+ALTER TABLE "GrammarFinding" ADD COLUMN "isCorrect" BOOLEAN NOT NULL DEFAULT false;

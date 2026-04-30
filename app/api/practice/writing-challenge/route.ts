@@ -64,9 +64,10 @@ function buildPrompt(
     "7. Provide an improved version of the user's text in natural English.",
     "8. Give one short next task.",
     "9. For grammarFindings, use only the active grammar topic keys listed above.",
-    "10. Include grammarFindings only for real grammar problems in the user text.",
-    "11. Use confidence from 0 to 1. Use low, medium, or high severity.",
-    "12. If no listed grammar topic clearly matches, return an empty grammarFindings array.",
+    "10. Include grammarFindings for both mistakes (isCorrect: false) and topics the user mastered/used correctly (isCorrect: true).",
+    "11. For mistakes, provide original, corrected, and explanationRu. For correct usage, original and corrected should be identical, and explanationRu should explain why it's a good usage (e.g., 'Correct use of Present Simple').",
+    "12. Use confidence from 0 to 1. For mistakes, use low, medium, or high severity. For correct usage, severity is always low.",
+    "13. If no listed grammar topic clearly matches, return an empty grammarFindings array.",
     "",
     "Scoring:",
     "- 40 points: target words are used",
@@ -99,6 +100,7 @@ function buildPrompt(
     '      "topicKey": "string",',
     '      "severity": "low",',
     '      "confidence": 0.0,',
+    '      "isCorrect": true,',
     '      "original": "string",',
     '      "corrected": "string",',
     '      "explanationRu": "string"',
@@ -345,75 +347,83 @@ export async function POST(request: NextRequest) {
     cefrLevel: card.catalogWord?.cefrLevel ?? null
   }))
 
-  const rawResponse = await fetchAiWritingReview(
-    buildPrompt(targetWords, userText, activeGrammarTopics)
-  ).catch((error) => {
-    console.error("Writing challenge AI request failed.", error)
-    return null
-  })
+  try {
+    const rawResponse = await fetchAiWritingReview(
+      buildPrompt(targetWords, userText, activeGrammarTopics)
+    ).catch((error) => {
+      console.error("[writing-challenge] AI request failed:", error)
+      return null
+    })
 
-  let result: PracticeWritingChallengeResult
-  let normalizedGrammarFindings: NormalizedGrammarFinding[] = []
+    let result: PracticeWritingChallengeResult
+    let normalizedGrammarFindings: NormalizedGrammarFinding[] = []
 
-  if (!rawResponse) {
-    result = buildFallbackResult(targetWords, userText)
-  } else {
-    try {
-      const normalizedResult = normalizeResult(
-        JSON.parse(rawResponse),
-        targetWords,
-        activeGrammarTopics
-      )
-      result = normalizedResult.result
-      normalizedGrammarFindings = normalizedResult.normalizedGrammarFindings
-    } catch (error) {
-      console.error("Could not parse AI writing challenge JSON.", error, rawResponse)
+    if (!rawResponse) {
       result = buildFallbackResult(targetWords, userText)
+    } else {
+      try {
+        const normalizedResult = normalizeResult(
+          JSON.parse(rawResponse),
+          targetWords,
+          activeGrammarTopics
+        )
+        result = normalizedResult.result
+        normalizedGrammarFindings = normalizedResult.normalizedGrammarFindings
+      } catch (error) {
+        console.error("[writing-challenge] Could not parse AI JSON:", error, rawResponse)
+        result = buildFallbackResult(targetWords, userText)
+      }
     }
-  }
 
-  const snapshotGrammarFindings = result.grammarFindings
-  const saved = await prisma.$transaction(async (tx) => {
-    const challenge = await tx.practiceWritingChallenge.create({
-      data: {
+    const snapshotGrammarFindings = result.grammarFindings
+    const saved = await prisma.$transaction(async (tx) => {
+      const challenge = await tx.practiceWritingChallenge.create({
+        data: {
+          userId: user.id,
+          cardIds,
+          targetWords: targetWords as Prisma.InputJsonValue,
+          userText,
+          score: result.score,
+          levelFeedback: result.levelFeedback,
+          usedWords: result.usedWords as unknown as Prisma.InputJsonValue,
+          grammarMistakes: result.grammarMistakes as unknown as Prisma.InputJsonValue,
+          grammarFindings: snapshotGrammarFindings as unknown as Prisma.InputJsonValue,
+          whatWasGood: result.whatWasGood,
+          improvedText: result.improvedText,
+          nextTask: result.nextTask
+        },
+        select: {
+          id: true
+        }
+      })
+
+      const appliedGrammarFindings = await applyGrammarFindingsToWritingChallenge(tx, {
         userId: user.id,
-        cardIds,
-        targetWords: targetWords as Prisma.InputJsonValue,
-        userText,
-        score: result.score,
-        levelFeedback: result.levelFeedback,
-        usedWords: result.usedWords as unknown as Prisma.InputJsonValue,
-        grammarMistakes: result.grammarMistakes as unknown as Prisma.InputJsonValue,
-        grammarFindings: snapshotGrammarFindings as unknown as Prisma.InputJsonValue,
-        whatWasGood: result.whatWasGood,
-        improvedText: result.improvedText,
-        nextTask: result.nextTask
-      },
-      select: {
-        id: true
+        challengeId: challenge.id,
+        findings: normalizedGrammarFindings
+      })
+
+      return {
+        id: challenge.id,
+        appliedGrammarFindings
       }
     })
 
-    const appliedGrammarFindings = await applyGrammarFindingsToWritingChallenge(tx, {
-      userId: user.id,
-      challengeId: challenge.id,
-      findings: normalizedGrammarFindings
+    revalidateTag(userCacheTag.grammar(user.id))
+    revalidateTag(userCacheTag.profile(user.id))
+
+    return NextResponse.json({
+      result: {
+        ...result,
+        grammarFindings: saved.appliedGrammarFindings,
+        id: saved.id
+      }
     })
-
-    return {
-      id: challenge.id,
-      appliedGrammarFindings
-    }
-  })
-
-  revalidateTag(userCacheTag.grammar(user.id))
-  revalidateTag(userCacheTag.profile(user.id))
-
-  return NextResponse.json({
-    result: {
-      ...result,
-      grammarFindings: saved.appliedGrammarFindings,
-      id: saved.id
-    }
-  })
+  } catch (error) {
+    console.error("[writing-challenge] Fatal error:", error)
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Internal server error" },
+      { status: 500 }
+    )
+  }
 }

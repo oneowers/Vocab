@@ -178,19 +178,19 @@ export function TranslatorPanel({
         const [cefrProfileResult, dictionaryResult] = await Promise.allSettled([
           shouldFetchCefrProfile
             ? fetch("/api/cefr-profile", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                  text: englishText
-                })
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                text: englishText
               })
+            })
             : Promise.resolve(null),
           dictionaryWord
             ? fetch(`/api/dictionary?word=${encodeURIComponent(dictionaryWord)}`, {
-                cache: "no-store"
-              })
+              cache: "no-store"
+            })
             : Promise.resolve(null)
         ])
 
@@ -361,8 +361,8 @@ export function TranslatorPanel({
                 type="button"
                 onClick={() => handleDirectionChange("en-ru")}
                 className={`relative z-10 flex min-w-[140px] items-center justify-center rounded-full px-5 py-3 text-[14px] font-semibold transition-all duration-300 ${direction === "en-ru"
-                    ? "text-white"
-                    : "text-white/50 hover:text-white"
+                  ? "text-white"
+                  : "text-white/50 hover:text-white"
                   }`}
               >
                 English
@@ -371,8 +371,8 @@ export function TranslatorPanel({
                 type="button"
                 onClick={() => handleDirectionChange("ru-en")}
                 className={`relative z-10 flex min-w-[140px] items-center justify-center rounded-full px-5 py-3 text-[14px] font-semibold transition-all duration-300 ${direction === "ru-en"
-                    ? "text-white"
-                    : "text-white/50 hover:text-white"
+                  ? "text-white"
+                  : "text-white/50 hover:text-white"
                   }`}
               >
                 Russian
@@ -423,16 +423,15 @@ export function TranslatorPanel({
                   spellCheck={false}
                   placeholder={direction === "en-ru" ? "Enter text" : "Введите текст"}
                   rows={translation ? 1 : 3}
-                  className={`w-full overflow-hidden resize-none border-0 bg-transparent p-0 font-black tracking-tight text-white outline-none placeholder:text-white/24 ${
-                    translation
+                  className={`w-full overflow-hidden resize-none border-0 bg-transparent p-0 font-black tracking-tight text-white outline-none placeholder:text-white/24 ${translation
                       ? "min-h-[42px] text-[26px] md:text-[32px]"
                       : "min-h-[110px] flex-1 text-[26px] md:text-[32px]"
-                  }`}
+                    }`}
                 />
                 {shouldShowColoredSourceText && cefrProfile && (
                   <div className="relative mt-3">
                     <div className="text-[18px] font-bold leading-relaxed tracking-tight md:text-[22px]">
-                    {cefrProfile.segments.map((segment, index) => (
+                      {cefrProfile.segments.map((segment, index) => (
                         segment.level ? (
                           <button
                             key={`${segment.text}-${index}`}

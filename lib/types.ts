@@ -101,6 +101,7 @@ export interface GrammarFindingRecord {
   topicKey: string
   severity: GrammarSeverity
   confidence: number
+  isCorrect: boolean
   original: string
   corrected: string
   explanationRu: string
@@ -236,6 +237,7 @@ export interface PracticeWritingGrammarFinding {
   topicKey: string
   severity: GrammarSeverity
   confidence: number
+  isCorrect?: boolean
   original: string
   corrected: string
   explanationRu: string

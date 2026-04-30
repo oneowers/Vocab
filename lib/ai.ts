@@ -41,7 +41,7 @@ function getGatewayModel() {
 }
 
 function getGeminiModel() {
-  return (process.env.GEMINI_MODEL?.trim() || "gemini-2.5-flash").replace(/^models\//, "")
+  return (process.env.GEMINI_MODEL?.trim() || "gemini-1.5-flash").replace(/^models\//, "")
 }
 
 function getProviderOrder(): AiTextProvider[] {
@@ -67,7 +67,7 @@ function getProviderOrder(): AiTextProvider[] {
 function supportsDisabledGeminiThinking(model: string) {
   const normalized = model.toLowerCase()
 
-  return normalized.includes("gemini-2.5-flash") || normalized.includes("gemini-3-flash")
+  return normalized.includes("gemini-2.0-flash")
 }
 
 function summarizeAiError(error: unknown) {

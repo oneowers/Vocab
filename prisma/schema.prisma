@@ -250,6 +250,7 @@ model GrammarFinding {
   explanationRu  String
   severity       GrammarSeverity
   confidence     Float
+  isCorrect      Boolean                  @default(false)
   scoreDelta     Int
   createdAt      DateTime                 @default(now())
 

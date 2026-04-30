@@ -140,12 +140,14 @@ export function normalizeGrammarFindings(
         ? clampConfidence(value.confidence)
         : null
 
+    const isCorrect = !!value.isCorrect
+
     if (
       !topicId ||
-      !isGrammarSeverity(value.severity) ||
+      (!isCorrect && !isGrammarSeverity(value.severity)) ||
       confidence === null ||
       !original ||
-      !corrected
+      (!isCorrect && !corrected)
     ) {
       continue
     }
@@ -153,10 +155,11 @@ export function normalizeGrammarFindings(
     normalized.push({
       topicId,
       topicKey,
-      severity: value.severity,
+      severity: isCorrect ? "low" : (value.severity as GrammarSeverity),
       confidence,
+      isCorrect,
       original,
-      corrected,
+      corrected: isCorrect ? original : corrected,
       explanationRu
     })
   }
@@ -171,6 +174,7 @@ export function toClientGrammarFinding(
     topicKey: finding.topicKey,
     severity: finding.severity,
     confidence: finding.confidence,
+    isCorrect: finding.isCorrect,
     original: finding.original,
     corrected: finding.corrected,
     explanationRu: finding.explanationRu
@@ -187,9 +191,20 @@ function selectStrongestAppliedFindings(findings: NormalizedGrammarFinding[]) {
 
     const existing = strongestByTopic.get(finding.topicId)
 
+    // A mistake always overrides a correct usage for the same topic in the same session
+    if (existing && existing.isCorrect && !finding.isCorrect) {
+      strongestByTopic.set(finding.topicId, finding)
+      continue
+    }
+
+    if (existing && !existing.isCorrect && finding.isCorrect) {
+      continue
+    }
+
     if (
       !existing ||
-      GRAMMAR_SEVERITY_RANK[finding.severity] > GRAMMAR_SEVERITY_RANK[existing.severity] ||
+      (finding.isCorrect && !existing.isCorrect) ||
+      (!finding.isCorrect && !existing.isCorrect && GRAMMAR_SEVERITY_RANK[finding.severity] > GRAMMAR_SEVERITY_RANK[existing.severity]) ||
       (
         GRAMMAR_SEVERITY_RANK[finding.severity] === GRAMMAR_SEVERITY_RANK[existing.severity] &&
         finding.confidence > existing.confidence
@@ -229,7 +244,7 @@ export async function applyGrammarFindingsToWritingChallenge(
   const appliedFindings = selectStrongestAppliedFindings(options.findings)
 
   for (const finding of appliedFindings) {
-    const scoreDelta = GRAMMAR_SEVERITY_DELTAS[finding.severity]
+    const scoreDelta = finding.isCorrect ? 2 : GRAMMAR_SEVERITY_DELTAS[finding.severity]
 
     await tx.grammarFinding.create({
       data: {
@@ -242,6 +257,7 @@ export async function applyGrammarFindingsToWritingChallenge(
         explanationRu: finding.explanationRu,
         severity: finding.severity,
         confidence: finding.confidence,
+        isCorrect: finding.isCorrect || false,
         scoreDelta
       }
     })
@@ -258,8 +274,8 @@ export async function applyGrammarFindingsToWritingChallenge(
         topicId: finding.topicId,
         score: scoreDelta,
         evidenceCount: 1,
-        negativeEvidenceCount: 1,
-        positiveEvidenceCount: 0,
+        negativeEvidenceCount: finding.isCorrect ? 0 : 1,
+        positiveEvidenceCount: finding.isCorrect ? 1 : 0,
         lastDetectedAt: now
       },
       update: {
@@ -270,7 +286,10 @@ export async function applyGrammarFindingsToWritingChallenge(
           increment: 1
         },
         negativeEvidenceCount: {
-          increment: 1
+          increment: finding.isCorrect ? 0 : 1
+        },
+        positiveEvidenceCount: {
+          increment: finding.isCorrect ? 1 : 0
         },
         lastDetectedAt: now
       }
@@ -314,6 +333,7 @@ function serializeLatestGrammarFinding(
     explanationRu: string
     severity: GrammarSeverity
     confidence: number
+    isCorrect: boolean
     scoreDelta: number
     createdAt: Date
   },
@@ -324,6 +344,7 @@ function serializeLatestGrammarFinding(
     topicKey,
     severity: finding.severity,
     confidence: finding.confidence,
+    isCorrect: finding.isCorrect,
     original: finding.originalText,
     corrected: finding.correctedText,
     explanationRu: finding.explanationRu,
