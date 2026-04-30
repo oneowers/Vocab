@@ -41,8 +41,14 @@ Required keys:
 - `GOOGLE_CLIENT_SECRET`
 - `KV_REST_API_URL` or `UPSTASH_REDIS_REST_URL`
 - `KV_REST_API_TOKEN` or `UPSTASH_REDIS_REST_TOKEN`
+- `AI_GATEWAY_API_KEY` or a fresh `VERCEL_OIDC_TOKEN` from `vercel env pull` for AI Gateway
+- `GEMINI_API_KEY` as the fallback AI provider
+- `AI_GATEWAY_MODEL` defaults to `openai/gpt-5.4`
+- `GEMINI_MODEL` defaults to `gemini-2.5-flash`
 
 `NEXT_PUBLIC_GUEST_MODE=true` enables guest mode and keeps Google sign-in visually disabled until OAuth is ready.
+
+AI features use `AI_PROVIDER_ORDER=gateway,gemini` by default when Vercel/Gateway env is present, and fall back to Gemini if Gateway auth fails. For local development with OIDC, re-run `vercel env pull` when the token expires.
 
 ## Local Development
 

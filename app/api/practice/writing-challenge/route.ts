@@ -1,20 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import type { Prisma } from "@prisma/client"
 
+import { generateLexiAiText } from "@/lib/ai"
 import { getOptionalAuthUser } from "@/lib/auth"
 import { getPrisma } from "@/lib/prisma"
 import { checkRateLimit } from "@/lib/throttle"
 import type { PracticeWritingChallengeResult, PracticeWritingTargetWord } from "@/lib/types"
-
-type GeminiGenerateContentResponse = {
-  candidates?: Array<{
-    content?: {
-      parts?: Array<{
-        text?: string
-      }>
-    }
-  }>
-}
 
 function getThrottleKey(request: NextRequest, userId: string) {
   const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
@@ -79,56 +70,52 @@ function buildPrompt(targetWords: PracticeWritingTargetWord[], userText: string)
   ].join("\n")
 }
 
-async function fetchGeminiWritingReview(prompt: string) {
-  const apiKey = process.env.GEMINI_API_KEY?.trim()
+function extractJsonText(text: string) {
+  let cleanedText = text.trim()
 
-  if (!apiKey) {
-    throw new Error("GEMINI_API_KEY is not configured.")
+  const jsonBlockMatch = text.match(/```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/)
+  if (jsonBlockMatch) {
+    cleanedText = jsonBlockMatch[1].trim()
   }
 
-  const model = (process.env.GEMINI_MODEL?.trim() || "gemini-1.5-flash").replace(/^models\//, "")
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1/models/${encodeURIComponent(model)}:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: prompt }]
-          }
-        ],
-        generationConfig: {
-          temperature: 0.2,
-          maxOutputTokens: 1200
-        }
-      })
+  if (!cleanedText.startsWith("{")) {
+    const jsonStart = cleanedText.indexOf("{")
+    const jsonEnd = cleanedText.lastIndexOf("}")
+    if (jsonStart !== -1 && jsonEnd > jsonStart) {
+      cleanedText = cleanedText.slice(jsonStart, jsonEnd + 1)
     }
+  }
+
+  return cleanedText
+}
+
+async function fetchAiWritingReview(prompt: string) {
+  const result = await generateLexiAiText({
+    prompt,
+    purpose: "writing-challenge",
+    temperature: 0.2,
+    maxOutputTokens: 1400,
+    responseMimeType: "application/json"
+  })
+
+  if (!result?.text) {
+    throw new Error("AI provider returned an empty writing review.")
+  }
+
+  const text = extractJsonText(result.text)
+
+  console.log(
+    "[writing-challenge] AI raw text length:",
+    text.length,
+    "provider:",
+    result.provider,
+    "model:",
+    result.model,
+    "starts with:",
+    text.slice(0, 60)
   )
 
-  if (!response.ok) {
-    throw new Error(`Gemini request failed with ${response.status}.`)
-  }
-
-  const payload = (await response.json().catch(() => null)) as GeminiGenerateContentResponse | null
-  const text = payload?.candidates?.[0]?.content?.parts
-    ?.map((part) => part.text)
-    .filter(Boolean)
-    .join("")
-    .trim()
-
-  if (!text) {
-    throw new Error("Gemini returned an empty writing review.")
-  }
-
-  // Clean up potential markdown blocks if AI decided to wrap JSON
   return text
-    .replace(/^```json\n?/, "")
-    .replace(/\n?```$/, "")
-    .trim()
 }
 
 function normalizeResult(parsed: unknown, targetWords: PracticeWritingTargetWord[]): PracticeWritingChallengeResult {
@@ -175,8 +162,9 @@ function normalizeResult(parsed: unknown, targetWords: PracticeWritingTargetWord
     })
     .filter((item) => item.original || item.corrected || item.explanationRu)
 
-  if (!levelFeedback || !whatWasGood || !improvedText || !nextTask) {
-    throw new Error("AI response is missing required fields.")
+  // Be lenient: only require score and levelFeedback; fill in defaults for the rest
+  if (!levelFeedback) {
+    throw new Error("AI response is missing levelFeedback.")
   }
 
   return {
@@ -184,9 +172,9 @@ function normalizeResult(parsed: unknown, targetWords: PracticeWritingTargetWord
     levelFeedback,
     usedWords,
     grammarMistakes,
-    whatWasGood,
-    improvedText,
-    nextTask
+    whatWasGood: whatWasGood || "Хорошая попытка! Продолжай практиковаться.",
+    improvedText: improvedText || "",
+    nextTask: nextTask || "Попробуй написать ещё один текст с этими словами."
   }
 }
 
@@ -297,7 +285,7 @@ export async function POST(request: NextRequest) {
     cefrLevel: card.catalogWord?.cefrLevel ?? null
   }))
 
-  const rawResponse = await fetchGeminiWritingReview(buildPrompt(targetWords, userText)).catch((error) => {
+  const rawResponse = await fetchAiWritingReview(buildPrompt(targetWords, userText)).catch((error) => {
     console.error("Writing challenge AI request failed.", error)
     return null
   })

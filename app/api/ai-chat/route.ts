@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 
 import { getOptionalAuthUser } from "@/lib/auth"
+import { generateLexiAiText } from "@/lib/ai"
 import { findCatalogWordByWord, getOrCreateAppSettings, resolveTranslationDetails } from "@/lib/catalog"
 import { fetchCefrProfile } from "@/lib/cefr-profile"
 import { fetchDictionaryDetails } from "@/lib/dictionary"
@@ -13,16 +14,6 @@ type AiChatRequestBody = {
   history?: Array<{
     role?: string
     content?: string
-  }>
-}
-
-type GeminiGenerateContentResponse = {
-  candidates?: Array<{
-    content?: {
-      parts?: Array<{
-        text?: string
-      }>
-    }
   }>
 }
 
@@ -159,7 +150,7 @@ function pickTopLevel(profile: Awaited<ReturnType<typeof fetchCefrProfile>>) {
     .find((bucket) => bucket.percentage > 0)?.level ?? null
 }
 
-function buildGeminiChatPrompt(rawMessage: string, history: ReturnType<typeof normalizeHistory>, mode: AiChatMode) {
+function buildAiChatPrompt(rawMessage: string, history: ReturnType<typeof normalizeHistory>, mode: AiChatMode) {
   const modeInstruction = isInteractiveMode(mode)
     ? [
         `Active chat mode: ${mode}.`,
@@ -233,7 +224,7 @@ function buildFallbackStudyReply({
   return lines.join("\n\n")
 }
 
-function buildGeminiPrompt({
+function buildAiStudyPrompt({
   rawMessage,
   message,
   history,
@@ -289,47 +280,15 @@ function buildGeminiPrompt({
   ].join("\n")
 }
 
-async function fetchGeminiStudyReply(prompt: string) {
-  const apiKey = process.env.GEMINI_API_KEY?.trim()
+async function fetchAiStudyReply(prompt: string) {
+  const result = await generateLexiAiText({
+    prompt,
+    purpose: "ai-chat",
+    temperature: 0.45,
+    maxOutputTokens: 420
+  })
 
-  if (!apiKey) {
-    return null
-  }
-
-  const model = (process.env.GEMINI_MODEL?.trim() || "gemini-1.5-flash").replace(/^models\//, "")
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1/models/${encodeURIComponent(model)}:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: prompt }]
-          }
-        ],
-        generationConfig: {
-          temperature: 0.45,
-          maxOutputTokens: 420
-        }
-      })
-    }
-  )
-
-  if (!response.ok) {
-    return null
-  }
-
-  const payload = (await response.json().catch(() => null)) as GeminiGenerateContentResponse | null
-
-  return payload?.candidates?.[0]?.content?.parts
-    ?.map((part) => part.text)
-    .filter(Boolean)
-    .join("")
-    .trim() || null
+  return result?.text ?? null
 }
 
 export async function POST(request: NextRequest) {
@@ -365,13 +324,13 @@ export async function POST(request: NextRequest) {
   }
 
   if (isInteractiveMode(mode) || !hasStudyIntent(rawMessage)) {
-    const geminiReply = await fetchGeminiStudyReply(buildGeminiChatPrompt(rawMessage, history, mode)).catch(() => null)
+    const aiReply = await fetchAiStudyReply(buildAiChatPrompt(rawMessage, history, mode)).catch(() => null)
 
     return NextResponse.json({
       reply:
-        geminiReply ||
-        "I can help with that, but Gemini is not available right now. Try again in a moment.",
-      mode: geminiReply ? "study" : "fallback",
+        aiReply ||
+        "I can help with that, but the AI provider is not available right now. Try again in a moment.",
+      mode: aiReply ? "study" : "fallback",
       source: null
     })
   }
@@ -417,8 +376,8 @@ export async function POST(request: NextRequest) {
     detectedLevel,
     dictionary
   })
-  const geminiReply = await fetchGeminiStudyReply(
-    buildGeminiPrompt({
+  const aiReply = await fetchAiStudyReply(
+    buildAiStudyPrompt({
       rawMessage,
       message,
       history,
@@ -432,7 +391,7 @@ export async function POST(request: NextRequest) {
     })
   ).catch(() => null)
 
-  if (!geminiReply && !translatedText && !dictionary && !profile) {
+  if (!aiReply && !translatedText && !dictionary && !profile) {
     return NextResponse.json(
       {
         reply:
@@ -444,7 +403,7 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({
-    reply: geminiReply || fallbackReply,
+    reply: aiReply || fallbackReply,
     mode: translatedText ? "study" : "fallback",
     source: translationResult?.source ?? null
   })
