@@ -284,7 +284,8 @@ async function handleQuizMode(userId: string): Promise<NextResponse> {
   const cards = await prisma.card.findMany({
     where: { userId },
     orderBy: { nextReviewDate: "asc" },
-    take: 8
+    take: 8,
+    include: { catalogWord: true }
   })
 
   if (cards.length === 0) {
@@ -295,19 +296,20 @@ async function handleQuizMode(userId: string): Promise<NextResponse> {
     })
   }
 
-  // 2. Build deduplicated target words list
+  // 2. Build deduplicated target words list (filter out cards missing word/translation)
   const seen = new Set<string>()
   const targetWords: TargetWord[] = cards
+    .filter((c) => Boolean(c.original && c.translation))
     .filter((c) => {
-      const key = c.original.toLowerCase()
+      const key = c.original!.toLowerCase()
       if (seen.has(key)) return false
       seen.add(key)
       return true
     })
     .map((c) => ({
-      word: c.original,
-      translation: c.translation,
-      level: c.cefrLevel ?? undefined
+      word: c.original!,
+      translation: c.translation!,
+      level: c.catalogWord?.cefrLevel ?? undefined
     }))
 
   // 3. Build hidden prompt and call AI

@@ -207,16 +207,16 @@ export function validateQuizBlock(data: unknown): ValidationResult<QuizBlock> {
   if (d.type !== "quiz") {
     return { ok: false, error: `Expected type "quiz", got "${d.type}"` }
   }
-  if (!Array.isArray(d.items) || d.items.length === 0) {
+  if (!Array.isArray(d.items) || (d.items as unknown[]).length === 0) {
     return { ok: false, error: "Quiz has no items" }
   }
-  if (d.items.length > 10) {
-    d.items = d.items.slice(0, 10) // hard cap at 10
+  if ((d.items as unknown[]).length > 10) {
+    ;(d as Record<string, unknown>).items = (d.items as unknown[]).slice(0, 10)
   }
 
   const items: QuizItem[] = []
-  for (let i = 0; i < d.items.length; i++) {
-    const result = validateQuizItem(d.items[i], i)
+  for (let i = 0; i < (d.items as unknown[]).length; i++) {
+    const result = validateQuizItem((d.items as unknown[])[i], i)
     if (!result.ok) return { ok: false, error: result.error }
     items.push(result.data)
   }
