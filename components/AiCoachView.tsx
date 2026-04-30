@@ -1,565 +1,303 @@
 "use client"
 
+import { motion, AnimatePresence } from "framer-motion"
+import {
+  ArrowUp, BookOpenText, Brain, ChevronRight, Clock,
+  Languages, Layers, LayoutGrid, Loader2, MessageCircle,
+  PenLine, Sparkles, Target, Theater, UserRound, type LucideIcon
+} from "lucide-react"
 import Link from "next/link"
 import { useEffect, useMemo, useRef, useState } from "react"
-import {
-  ArrowUp,
-  BookOpenText,
-  Brain,
-  MessageCircle,
-  PenLine,
-  Sparkles,
-  Target,
-  Theater,
-  UserRound,
-  type LucideIcon
-} from "lucide-react"
 
+import { ProUpgradeBanner } from "@/components/ProUpgradeBanner"
 import { useToast } from "@/components/Toast"
+import { AiMessage } from "@/components/AiCoachComponents"
 import { useClientResource } from "@/hooks/useClientResource"
 import { getTodayDateKey, isDueDate } from "@/lib/date"
 import { getGuestCards, isGuestSessionActive } from "@/lib/guest"
 import { sortDueCards } from "@/lib/spaced-repetition"
-import type { CardRecord, CardsResponse } from "@/lib/types"
+import type { CardsResponse } from "@/lib/types"
+import type { ChatMessage, AIBlock } from "@/lib/ai-blocks"
 
-type ChatRole = "assistant" | "user"
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-interface ChatMessage {
-  id: string
-  role: ChatRole
-  content: string
-}
-
-interface AiChatResponse {
-  reply: string
-  mode: "study" | "fallback"
-  source: "catalog" | "deepl" | "langeek" | null
-}
-
-const starterPrompts = [
-  "Explain the word evidence",
-  "Give me examples with progress",
-  "Help me remember keep going",
-  "Check the CEFR level of this sentence"
-]
-
-const aiModeIds = ["chat", "prompts", "story", "quiz", "memory", "roleplay", "review"] as const
-
-type AiModeId = (typeof aiModeIds)[number]
-
-interface AiMode {
-  id: AiModeId
-  label: string
-  title: string
-  description: string
-  icon: LucideIcon
-  prompts: string[]
-  launchLabel: string
-}
+type AiModeId = "chat" | "prompts" | "story" | "quiz" | "memory" | "roleplay" | "review"
+interface AiMode { id: AiModeId; label: string; icon: LucideIcon }
 
 const aiModes: AiMode[] = [
-  {
-    id: "chat",
-    label: "Chat",
-    title: "AI study coach",
-    description: "Ask anything about words, examples, pronunciation, grammar, or learning strategy.",
-    icon: MessageCircle,
-    prompts: starterPrompts,
-    launchLabel: "Start coaching"
-  },
-  {
-    id: "prompts",
-    label: "Prompts",
-    title: "Quick starts",
-    description: "Fast study prompts for common vocabulary questions.",
-    icon: Sparkles,
-    prompts: starterPrompts,
-    launchLabel: "Start prompt"
-  },
-  {
-    id: "story",
-    label: "Story",
-    title: "Mini stories",
-    description: "Turn vocabulary into a tiny scene so words feel alive instead of isolated.",
-    icon: BookOpenText,
-    prompts: [
-      "Create a short A2 story using: progress, evidence, keep going",
-      "Write a tiny dialogue with 5 useful phrases for a cafe",
-      "Make a funny micro-story that helps me remember the word evidence"
-    ],
-    launchLabel: "Start story"
-  },
-  {
-    id: "quiz",
-    label: "Quiz",
-    title: "Instant quiz",
-    description: "Generate quick practice tasks from any word list or topic.",
-    icon: Target,
-    prompts: [
-      "Quiz me on 5 B1 English words and wait for my answers",
-      "Create a multiple-choice quiz for phrasal verbs with go",
-      "Give me a fill-in-the-blank exercise for today"
-    ],
-    launchLabel: "Start quiz"
-  },
-  {
-    id: "memory",
-    label: "Memory",
-    title: "Memory hooks",
-    description: "Make mnemonics, associations, and visual hooks for hard words.",
-    icon: Brain,
-    prompts: [
-      "Help me remember the difference between affect and effect",
-      "Create a memory trick for the word evidence",
-      "Make 3 associations for the phrase keep going"
-    ],
-    launchLabel: "Start memory drill"
-  },
-  {
-    id: "roleplay",
-    label: "Roleplay",
-    title: "Roleplay mode",
-    description: "Practice real conversations with a coach that corrects gently.",
-    icon: Theater,
-    prompts: [
-      "Roleplay a job interview with me in English",
-      "Act as a barista and help me order coffee naturally",
-      "Practice small talk with me and correct my mistakes"
-    ],
-    launchLabel: "Start roleplay"
-  },
-  {
-    id: "review",
-    label: "Review",
-    title: "Writing review",
-    description: "Send a sentence and get cleaner wording, CEFR feedback, and one improvement tip.",
-    icon: PenLine,
-    prompts: [
-      "Review this sentence: I very like learn English",
-      "Improve my answer and explain the mistake: She go to school yesterday",
-      "Check the CEFR level of this paragraph and give one upgrade"
-    ],
-    launchLabel: "Start review"
-  }
+  { id: "chat",     label: "Chat",     icon: MessageCircle },
+  { id: "prompts",  label: "Prompts",  icon: Sparkles },
+  { id: "story",    label: "Story",    icon: BookOpenText },
+  { id: "quiz",     label: "Quiz",     icon: Target },
+  { id: "memory",   label: "Memory",   icon: Brain },
+  { id: "roleplay", label: "Roleplay", icon: Theater },
+  { id: "review",   label: "Review",   icon: PenLine },
 ]
 
-function formatCardForAi(card: CardRecord) {
-  const level = card.cefrLevel ? ` (${card.cefrLevel})` : ""
-
-  return `${card.original} = ${card.translation}${level}`
+interface SuggestedAction {
+  id: string; title: string; description: string
+  icon: LucideIcon; color: string
+  visibleMessage: string; mode: AiModeId
 }
 
-function listCardsForAi(cards: CardRecord[], limit = 5) {
-  return cards.slice(0, limit).map(formatCardForAi).join("; ")
-}
-
-function buildDeckPrompts(mode: AiMode, cards: CardRecord[], cefrLevel: string | null) {
-  if (!cards.length) {
-    return mode.prompts
-  }
-
-  const today = getTodayDateKey()
-  const dueCards = cards.filter((card) => isDueDate(card.nextReviewDate, today))
-  const unknownCards = cards.filter((card) => card.lastReviewResult === "unknown")
-  const weakCards = [...cards]
-    .sort((left, right) => right.wrongCount - left.wrongCount || left.correctCount - right.correctCount)
-    .filter((card) => card.wrongCount > 0 || card.lastReviewResult === "unknown")
-  const dueWords = listCardsForAi(dueCards.length ? dueCards : cards)
-  const unknownWords = listCardsForAi(unknownCards.length ? unknownCards : cards)
-  const weakWords = listCardsForAi(weakCards.length ? weakCards : cards)
-  const deckWords = listCardsForAi(cards)
-  const level = cefrLevel ?? "my current level"
-
-  switch (mode.id) {
-    case "story":
-      return [
-        `Create a ${level} mini-story using my deck words: ${deckWords}`,
-        `Write a dialogue with these words from my cards: ${deckWords}`,
-        `Make a memorable scene that connects these words: ${unknownWords}`
-      ]
-    case "quiz":
-      return [
-        `Quiz me on my due cards one by one: ${dueWords}`,
-        `Create multiple-choice questions from my deck: ${deckWords}`,
-        `Give me fill-in-the-blank practice for these cards: ${unknownWords}`
-      ]
-    case "memory":
-      return [
-        `Create memory hooks for my weak cards: ${weakWords}`,
-        `Group these words into associations and patterns: ${deckWords}`,
-        `Make mnemonic images for these difficult words: ${unknownWords}`
-      ]
-    case "roleplay":
-      return [
-        `Start a roleplay that naturally uses my deck words: ${deckWords}`,
-        `Interview me and make me use these words correctly: ${unknownWords}`,
-        `Create a real-life conversation at ${level} level using: ${deckWords}`
-      ]
-    case "review":
-      return [
-        `Check my level and give a review drill using my due cards: ${dueWords}`,
-        `Find patterns in my weak cards and make a focused review plan: ${weakWords}`,
-        `Create a 5-minute review session from my deck: ${deckWords}`
-      ]
-    case "prompts":
-    case "chat":
-    default:
-      return [
-        `Explain my due words with examples: ${dueWords}`,
-        `Help me practice my unknown words: ${unknownWords}`,
-        `Make a short study plan for my deck at ${level} level`
-      ]
-  }
-}
-
-const initialMessages: ChatMessage[] = [
-  {
-    id: "welcome",
-    role: "assistant",
-    content:
-      "I’m your AI study coach. Ask for a short explanation, pronunciation help, synonyms, examples, or CEFR feedback."
-  }
+const SUGGESTED_ACTIONS: SuggestedAction[] = [
+  { id: "explain",   title: "Explain due words",  description: "Get context for today's words",  icon: BookOpenText, color: "text-blue-400",    visibleMessage: "Can you explain my words for today?",       mode: "chat" },
+  { id: "practice",  title: "Practice unknown",   description: "Focus on words you missed",      icon: Target,       color: "text-rose-400",    visibleMessage: "Help me practise my difficult words.",       mode: "memory" },
+  { id: "plan",      title: "Study plan",         description: "Personalised learning path",     icon: Sparkles,     color: "text-amber-400",   visibleMessage: "Create a study plan for my current deck.",  mode: "chat" },
+  { id: "quiz",      title: "Quiz me",            description: "Interactive word practice",      icon: LayoutGrid,   color: "text-emerald-400", visibleMessage: "Quiz me on my saved words.",                mode: "quiz" },
+  { id: "sentences", title: "Make examples",      description: "Build context from active cards", icon: PenLine,     color: "text-indigo-400",  visibleMessage: "Write a short story using my words.",       mode: "story" },
 ]
 
-export function AiCoachView() {
+interface ApiResponse {
+  reply?: string | null
+  kind?: "text" | "block" | "error"
+  block?: AIBlock
+  mode?: string
+}
+
+function mkId() { return `${Date.now()}-${Math.random().toString(36).slice(2)}` }
+function mkNow() { return new Date().toISOString() }
+
+// ─── Subcomponents ────────────────────────────────────────────────────────────
+
+function Badge({ icon: Icon, label, loading }: { icon: LucideIcon; label: string; loading?: boolean }) {
+  return (
+    <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-bold text-white/70 backdrop-blur-md">
+      <Icon size={10} className="text-white/40" />
+      {loading ? <div className="h-2 w-6 animate-pulse rounded bg-white/10" /> : label}
+    </div>
+  )
+}
+
+function DeckBadges({ total, due, level, loading }: { total: number; due: number; level: string; loading: boolean }) {
+  return (
+    <div className="hide-scrollbar mt-4 flex w-full items-center gap-1.5 overflow-x-auto px-1 md:justify-center md:gap-2">
+      <Badge icon={Layers}    label={`${total} cards`} loading={loading} />
+      <Badge icon={Clock}     label={`${due} due`}     loading={loading} />
+      <Badge icon={Target}    label={`${level}`}       loading={loading} />
+      <Badge icon={Languages} label="EN → RU" />
+    </div>
+  )
+}
+
+function ActionCard({ action, onClick }: { action: SuggestedAction; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="group flex w-full items-center gap-3.5 rounded-[22px] border border-white/[0.06] bg-white/[0.03] p-3.5 text-left transition-all hover:bg-white/[0.06] active:scale-[0.98] md:flex-col md:items-start md:rounded-3xl md:p-5"
+    >
+      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.05] ${action.color} md:h-11 md:w-11 md:rounded-2xl`}>
+        <action.icon size={20} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="truncate text-[14px] font-bold text-white">{action.title}</p>
+        <p className="truncate text-[12px] text-white/40 md:whitespace-normal md:mt-1">{action.description}</p>
+      </div>
+      <ChevronRight size={16} className="text-white/20 md:hidden" />
+    </button>
+  )
+}
+
+// ─── Main View ────────────────────────────────────────────────────────────────
+
+export function AiCoachView({ isPro }: { isPro: boolean }) {
   const { showToast } = useToast()
-  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages)
-  const [input, setInput] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [activeMenu, setActiveMenu] = useState<AiModeId>("chat")
-  const [chatFlowMode, setChatFlowMode] = useState<AiModeId>("chat")
-  const [guestMode, setGuestMode] = useState(false)
-  const scrollerRef = useRef<HTMLDivElement | null>(null)
-  const inputRef = useRef<HTMLTextAreaElement | null>(null)
-  const {
-    data: cardsPayload,
-    loading: cardsLoading
-  } = useClientResource<CardsResponse>({
+  const [messages, setMessages] = useState<ChatMessage[]>([{
+    id: "welcome", role: "assistant", kind: "text", createdAt: mkNow(),
+    content: "I'm your AI study coach. Ask for explanations, examples, CEFR feedback, or quiz yourself on saved words."
+  }])
+  const [input, setInput]       = useState("")
+  const [loading, setLoading]   = useState(false)
+  const [activeMode, setMode]   = useState<AiModeId>("chat")
+  const [guestMode, setGuest]   = useState(false)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const inputRef  = useRef<HTMLTextAreaElement>(null)
+
+  const { data: cardsPayload, loading: cardsLoading } = useClientResource<CardsResponse>({
     key: "cards:collection",
-    enabled: !guestMode,
+    enabled: isPro && !guestMode,
     revalidateOnMount: true,
     loader: async () => {
-      const response = await fetch("/api/cards")
-
-      if (!response.ok) {
-        throw new Error("Could not load cards.")
-      }
-
-      return (await response.json()) as CardsResponse
+      const r = await fetch("/api/cards")
+      if (!r.ok) throw new Error("Could not load cards.")
+      return r.json() as Promise<CardsResponse>
     },
-    onError: () => {
-      showToast("Could not connect AI to your deck.", "error")
-    }
+    onError: () => showToast("Could not connect AI to your deck.", "error")
   })
 
-  const canSend = input.trim().length > 0 && !loading
-  const activeMode = aiModes.find((mode) => mode.id === activeMenu) ?? aiModes[0]
-  const ActiveModeIcon = activeMode.icon
-  const currentFlowMode = aiModes.find((mode) => mode.id === chatFlowMode) ?? aiModes[0]
-  const CurrentFlowIcon = currentFlowMode.icon
   const deckCards = useMemo(() => {
-    if (guestMode) {
-      return sortDueCards(getGuestCards())
-    }
-
+    if (guestMode) return sortDueCards(getGuestCards())
     return sortDueCards(cardsPayload?.cards ?? [])
   }, [cardsPayload?.cards, guestMode])
-  const todayKey = getTodayDateKey()
-  const dueCount = deckCards.filter((card) => isDueDate(card.nextReviewDate, todayKey)).length
-  const modePrompts = useMemo(
-    () => buildDeckPrompts(activeMode, deckCards, cardsPayload?.dailyCatalog.cefrLevel ?? null),
-    [activeMode, cardsPayload?.dailyCatalog.cefrLevel, deckCards]
-  )
 
+  const todayKey   = getTodayDateKey()
+  const dueCount   = deckCards.filter(c => isDueDate(c.nextReviewDate, todayKey)).length
+  const level      = cardsPayload?.dailyCatalog.cefrLevel ?? "B1"
+
+  useEffect(() => { setGuest(isGuestSessionActive()) }, [])
   useEffect(() => {
-    setGuestMode(isGuestSessionActive())
-  }, [])
-
-  useEffect(() => {
-    if (!scrollerRef.current) {
-      return
-    }
-
-    scrollerRef.current.scrollTop = scrollerRef.current.scrollHeight
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
   }, [messages, loading])
-
   useEffect(() => {
-    const textarea = inputRef.current
-
-    if (!textarea) {
-      return
-    }
-
-    textarea.style.height = "0px"
-    textarea.style.height = `${Math.min(textarea.scrollHeight, 112)}px`
-    textarea.style.overflowY = textarea.scrollHeight > 112 ? "auto" : "hidden"
+    const t = inputRef.current
+    if (!t) return
+    t.style.height = "auto"
+    t.style.height = `${Math.min(t.scrollHeight, 120)}px`
   }, [input])
 
-  async function sendMessage(value: string, mode: AiModeId = chatFlowMode) {
-    const trimmed = value.trim()
+  async function sendMessage(visibleText: string, overrideMode?: AiModeId) {
+    const text = visibleText.trim()
+    if (!text || loading) return
 
-    if (!trimmed || loading) {
+    const mode = overrideMode ?? activeMode
+
+    // Guard: quiz needs cards
+    if (mode === "quiz" && deckCards.length === 0) {
+      showToast("No saved words found. Add some cards first!", "error")
       return
     }
 
-    const userMessage: ChatMessage = {
-      id: `user-${Date.now()}`,
-      role: "user",
-      content: trimmed
-    }
-
-    setMessages((current) => [...current, userMessage])
+    const userMsg: ChatMessage = { id: mkId(), role: "user", kind: "text", content: text, createdAt: mkNow() }
+    setMessages(prev => [...prev, userMsg])
     setInput("")
     setLoading(true)
 
     try {
-      const response = await fetch("/api/ai-chat", {
+      const res = await fetch("/api/ai-chat", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message: trimmed,
+          message: text,
           mode,
-          history: [...messages, userMessage].slice(-10).map((message) => ({
-            role: message.role,
-            content: message.content
+          history: messages.slice(-6).map(m => ({
+            role: m.role,
+            content: m.kind === "block" ? "[quiz block]" : (m as any).content ?? ""
           }))
         })
       })
 
-      if (!response.ok) {
-        throw new Error("Could not reach the AI coach.")
+      if (!res.ok) throw new Error("AI coach is temporarily resting. Try again soon.")
+      const payload = (await res.json()) as ApiResponse
+
+      let assistantMsg: ChatMessage
+
+      if (payload.kind === "block" && payload.block) {
+        assistantMsg = { id: mkId(), role: "assistant", kind: "block", block: payload.block, createdAt: mkNow() }
+      } else if (payload.kind === "error") {
+        assistantMsg = { id: mkId(), role: "assistant", kind: "error", content: payload.reply ?? "Something went wrong.", createdAt: mkNow() }
+      } else {
+        assistantMsg = { id: mkId(), role: "assistant", kind: "text", content: payload.reply ?? "No response.", createdAt: mkNow() }
       }
 
-      const payload = (await response.json()) as AiChatResponse
-
-      setMessages((current) => [
-        ...current,
-        {
-          id: `assistant-${Date.now()}`,
-          role: "assistant",
-          content: payload.reply
-        }
-      ])
-    } catch (error) {
-      showToast(error instanceof Error ? error.message : "Could not reach the AI coach.", "error")
+      setMessages(prev => [...prev, assistantMsg])
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Connection failed"
+      showToast(msg, "error")
+      setMessages(prev => [...prev, {
+        id: mkId(), role: "assistant", kind: "error", createdAt: mkNow(),
+        content: `⚠️ ${msg}\n\nPlease try again in a few seconds.`
+      }])
     } finally {
       setLoading(false)
     }
   }
 
+  if (!isPro) return <ProUpgradeBanner />
+
+  const isEmpty = messages.length <= 1
+
   return (
-    <div className="translate-page-shell -mx-4 -my-4 px-4 py-4 md:-mx-8 md:-my-8 md:px-8 md:py-8">
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
-        <div
-          className="pointer-events-none fixed inset-x-0 top-0 z-20 h-[14rem] bg-gradient-to-b from-black via-black/78 to-transparent"
-          aria-hidden="true"
-        />
-
-        <div className="fixed left-1/2 top-3 z-30 w-[calc(100%-2rem)] max-w-[38rem] -translate-x-1/2 md:top-6">
-          <div className="relative flex items-center justify-center gap-3">
-            <div className="relative min-w-0 flex-1 overflow-hidden rounded-full border border-white/[0.06] bg-white/[0.03] p-1 shadow-[0_4px_20px_rgba(0,0,0,0.2)]">
-              <div className="hide-scrollbar flex min-w-0 gap-1 overflow-x-auto">
-                {aiModes.map((mode) => {
-                  const Icon = mode.icon
-                  const active = activeMenu === mode.id
-
-                  return (
-                    <button
-                      key={mode.id}
-                      type="button"
-                      onClick={() => setActiveMenu(mode.id)}
-                      className={`relative z-10 flex h-11 shrink-0 items-center justify-center gap-2 rounded-full px-4 text-[14px] font-semibold transition ${
-                        active
-                          ? "bg-white/[0.09] text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]"
-                          : "text-white/50 hover:bg-white/[0.04] hover:text-white"
-                      }`}
-                    >
-                      <Icon size={16} />
-                      {mode.label}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-            <Link
-              href="/profile"
-              aria-label="Open profile"
-              className="flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-full border border-white/[0.06] bg-white/[0.03] text-white/74 shadow-[0_4px_20px_rgba(0,0,0,0.2)] transition hover:bg-white/[0.06] hover:text-white"
-            >
-              <UserRound size={20} />
-            </Link>
-          </div>
-        </div>
-
-        <div className="h-[5.5rem] md:h-[6.75rem]" />
-
-        <section className="group relative flex flex-col p-0 md:min-h-[72vh]">
-          <div
-            ref={scrollerRef}
-            className="relative z-0 space-y-4 px-0 py-0 pb-[calc(var(--tab-bar-height)+104px)] transition-[padding-bottom] duration-200 ease-out group-focus-within:pb-[calc(env(safe-area-inset-bottom)+104px)] md:flex-1 md:overflow-y-auto md:pb-[132px]"
-          >
-            {activeMenu !== "chat" ? (
-              <div className="translate-card rounded-[28px] px-5 py-5 text-white/78">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/[0.08] text-white">
-                    <ActiveModeIcon size={20} />
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/36">
-                      AI idea
-                    </p>
-                    <h2 className="mt-1 text-[20px] font-black text-white">{activeMode.title}</h2>
-                    <p className="mt-2 text-[14px] leading-relaxed text-white/50">
-                      {activeMode.description}
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-4 flex flex-wrap items-center gap-2">
-                  <span className="rounded-full bg-white/[0.06] px-3 py-1.5 text-[12px] font-semibold text-white/58">
-                    {cardsLoading ? "Connecting deck..." : `${deckCards.length} cards connected`}
-                  </span>
-                  <span className="rounded-full bg-white/[0.06] px-3 py-1.5 text-[12px] font-semibold text-white/58">
-                    {dueCount} due today
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const firstPrompt = modePrompts[0]
-                      setChatFlowMode(activeMode.id)
-                      setActiveMenu("chat")
-                      void sendMessage(firstPrompt, activeMode.id)
-                    }}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[12px] font-bold text-black transition hover:translate-y-[-1px]"
-                  >
-                    <ActiveModeIcon size={13} />
-                    {activeMode.launchLabel}
-                  </button>
-                </div>
-              </div>
-            ) : null}
-
-            {activeMenu !== "chat" ? (
-              <div className="grid gap-3 pb-1">
-                {modePrompts.map((prompt) => (
-                  <button
-                    key={prompt}
-                    type="button"
-                    onClick={() => {
-                      setChatFlowMode(activeMode.id)
-                      setActiveMenu("chat")
-                      void sendMessage(prompt, activeMode.id)
-                    }}
-                    className="translate-card rounded-[24px] px-5 py-4 text-left text-[15px] font-semibold text-white/78 transition hover:translate-y-[-1px] hover:text-white"
-                  >
-                    {prompt}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+    <div className="relative min-h-screen bg-black pb-32 pt-20 text-white md:pb-40 md:pt-28">
+      {/* Top Nav */}
+      <div className="fixed inset-x-0 top-0 z-[60] flex justify-center px-3 py-3 md:px-4 md:py-5">
+        <div className="flex w-full max-w-2xl items-center gap-2">
+          <div className="hide-scrollbar flex flex-1 items-center gap-1 overflow-x-auto rounded-full border border-white/[0.06] bg-black/70 p-1 backdrop-blur-2xl">
+            {aiModes.map(m => (
+              <button
+                key={m.id}
+                onClick={() => setMode(m.id)}
+                className={`flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[12px] font-bold transition-all ${
+                  activeMode === m.id ? "bg-white text-black" : "text-white/40 hover:text-white hover:bg-white/5"
+                }`}
               >
-                <div
-                  className={`max-w-[88%] rounded-[28px] px-5 py-4 text-[15px] leading-relaxed shadow-[0_10px_30px_rgba(0,0,0,0.18)] ${
-                    message.role === "user"
-                      ? "bg-white text-black"
-                      : "bg-[linear-gradient(145deg,rgba(34,34,40,0.92),rgba(18,18,22,0.98))] text-white"
-                  }`}
-                  style={{ whiteSpace: "pre-wrap" }}
-                >
-                  {message.content}
+                <m.icon size={13} />
+                {m.label}
+              </button>
+            ))}
+          </div>
+          <Link href="/profile" className="flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-full border border-white/[0.06] bg-black/70 text-white/50 backdrop-blur-2xl transition hover:text-white">
+            <UserRound size={18} />
+          </Link>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="mx-auto w-full max-w-2xl px-4 md:px-6">
+        <AnimatePresence mode="wait">
+          {isEmpty ? (
+            <motion.div key="hero" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              className="flex flex-col items-center py-4 text-center md:py-10"
+            >
+              <div className="relative mb-4 flex h-14 w-14 items-center justify-center rounded-[20px] bg-gradient-to-br from-amber-400 to-orange-600 p-[1px] md:h-20 md:w-20 md:rounded-3xl">
+                <div className="flex h-full w-full items-center justify-center rounded-[19px] bg-black md:rounded-[1.4rem]">
+                  <Sparkles size={24} className="text-amber-400 md:size-8" />
                 </div>
               </div>
-            ))}
-
-            {messages.length === 1 && activeMenu === "chat" ? (
-              <div className="grid gap-3 pt-1">
-                {modePrompts.map((prompt) => (
-                  <button
-                    key={prompt}
-                    type="button"
-                    onClick={() => {
-                      setChatFlowMode(activeMode.id)
-                      void sendMessage(prompt, activeMode.id)
-                    }}
-                    className="translate-card rounded-[24px] px-5 py-4 text-left text-[15px] font-semibold text-white/78 transition hover:translate-y-[-1px] hover:text-white"
-                  >
-                    {prompt}
-                  </button>
+              <h1 className="max-w-[280px] text-[20px] font-black leading-tight md:max-w-none md:text-4xl">
+                Practice English with <span className="text-amber-400">saved words</span>
+              </h1>
+              <p className="mt-2 max-w-[300px] text-[13px] text-white/40 md:mt-3 md:max-w-md md:text-base">
+                Explain words, quiz yourself, or build a study plan.
+              </p>
+              <DeckBadges total={deckCards.length} due={dueCount} level={level} loading={cardsLoading} />
+              <div className="mt-6 grid w-full grid-cols-1 gap-2.5 sm:grid-cols-2 md:mt-10 md:gap-3">
+                {SUGGESTED_ACTIONS.map(a => (
+                  <ActionCard key={a.id} action={a} onClick={() => sendMessage(a.visibleMessage, a.mode)} />
                 ))}
               </div>
-            ) : null}
-
-            {loading ? (
-              <div className="flex justify-start">
-                <div className="ai-thinking-bubble">
-                  <div className="ai-thinking-row">
-                    <span className="ai-thinking-label">Thinking</span>
-                    <span className="ai-thinking-dots" aria-hidden="true">
-                      <span className="ai-thinking-dot" />
-                      <span className="ai-thinking-dot" />
-                      <span className="ai-thinking-dot" />
-                    </span>
+            </motion.div>
+          ) : (
+            <div ref={scrollRef} className="space-y-4 pt-4 md:space-y-5 md:pt-6">
+              {messages.map(msg => (
+                <motion.div key={msg.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+                  <AiMessage msg={msg} />
+                </motion.div>
+              ))}
+              {loading && (
+                <div className="flex justify-start">
+                  <div className="flex items-center gap-2 rounded-full border border-white/5 bg-white/[0.03] px-3.5 py-1.5 text-[12px] font-bold text-white/40">
+                    <Loader2 size={12} className="animate-spin" />
+                    AI coach is thinking...
                   </div>
-                  <div className="ai-thinking-glow" aria-hidden="true" />
                 </div>
-              </div>
-            ) : null}
-          </div>
-
-          <form
-            className="fixed bottom-[calc(var(--tab-bar-height)+12px)] left-1/2 z-40 w-[calc(100%-2rem)] max-w-[46rem] -translate-x-1/2 transition-[bottom] duration-200 ease-out focus-within:bottom-[calc(env(safe-area-inset-bottom)+8px)]"
-            onSubmit={(event) => {
-              event.preventDefault()
-              void sendMessage(input)
-            }}
-          >
-            {chatFlowMode !== "chat" ? (
-              <div className="mb-2 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setChatFlowMode("chat")}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.08] px-3 py-1.5 text-[12px] font-semibold text-white/68 backdrop-blur-xl transition hover:bg-white/[0.12] hover:text-white"
-                >
-                  <CurrentFlowIcon size={13} />
-                  {currentFlowMode.label} in chat
-                </button>
-              </div>
-            ) : null}
-            <div className="translate-card rounded-full border border-white/[0.06] bg-[#232329]/95 px-3 py-2 shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl">
-              <div className="flex min-h-12 items-end gap-2">
-                <div className="min-w-0 flex-1 px-1">
-                  <textarea
-                    ref={inputRef}
-                    value={input}
-                    onChange={(event) => setInput(event.target.value)}
-                    placeholder="Message AI coach..."
-                    rows={1}
-                    className="block min-h-7 w-full resize-none bg-transparent py-0.5 text-[16px] leading-[1.35] text-white outline-none placeholder:text-white/34"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={!canSend}
-                  aria-label="Send message"
-                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition ${
-                    canSend
-                      ? "bg-white text-black hover:translate-y-[-1px]"
-                      : "cursor-not-allowed bg-white/12 text-white/34"
-                  }`}
-                >
-                  <ArrowUp size={18} strokeWidth={2.5} />
-                </button>
-              </div>
+              )}
             </div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Sticky Input */}
+      <div className="fixed inset-x-0 bottom-0 z-50 bg-gradient-to-t from-black via-black/95 to-transparent px-3 pb-8 pt-10 md:px-4 md:pb-10 md:pt-14">
+        <div className="mx-auto max-w-2xl">
+          <form onSubmit={e => { e.preventDefault(); sendMessage(input) }}
+            className="flex items-end gap-2 rounded-[2rem] border border-white/10 bg-[#121217]/90 p-1.5 shadow-2xl backdrop-blur-3xl focus-within:border-white/20 md:rounded-[2.5rem] md:p-2"
+          >
+            <textarea
+              ref={inputRef} rows={1} value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(input) } }}
+              placeholder="Ask AI coach..."
+              className="flex-1 resize-none bg-transparent px-3 py-2.5 text-[15px] leading-relaxed text-white outline-none placeholder:text-white/20 md:px-4 md:py-3"
+            />
+            <button type="submit" disabled={!input.trim() || loading}
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all md:h-12 md:w-12 ${
+                input.trim() && !loading ? "bg-white text-black active:scale-95" : "bg-white/5 text-white/20"
+              }`}
+            >
+              <ArrowUp size={18} strokeWidth={2.5} />
+            </button>
           </form>
-        </section>
+        </div>
       </div>
     </div>
   )

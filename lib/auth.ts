@@ -24,6 +24,8 @@ export async function getOptionalSessionUser() {
 export async function getOptionalAuthUser() {
   if (isLocalDevelopment()) {
     const cookieStore = cookies()
+    const devRole = cookieStore.get("dev-role")?.value || "ADMIN"
+
     if (cookieStore.get("dev-admin")?.value === "true") {
       const email = "admin@localhost"
       const prisma = getPrisma()
@@ -43,7 +45,7 @@ export async function getOptionalAuthUser() {
 
       return {
         ...user,
-        role: "ADMIN" as const
+        role: devRole as any
       }
     }
   }
@@ -61,9 +63,11 @@ export async function getOptionalAuthUser() {
   })
 
   if (user && isLocalDevelopment()) {
+    const cookieStore = cookies()
+    const devRole = cookieStore.get("dev-role")?.value || "ADMIN"
     return {
       ...user,
-      role: "ADMIN" as const
+      role: devRole as any
     }
   }
 

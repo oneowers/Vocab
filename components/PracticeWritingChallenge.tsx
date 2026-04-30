@@ -83,7 +83,13 @@ export function PracticeWritingChallenge({
         animate={{ opacity: 1, scale: 1 }}
         className="relative overflow-hidden border border-white/10 bg-white/[0.03] p-8 shadow-[0_18px_36px_-18px_rgba(0,0,0,0.45)] md:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] rounded-[2rem] md:rounded-[2.5rem]"
       >
-        <div className={styles.heroCardGlow} style={{ opacity: 0.1 }} />
+        <div 
+          className={styles.heroCardGlow} 
+          style={{ 
+            opacity: 0.12,
+            background: "radial-gradient(circle at 80% 20%, rgba(16, 185, 129, 0.25) 0%, rgba(16, 185, 129, 0.08) 40%, transparent 70%)"
+          }} 
+        />
         
         <div className="relative z-10 flex items-center gap-4 mb-8">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
@@ -187,8 +193,8 @@ export function PracticeWritingChallenge({
           {result.improvedText && (
             <div>
               <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/30 mb-2">Improved version</p>
-              <div className="rounded-3xl bg-blue-500/5 border border-blue-500/20 p-6 shadow-inner">
-                 <p className="text-[15px] leading-relaxed text-blue-100 font-medium">
+              <div className="rounded-3xl bg-emerald-500/5 border border-emerald-500/20 p-6 shadow-inner">
+                 <p className="text-[15px] leading-relaxed text-emerald-100 font-medium">
                   {result.improvedText}
                  </p>
               </div>

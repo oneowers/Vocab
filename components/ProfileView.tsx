@@ -430,6 +430,31 @@ export function ProfileView({ user, initialActivity = null }: ProfileViewProps) 
             <span className="text-[13px] font-semibold text-text-primary">Email</span>
             <span className="text-[12px] text-text-tertiary">{profileUser?.email || "Guest"}</span>
           </div>
+
+          {profileUser && (profileUser.role === "ADMIN" || profileUser.email === "admin@localhost") && (
+            <div className="mt-4 rounded-[16px] border border-amber-500/20 bg-amber-500/5 p-3">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-amber-500/60">Developer Settings</p>
+              <div className="mt-2 flex items-center justify-between">
+                <div>
+                  <p className="text-[13px] font-bold text-white">Toggle Dev Role</p>
+                  <p className="text-[11px] text-white/40">Switch between Admin and User view</p>
+                </div>
+                <button
+                  onClick={async () => {
+                    const res = await fetch("/api/dev/toggle-role", { method: "POST" })
+                    if (res.ok) {
+                      showToast("Role toggled. Refreshing...", "success")
+                      router.refresh()
+                    }
+                  }}
+                  className="rounded-full bg-amber-500/10 px-3 py-1 text-[11px] font-bold text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 transition"
+                >
+                  Switch to {profileUser.role === "ADMIN" ? "User" : "Admin"}
+                </button>
+              </div>
+            </div>
+          )}
+
           {profileUser?.role === "ADMIN" ? (
             <Link href="/admin" prefetch className="flex min-h-[40px] items-center justify-between rounded-[12px] px-3 transition hover:bg-white/[0.04]">
               <span className="inline-flex items-center gap-3 text-[13px] font-semibold text-text-primary">

@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server"
 
 import { getOptionalAuthUser } from "@/lib/auth"
 import { generateLexiAiText } from "@/lib/ai"
+import {
+  buildQuizPrompt,
+  buildQuizRepairPrompt,
+  parseAIBlockFromText,
+  type TargetWord
+} from "@/lib/ai-blocks"
 import { findCatalogWordByWord, getOrCreateAppSettings, resolveTranslationDetails } from "@/lib/catalog"
 import { fetchCefrProfile } from "@/lib/cefr-profile"
 import { fetchDictionaryDetails } from "@/lib/dictionary"
@@ -50,21 +56,25 @@ function isSingleWord(input: string) {
 }
 
 function isAiChatMode(value: string | undefined): value is AiChatMode {
-  return value === "chat" ||
+  return (
+    value === "chat" ||
     value === "prompts" ||
     value === "story" ||
     value === "quiz" ||
     value === "memory" ||
     value === "roleplay" ||
     value === "review"
+  )
 }
 
 function isInteractiveMode(mode: AiChatMode) {
-  return mode === "story" ||
+  return (
+    mode === "story" ||
     mode === "quiz" ||
     mode === "memory" ||
     mode === "roleplay" ||
     mode === "review"
+  )
 }
 
 function normalizeHistory(history: AiChatRequestBody["history"]) {
@@ -97,46 +107,13 @@ function hasStudyIntent(input: string) {
   }
 
   return [
-    "translate",
-    "meaning",
-    "explain",
-    "word",
-    "phrase",
-    "sentence",
-    "synonym",
-    "synonyms",
-    "pronunciation",
-    "pronounce",
-    "cefr",
-    "level",
-    "example",
-    "examples",
-    "remember",
-    "quiz",
-    "test",
-    "drill",
-    "roleplay",
-    "story",
-    "review",
-    "переведи",
-    "переводится",
-    "значит",
-    "объясни",
-    "слово",
-    "фраз",
-    "предложени",
-    "синоним",
-    "произнос",
-    "уровень",
-    "пример",
-    "запомнить",
-    "тест",
-    "викторин",
-    "задани",
-    "вопрос",
-    "роль",
-    "истори",
-    "проверь"
+    "translate", "meaning", "explain", "word", "phrase", "sentence",
+    "synonym", "synonyms", "pronunciation", "pronounce", "cefr", "level",
+    "example", "examples", "remember", "quiz", "test", "drill", "roleplay",
+    "story", "review", "переведи", "переводится", "значит", "объясни",
+    "слово", "фраз", "предложени", "синоним", "произнос", "уровень",
+    "пример", "запомнить", "тест", "викторин", "задани", "вопрос",
+    "роль", "истори", "проверь"
   ].some((marker) => normalized.includes(marker))
 }
 
@@ -145,18 +122,23 @@ function pickTopLevel(profile: Awaited<ReturnType<typeof fetchCefrProfile>>) {
     return null
   }
 
-  return [...profile.buckets]
-    .sort((left, right) => right.percentage - left.percentage)
-    .find((bucket) => bucket.percentage > 0)?.level ?? null
+  return (
+    [...profile.buckets]
+      .sort((left, right) => right.percentage - left.percentage)
+      .find((bucket) => bucket.percentage > 0)?.level ?? null
+  )
 }
 
-function buildAiChatPrompt(rawMessage: string, history: ReturnType<typeof normalizeHistory>, mode: AiChatMode) {
+function buildAiChatPrompt(
+  rawMessage: string,
+  history: ReturnType<typeof normalizeHistory>,
+  mode: AiChatMode
+) {
   const modeInstruction = isInteractiveMode(mode)
     ? [
         `Active chat mode: ${mode}.`,
         "Run this as an in-chat activity. Do not redirect the learner to another page.",
-        "For quizzes, drills, reviews, and roleplays: ask one question or give one task at a time, then wait for the learner's answer.",
-        "When the learner answers, grade or respond using the conversation history, then continue with the next step.",
+        "For interactive modes: ask one task/question at a time and use the conversation history to continue.",
         "Keep tasks short enough for a mobile chat bubble."
       ].join("\n")
     : "Active chat mode: general coach."
@@ -280,16 +262,114 @@ function buildAiStudyPrompt({
   ].join("\n")
 }
 
-async function fetchAiStudyReply(prompt: string) {
+async function fetchAiText(prompt: string, maxTokens = 800) {
   const result = await generateLexiAiText({
     prompt,
     purpose: "ai-chat",
-    temperature: 0.45,
-    maxOutputTokens: 420
+    temperature: 0.35,
+    maxOutputTokens: maxTokens
   })
 
   return result?.text ?? null
 }
+
+// ============================================================
+// QUIZ GENERATION PIPELINE
+// ============================================================
+
+async function handleQuizMode(userId: string): Promise<NextResponse> {
+  const prisma = getPrisma()
+
+  // 1. Fetch user cards
+  const cards = await prisma.card.findMany({
+    where: { userId },
+    orderBy: { nextReviewDate: "asc" },
+    take: 8
+  })
+
+  if (cards.length === 0) {
+    return NextResponse.json({
+      reply: "You don't have any saved words yet. Add some cards to your deck first so I can quiz you on them! 📚",
+      kind: "text",
+      mode: "fallback"
+    })
+  }
+
+  // 2. Build deduplicated target words list
+  const seen = new Set<string>()
+  const targetWords: TargetWord[] = cards
+    .filter((c) => {
+      const key = c.original.toLowerCase()
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+    .map((c) => ({
+      word: c.original,
+      translation: c.translation,
+      level: c.cefrLevel ?? undefined
+    }))
+
+  // 3. Build hidden prompt and call AI
+  const quizPrompt = buildQuizPrompt(targetWords)
+  const rawReply = await fetchAiText(quizPrompt, 1200).catch(() => null)
+
+  if (!rawReply) {
+    return NextResponse.json({
+      reply: "AI coach is temporarily unavailable. Please try again in a moment.",
+      kind: "text",
+      mode: "fallback"
+    })
+  }
+
+  // 4. Parse and validate
+  const parseResult = parseAIBlockFromText(rawReply)
+
+  if (parseResult.ok) {
+    return NextResponse.json({
+      kind: "block",
+      block: parseResult.block,
+      reply: null,
+      mode: "block"
+    })
+  }
+
+  // 5. Retry once with repair prompt
+  if (process.env.NODE_ENV === "development") {
+    console.warn("[Quiz Pipeline] First attempt failed:", parseResult.error)
+    console.warn("[Quiz Pipeline] Raw AI reply:", rawReply.slice(0, 500))
+  }
+
+  const repairPrompt = buildQuizRepairPrompt(targetWords, parseResult.error)
+  const repairReply = await fetchAiText(repairPrompt, 1200).catch(() => null)
+
+  if (repairReply) {
+    const repairResult = parseAIBlockFromText(repairReply)
+    if (repairResult.ok) {
+      return NextResponse.json({
+        kind: "block",
+        block: repairResult.block,
+        reply: null,
+        mode: "block"
+      })
+    }
+
+    if (process.env.NODE_ENV === "development") {
+      console.warn("[Quiz Pipeline] Repair attempt also failed:", repairResult.error)
+    }
+  }
+
+  // 6. Both failed → return friendly error
+  return NextResponse.json({
+    reply: "Quiz generation failed. The AI returned an unexpected response. Please try again.",
+    kind: "text",
+    mode: "fallback"
+  })
+}
+
+// ============================================================
+// MAIN POST HANDLER
+// ============================================================
 
 export async function POST(request: NextRequest) {
   const user = await getOptionalAuthUser()
@@ -315,24 +395,31 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Missing message." }, { status: 400 })
   }
 
-  const message = extractStudyQuery(rawMessage).slice(0, 400)
   const mode = isAiChatMode(body?.mode) ? body.mode : "chat"
   const history = normalizeHistory(body?.history)
 
-  if (!message) {
-    return NextResponse.json({ error: "Missing message." }, { status: 400 })
+  // ── Quiz mode: use dedicated pipeline ──────────────────────
+  if (mode === "quiz") {
+    return handleQuizMode(user.id)
   }
 
+  // ── Other interactive modes (story, memory, roleplay, review) ──
   if (isInteractiveMode(mode) || !hasStudyIntent(rawMessage)) {
-    const aiReply = await fetchAiStudyReply(buildAiChatPrompt(rawMessage, history, mode)).catch(() => null)
+    const aiReply = await fetchAiText(buildAiChatPrompt(rawMessage, history, mode)).catch(() => null)
 
     return NextResponse.json({
-      reply:
-        aiReply ||
-        "I can help with that, but the AI provider is not available right now. Try again in a moment.",
+      reply: aiReply || "I can help with that, but the AI provider is not available right now. Try again in a moment.",
+      kind: "text",
       mode: aiReply ? "study" : "fallback",
       source: null
     })
+  }
+
+  // ── Study / translation mode ────────────────────────────────
+  const message = extractStudyQuery(rawMessage).slice(0, 400)
+
+  if (!message) {
+    return NextResponse.json({ error: "Missing message." }, { status: 400 })
   }
 
   const prisma = getPrisma()
@@ -376,7 +463,7 @@ export async function POST(request: NextRequest) {
     detectedLevel,
     dictionary
   })
-  const aiReply = await fetchAiStudyReply(
+  const aiReply = await fetchAiText(
     buildAiStudyPrompt({
       rawMessage,
       message,
@@ -394,8 +481,8 @@ export async function POST(request: NextRequest) {
   if (!aiReply && !translatedText && !dictionary && !profile) {
     return NextResponse.json(
       {
-        reply:
-          "I could not build a study answer for that yet. Try a single word, a short phrase, or tap one of the prompt chips.",
+        reply: "I could not build a study answer for that yet. Try a single word, a short phrase, or tap one of the prompt chips.",
+        kind: "text",
         mode: "fallback"
       },
       { status: 200 }
@@ -404,6 +491,7 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json({
     reply: aiReply || fallbackReply,
+    kind: "text",
     mode: translatedText ? "study" : "fallback",
     source: translationResult?.source ?? null
   })

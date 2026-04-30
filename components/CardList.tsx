@@ -390,11 +390,10 @@ export function CardList({
                       event.stopPropagation()
                       toggleCardSelection(card.id)
                     }}
-                    className={`inline-flex h-8 w-8 items-center justify-center rounded-full border transition-all duration-200 ${
-                      selectedCardIds.includes(card.id)
+                    className={`inline-flex h-8 w-8 items-center justify-center rounded-full border transition-all duration-200 ${selectedCardIds.includes(card.id)
                         ? "border-emerald-400 bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.28)]"
                         : "border-white/[0.08] bg-white/[0.05] text-white/55"
-                    }`}
+                      }`}
                     aria-label={`${selectedCardIds.includes(card.id) ? "Unselect" : "Select"} ${card.original}`}
                   >
                     {selectedCardIds.includes(card.id) ? <Check size={14} strokeWidth={3} /> : null}

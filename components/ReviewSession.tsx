@@ -939,7 +939,7 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
               <ArrowLeft size={16} />
             </button>
             <div className={styles.sessionHeaderMeta}>
-              <span className={styles.sessionHeaderEyebrow}>Stage {activeStageIndex + 1}/3</span>
+              <span className={styles.sessionHeaderEyebrow}>Stage {activeStageIndex + 1}/{REVIEW_STEPS.length}</span>
               <div className="mt-0.5 flex items-center gap-2">
                 <div className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse" />
                 <h2 className={styles.sessionHeaderTitle} style={{ letterSpacing: "0.02em" }}>{getStageLabel(activeStage)}</h2>

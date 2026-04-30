@@ -116,15 +116,24 @@
 
 .heroCardGlow {
   position: absolute;
-  top: -20%;
-  right: -20%;
-  width: 80%;
-  height: 80%;
-  background: radial-gradient(circle at center, rgba(74, 158, 255, 0.1), transparent 70%);
+  top: -10%;
+  right: -10%;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(
+    circle at 80% 20%, 
+    rgba(74, 158, 255, 0.15) 0%, 
+    rgba(74, 158, 255, 0.05) 30%, 
+    transparent 70%
+  );
   pointer-events: none;
+  z-index: 0;
+  filter: blur(40px);
 }
 
 .heroHeader {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   gap: 1.25rem;
@@ -172,6 +181,8 @@
 }
 
 .questVisualizer {
+  position: relative;
+  z-index: 1;
   margin: 2rem 0 2.35rem;
   padding: 1rem 1rem 0.95rem;
   border-radius: 2rem;
@@ -181,6 +192,8 @@
 }
 
 .heroStats {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -221,6 +234,8 @@
 }
 
 .heroActions {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
