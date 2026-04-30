@@ -7,6 +7,9 @@ export type CardStatusFilter = "All" | "known" | "unknown"
 export type CefrLevel = "A1" | "A2" | "B1" | "B2" | "C1" | "C2"
 export type CatalogEnrichmentStatus = "pending" | "completed" | "failed"
 export type CatalogReviewStatus = "draft" | "approved"
+export type GrammarSeverity = "low" | "medium" | "high"
+export type GrammarFindingSourceType = "writing_challenge"
+export type GrammarScoreBand = "unknown" | "minor" | "weak" | "serious" | "critical" | "strong"
 export type TranslationProvider =
   | "auto"
   | "catalog-only"
@@ -77,6 +80,48 @@ export interface WordCatalogRecord {
   enrichmentError: string | null
   createdAt: string
   updatedAt: string
+}
+
+export interface GrammarTopicRecord {
+  id: string
+  key: string
+  titleEn: string
+  titleRu: string
+  category: string
+  cefrLevel: CefrLevel
+  description: string
+  examples: string[]
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface GrammarFindingRecord {
+  id: string
+  topicKey: string
+  severity: GrammarSeverity
+  confidence: number
+  original: string
+  corrected: string
+  explanationRu: string
+  scoreDelta: number
+  createdAt: string
+}
+
+export interface GrammarSkillRecord {
+  topic: GrammarTopicRecord
+  score: number
+  scoreBand: GrammarScoreBand
+  evidenceCount: number
+  positiveEvidenceCount: number
+  negativeEvidenceCount: number
+  lastDetectedAt: string | null
+  latestFinding: GrammarFindingRecord | null
+}
+
+export interface GrammarSkillsPayload {
+  items: GrammarSkillRecord[]
+  weakCount: number
 }
 
 export interface AppSettingsRecord {
@@ -187,12 +232,22 @@ export interface PracticeWritingGrammarMistake {
   explanationRu: string
 }
 
+export interface PracticeWritingGrammarFinding {
+  topicKey: string
+  severity: GrammarSeverity
+  confidence: number
+  original: string
+  corrected: string
+  explanationRu: string
+}
+
 export interface PracticeWritingChallengeResult {
   id?: string
   score: number
   levelFeedback: string
   usedWords: PracticeWritingUsedWord[]
   grammarMistakes: PracticeWritingGrammarMistake[]
+  grammarFindings: PracticeWritingGrammarFinding[]
   whatWasGood: string
   improvedText: string
   nextTask: string
@@ -251,6 +306,13 @@ export interface AdminCardsPayload {
 
 export interface AdminCatalogPayload {
   items: WordCatalogRecord[]
+  page: number
+  totalPages: number
+  totalItems: number
+}
+
+export interface AdminGrammarTopicsPayload {
+  items: GrammarTopicRecord[]
   page: number
   totalPages: number
   totalItems: number

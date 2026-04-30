@@ -35,6 +35,8 @@ model User {
   cards                   Card[]
   catalogClaims           UserCatalogWord[]
   reviewLogs              ReviewLog[]
+  grammarSkills           UserGrammarSkill[]
+  grammarFindings         GrammarFinding[]
   practiceSession         PracticeSessionProgress?
   writingChallenges       PracticeWritingChallenge[]
 }
@@ -83,6 +85,16 @@ enum CatalogEnrichmentStatus {
 enum CatalogReviewStatus {
   draft
   approved
+}
+
+enum GrammarSeverity {
+  low
+  medium
+  high
+}
+
+enum GrammarFindingSourceType {
+  writing_challenge
 }
 
 model Card {
@@ -178,12 +190,74 @@ model PracticeWritingChallenge {
   levelFeedback   String
   usedWords       Json
   grammarMistakes Json
+  grammarFindings Json     @default("[]")
+  grammarScoreAppliedAt DateTime?
   whatWasGood     String
   improvedText    String
   nextTask        String
   createdAt       DateTime @default(now())
 
   @@index([userId, createdAt(sort: Desc)])
+}
+
+model GrammarTopic {
+  id          String             @id @default(uuid())
+  key         String             @unique
+  titleEn     String
+  titleRu     String
+  category    String
+  cefrLevel   CefrLevel
+  description String
+  examples    Json               @default("[]")
+  isActive    Boolean            @default(true)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  userSkills  UserGrammarSkill[]
+  findings    GrammarFinding[]
+
+  @@index([isActive, cefrLevel, category])
+}
+
+model UserGrammarSkill {
+  id                    String       @id @default(uuid())
+  userId                String
+  user                  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topicId               String
+  topic                 GrammarTopic @relation(fields: [topicId], references: [id], onDelete: Restrict)
+  score                 Int          @default(0)
+  evidenceCount         Int          @default(0)
+  positiveEvidenceCount Int          @default(0)
+  negativeEvidenceCount Int          @default(0)
+  lastDetectedAt        DateTime?
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+
+  @@unique([userId, topicId])
+  @@index([userId, score])
+  @@index([topicId])
+}
+
+model GrammarFinding {
+  id             String                   @id @default(uuid())
+  userId         String
+  user           User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topicId        String
+  topic          GrammarTopic             @relation(fields: [topicId], references: [id], onDelete: Restrict)
+  sourceType     GrammarFindingSourceType
+  sourceId       String?
+  originalText   String
+  correctedText  String
+  explanationRu  String
+  severity       GrammarSeverity
+  confidence     Float
+  scoreDelta     Int
+  createdAt      DateTime                 @default(now())
+
+  @@unique([sourceType, sourceId, topicId])
+  @@index([userId])
+  @@index([topicId])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([sourceType, sourceId])
 }
 
 model WordCatalog {

@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from "next/server"
+import { revalidateTag } from "next/cache"
 import type { Prisma } from "@prisma/client"
 
 import { generateLexiAiText } from "@/lib/ai"
 import { getOptionalAuthUser } from "@/lib/auth"
+import {
+  applyGrammarFindingsToWritingChallenge,
+  getActiveGrammarTopicsForAi,
+  normalizeGrammarFindings,
+  toClientGrammarFinding,
+  type ActiveGrammarTopicForAi,
+  type NormalizedGrammarFinding
+} from "@/lib/grammar"
 import { getPrisma } from "@/lib/prisma"
+import { userCacheTag } from "@/lib/server-cache"
 import { checkRateLimit } from "@/lib/throttle"
 import type { PracticeWritingChallengeResult, PracticeWritingTargetWord } from "@/lib/types"
 
@@ -12,12 +22,29 @@ function getThrottleKey(request: NextRequest, userId: string) {
   return userId || forwardedFor || "user"
 }
 
-function buildPrompt(targetWords: PracticeWritingTargetWord[], userText: string) {
+function buildPrompt(
+  targetWords: PracticeWritingTargetWord[],
+  userText: string,
+  grammarTopics: ActiveGrammarTopicForAi[]
+) {
+  const promptTopics = grammarTopics.map((topic) => ({
+    key: topic.key,
+    titleEn: topic.titleEn,
+    titleRu: topic.titleRu,
+    category: topic.category,
+    cefrLevel: topic.cefrLevel,
+    description: topic.description
+  }))
+
   return [
     "You are an English vocabulary coach inside LexiFlow.",
+    "LexiFlow is used by Russian-speaking learners studying English.",
     "",
     "The user was asked to write a short text using these target words:",
     JSON.stringify(targetWords, null, 2),
+    "",
+    "Active grammar topic keys for tracking:",
+    JSON.stringify(promptTopics, null, 2),
     "",
     "Each target word has:",
     "- word",
@@ -36,6 +63,10 @@ function buildPrompt(targetWords: PracticeWritingTargetWord[], userText: string)
     "6. Say what you liked about the text.",
     "7. Provide an improved version of the user's text in natural English.",
     "8. Give one short next task.",
+    "9. For grammarFindings, use only the active grammar topic keys listed above.",
+    "10. Include grammarFindings only for real grammar problems in the user text.",
+    "11. Use confidence from 0 to 1. Use low, medium, or high severity.",
+    "12. If no listed grammar topic clearly matches, return an empty grammarFindings array.",
     "",
     "Scoring:",
     "- 40 points: target words are used",
@@ -58,6 +89,16 @@ function buildPrompt(targetWords: PracticeWritingTargetWord[], userText: string)
     "  ],",
     '  "grammarMistakes": [',
     "    {",
+    '      "original": "string",',
+    '      "corrected": "string",',
+    '      "explanationRu": "string"',
+    "    }",
+    "  ],",
+    '  "grammarFindings": [',
+    "    {",
+    '      "topicKey": "string",',
+    '      "severity": "low",',
+    '      "confidence": 0.0,',
     '      "original": "string",',
     '      "corrected": "string",',
     '      "explanationRu": "string"',
@@ -94,7 +135,7 @@ async function fetchAiWritingReview(prompt: string) {
     prompt,
     purpose: "writing-challenge",
     temperature: 0.2,
-    maxOutputTokens: 1400,
+    maxOutputTokens: 2200,
     responseMimeType: "application/json"
   })
 
@@ -118,7 +159,14 @@ async function fetchAiWritingReview(prompt: string) {
   return text
 }
 
-function normalizeResult(parsed: unknown, targetWords: PracticeWritingTargetWord[]): PracticeWritingChallengeResult {
+function normalizeResult(
+  parsed: unknown,
+  targetWords: PracticeWritingTargetWord[],
+  activeGrammarTopics: ActiveGrammarTopicForAi[]
+): {
+  result: PracticeWritingChallengeResult
+  normalizedGrammarFindings: NormalizedGrammarFinding[]
+} {
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
     throw new Error("AI response is not a valid object.")
   }
@@ -131,6 +179,10 @@ function normalizeResult(parsed: unknown, targetWords: PracticeWritingTargetWord
   const nextTask = typeof value.nextTask === "string" ? value.nextTask.trim() : ""
   const usedWordsRaw = Array.isArray(value.usedWords) ? value.usedWords : []
   const grammarMistakesRaw = Array.isArray(value.grammarMistakes) ? value.grammarMistakes : []
+  const normalizedGrammarFindings = normalizeGrammarFindings(
+    value.grammarFindings,
+    activeGrammarTopics
+  )
 
   const usedWords = targetWords.map((targetWord) => {
     const match = usedWordsRaw.find((item) => {
@@ -168,13 +220,17 @@ function normalizeResult(parsed: unknown, targetWords: PracticeWritingTargetWord
   }
 
   return {
-    score,
-    levelFeedback,
-    usedWords,
-    grammarMistakes,
-    whatWasGood: whatWasGood || "Хорошая попытка! Продолжай практиковаться.",
-    improvedText: improvedText || "",
-    nextTask: nextTask || "Попробуй написать ещё один текст с этими словами."
+    result: {
+      score,
+      levelFeedback,
+      usedWords,
+      grammarMistakes,
+      grammarFindings: normalizedGrammarFindings.map(toClientGrammarFinding),
+      whatWasGood: whatWasGood || "Хорошая попытка! Продолжай практиковаться.",
+      improvedText: improvedText || "",
+      nextTask: nextTask || "Попробуй написать ещё один текст с этими словами."
+    },
+    normalizedGrammarFindings
   }
 }
 
@@ -208,6 +264,7 @@ function buildFallbackResult(
       "AI-проверка сейчас недоступна, поэтому LexiFlow показал базовую локальную оценку по использованию целевых слов.",
     usedWords,
     grammarMistakes: [],
+    grammarFindings: [],
     whatWasGood:
       usedCount > 0
         ? "Ты уже встроил часть целевых слов в связный текст, и это хороший шаг к активному использованию словаря."
@@ -254,26 +311,29 @@ export async function POST(request: NextRequest) {
   }
 
   const prisma = getPrisma()
-  const cards = await prisma.card.findMany({
-    where: {
-      userId: user.id,
-      id: {
-        in: cardIds
-      }
-    },
-    select: {
-      id: true,
-      original: true,
-      translation: true,
-      catalogWord: {
-        select: {
-          word: true,
-          translation: true,
-          cefrLevel: true
+  const [cards, activeGrammarTopics] = await Promise.all([
+    prisma.card.findMany({
+      where: {
+        userId: user.id,
+        id: {
+          in: cardIds
+        }
+      },
+      select: {
+        id: true,
+        original: true,
+        translation: true,
+        catalogWord: {
+          select: {
+            word: true,
+            translation: true,
+            cefrLevel: true
+          }
         }
       }
-    }
-  })
+    }),
+    getActiveGrammarTopicsForAi(prisma)
+  ])
 
   if (!cards.length) {
     return NextResponse.json({ error: "Target words were not found." }, { status: 404 })
@@ -285,46 +345,74 @@ export async function POST(request: NextRequest) {
     cefrLevel: card.catalogWord?.cefrLevel ?? null
   }))
 
-  const rawResponse = await fetchAiWritingReview(buildPrompt(targetWords, userText)).catch((error) => {
+  const rawResponse = await fetchAiWritingReview(
+    buildPrompt(targetWords, userText, activeGrammarTopics)
+  ).catch((error) => {
     console.error("Writing challenge AI request failed.", error)
     return null
   })
 
   let result: PracticeWritingChallengeResult
+  let normalizedGrammarFindings: NormalizedGrammarFinding[] = []
 
   if (!rawResponse) {
     result = buildFallbackResult(targetWords, userText)
   } else {
     try {
-      result = normalizeResult(JSON.parse(rawResponse), targetWords)
+      const normalizedResult = normalizeResult(
+        JSON.parse(rawResponse),
+        targetWords,
+        activeGrammarTopics
+      )
+      result = normalizedResult.result
+      normalizedGrammarFindings = normalizedResult.normalizedGrammarFindings
     } catch (error) {
       console.error("Could not parse AI writing challenge JSON.", error, rawResponse)
       result = buildFallbackResult(targetWords, userText)
     }
   }
 
-  const saved = await prisma.practiceWritingChallenge.create({
-    data: {
+  const snapshotGrammarFindings = result.grammarFindings
+  const saved = await prisma.$transaction(async (tx) => {
+    const challenge = await tx.practiceWritingChallenge.create({
+      data: {
+        userId: user.id,
+        cardIds,
+        targetWords: targetWords as Prisma.InputJsonValue,
+        userText,
+        score: result.score,
+        levelFeedback: result.levelFeedback,
+        usedWords: result.usedWords as unknown as Prisma.InputJsonValue,
+        grammarMistakes: result.grammarMistakes as unknown as Prisma.InputJsonValue,
+        grammarFindings: snapshotGrammarFindings as unknown as Prisma.InputJsonValue,
+        whatWasGood: result.whatWasGood,
+        improvedText: result.improvedText,
+        nextTask: result.nextTask
+      },
+      select: {
+        id: true
+      }
+    })
+
+    const appliedGrammarFindings = await applyGrammarFindingsToWritingChallenge(tx, {
       userId: user.id,
-      cardIds,
-      targetWords: targetWords as Prisma.InputJsonValue,
-      userText,
-      score: result.score,
-      levelFeedback: result.levelFeedback,
-      usedWords: result.usedWords as unknown as Prisma.InputJsonValue,
-      grammarMistakes: result.grammarMistakes as unknown as Prisma.InputJsonValue,
-      whatWasGood: result.whatWasGood,
-      improvedText: result.improvedText,
-      nextTask: result.nextTask
-    },
-    select: {
-      id: true
+      challengeId: challenge.id,
+      findings: normalizedGrammarFindings
+    })
+
+    return {
+      id: challenge.id,
+      appliedGrammarFindings
     }
   })
+
+  revalidateTag(userCacheTag.grammar(user.id))
+  revalidateTag(userCacheTag.profile(user.id))
 
   return NextResponse.json({
     result: {
       ...result,
+      grammarFindings: saved.appliedGrammarFindings,
       id: saved.id
     }
   })

@@ -12,11 +12,34 @@ import { DEFAULT_GUEST_REVIEW_LIVES, clearGuestSession, isGuestSessionActive } f
 import { getRoleLabel } from "@/lib/roles"
 import { buildEmptyProfileActivity } from "@/lib/profile-data"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
-import type { AppUserRecord, CefrLevel, ProfileActivityPayload } from "@/lib/types"
+import type { AppUserRecord, CefrLevel, GrammarSkillsPayload, ProfileActivityPayload } from "@/lib/types"
 
 interface ProfileViewProps {
   user: AppUserRecord | null
   initialActivity?: ProfileActivityPayload | null
+}
+
+const emptyGrammarSkills: GrammarSkillsPayload = {
+  items: [],
+  weakCount: 0
+}
+
+function formatDetectedDate(value: string | null) {
+  if (!value) {
+    return null
+  }
+
+  return new Date(value).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric"
+  })
+}
+
+function getScoreBandLabel(score: number) {
+  if (score <= -71) return "Critical"
+  if (score <= -41) return "Serious"
+  if (score <= -16) return "Weak"
+  return "Minor"
 }
 
 export function ProfileView({ user, initialActivity = null }: ProfileViewProps) {
@@ -49,6 +72,29 @@ export function ProfileView({ user, initialActivity = null }: ProfileViewProps) 
     },
     onError: () => {
       showToast("Could not load profile activity.", "error")
+    }
+  })
+  const {
+    data: grammarSkills,
+    loading: grammarLoading,
+    refreshing: grammarRefreshing
+  } = useClientResource<GrammarSkillsPayload>({
+    key: guestActive || !profileUser ? "profile-grammar:guest" : `profile-grammar:${profileUser.id}:weak`,
+    enabled: !guestActive && Boolean(profileUser),
+    initialData: guestActive || !profileUser ? emptyGrammarSkills : null,
+    loader: async () => {
+      const response = await fetch("/api/profile/grammar-skills?scope=weak", {
+        cache: "no-store"
+      })
+
+      if (!response.ok) {
+        throw new Error("Could not load grammar skills.")
+      }
+
+      return (await response.json()) as GrammarSkillsPayload
+    },
+    onError: () => {
+      showToast("Could not load grammar weak points.", "error")
     }
   })
 
@@ -86,6 +132,7 @@ export function ProfileView({ user, initialActivity = null }: ProfileViewProps) 
   }
 
   const resolvedActivity = activity ?? initialActivity ?? fallbackActivity
+  const resolvedGrammarSkills = grammarSkills ?? emptyGrammarSkills
   const hasActivityData = Boolean(activity || initialActivity || guestActive || !profileUser)
   const name = guestActive ? "Guest explorer" : profileUser?.name || profileUser?.email || "LexiFlow user"
   const subtitle = guestActive
@@ -264,6 +311,75 @@ export function ProfileView({ user, initialActivity = null }: ProfileViewProps) 
           <span>View detailed stats</span>
           <ArrowRight size={14} className="text-text-tertiary" />
         </Link>
+      </section>
+
+      <section className="panel p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="section-label">Grammar Weak Points</p>
+            <h2 className="mt-1 text-[17px] font-bold text-white">
+              {grammarLoading && !grammarSkills ? "Checking..." : `${resolvedGrammarSkills.weakCount} topics`}
+            </h2>
+          </div>
+          <Link
+            href="/profile/grammar-skills"
+            prefetch
+            className="inline-flex min-h-9 items-center gap-2 rounded-[12px] px-2 text-[12px] font-bold text-text-primary transition hover:bg-white/[0.04]"
+          >
+            <span>View all</span>
+            <ArrowRight size={13} className="text-text-tertiary" />
+          </Link>
+        </div>
+
+        {grammarLoading && !grammarSkills ? (
+          <div className="mt-4 space-y-2">
+            <div className="skeleton skeleton-soft h-14 rounded-[16px]" />
+            <div className="skeleton skeleton-soft h-14 rounded-[16px]" />
+          </div>
+        ) : resolvedGrammarSkills.items.length ? (
+          <div className={`mt-4 space-y-2 ${grammarRefreshing ? "opacity-70" : ""}`}>
+            {resolvedGrammarSkills.items.slice(0, 3).map((item) => {
+              const detectedDate = formatDetectedDate(item.lastDetectedAt)
+
+              return (
+                <article key={item.topic.id} className="rounded-[16px] border border-white/[0.05] bg-white/[0.025] p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-[14px] font-bold text-white">{item.topic.titleEn}</h3>
+                        <span className="rounded-full bg-rose-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-rose-200">
+                          {getScoreBandLabel(item.score)}
+                        </span>
+                      </div>
+                      <p className="mt-1 line-clamp-2 text-[12px] leading-relaxed text-text-tertiary">
+                        {item.latestFinding?.explanationRu || item.topic.description}
+                      </p>
+                      {detectedDate ? (
+                        <p className="mt-2 text-[10px] font-semibold uppercase tracking-wider text-text-tertiary">
+                          Last detected {detectedDate}
+                        </p>
+                      ) : null}
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p className="text-[18px] font-black text-white">{item.score}</p>
+                      <Link
+                        href={`/profile/grammar-skills#${item.topic.key}`}
+                        prefetch
+                        className="mt-1 inline-flex text-[11px] font-bold text-text-tertiary transition hover:text-white"
+                      >
+                        Details
+                      </Link>
+                    </div>
+                  </div>
+                </article>
+              )
+            })}
+          </div>
+        ) : (
+          <p className="mt-4 rounded-[16px] border border-white/[0.04] bg-white/[0.02] p-3 text-[13px] leading-relaxed text-text-tertiary">
+            No weak grammar areas yet. LexiFlow will update this after AI writing checks.
+          </p>
+        )}
       </section>
 
       <section className="panel overflow-hidden p-2">

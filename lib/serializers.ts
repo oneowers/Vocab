@@ -1,6 +1,6 @@
-import type { AppSettings, Card, User, WordCatalog } from "@prisma/client"
+import type { AppSettings, Card, GrammarTopic, User, WordCatalog } from "@prisma/client"
 
-import type { AppSettingsRecord, AppUserRecord, CardRecord, WordCatalogRecord } from "@/lib/types"
+import type { AppSettingsRecord, AppUserRecord, CardRecord, GrammarTopicRecord, WordCatalogRecord } from "@/lib/types"
 
 type SerializableCatalogWord = Pick<
   WordCatalog,
@@ -108,6 +108,30 @@ export function serializeWordCatalog(word: WordCatalog): WordCatalogRecord {
     enrichmentError: word.enrichmentError ?? null,
     createdAt: word.createdAt.toISOString(),
     updatedAt: word.updatedAt.toISOString()
+  }
+}
+
+function serializeGrammarExamples(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  return value.filter((item): item is string => typeof item === "string")
+}
+
+export function serializeGrammarTopic(topic: GrammarTopic): GrammarTopicRecord {
+  return {
+    id: topic.id,
+    key: topic.key,
+    titleEn: topic.titleEn,
+    titleRu: topic.titleRu,
+    category: topic.category,
+    cefrLevel: topic.cefrLevel,
+    description: topic.description,
+    examples: serializeGrammarExamples(topic.examples),
+    isActive: topic.isActive,
+    createdAt: topic.createdAt.toISOString(),
+    updatedAt: topic.updatedAt.toISOString()
   }
 }
 

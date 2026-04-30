@@ -5,6 +5,7 @@ export const ADMIN_DATA_REVALIDATE_SECONDS = 45
 
 export const userCacheTag = {
   cards: (userId: string) => `cards:${userId}`,
+  grammar: (userId: string) => `grammar:${userId}`,
   stats: (userId: string) => `stats:${userId}`,
   profile: (userId: string) => `profile:${userId}`,
   review: (userId: string) => `review:${userId}`
@@ -12,7 +13,8 @@ export const userCacheTag = {
 
 export const adminCacheTag = {
   analytics: "admin:analytics",
-  catalog: "admin:catalog"
+  catalog: "admin:catalog",
+  grammarTopics: "admin:grammar-topics"
 }
 
 export const sharedCacheTag = {

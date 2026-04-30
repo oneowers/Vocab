@@ -20,11 +20,11 @@
   --success-soft: rgba(52, 199, 89, 0.14);
   --warning: #ffcc00;
   --warning-soft: rgba(255, 204, 0, 0.18);
-  --activity-level-0: #ebedf0;
-  --activity-level-1: #9be9a8;
-  --activity-level-2: #40c463;
-  --activity-level-3: #30a14e;
-  --activity-level-4: #216e39;
+  --activity-level-0: #161b22;
+  --activity-level-1: #0e4429;
+  --activity-level-2: #006d32;
+  --activity-level-3: #26a641;
+  --activity-level-4: #39d353;
   --radius-card: 26px;
   --radius-button: 999px;
   --radius-input: 20px;

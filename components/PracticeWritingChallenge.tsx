@@ -14,6 +14,18 @@ interface PracticeWritingChallengeProps {
   onSkip: () => void
 }
 
+function getGrammarFindingSeverityClass(severity: PracticeWritingChallengeResult["grammarFindings"][number]["severity"]) {
+  if (severity === "high") {
+    return "bg-red-500/20 text-red-200"
+  }
+
+  if (severity === "medium") {
+    return "bg-rose-500/15 text-rose-200"
+  }
+
+  return "bg-amber-500/15 text-amber-200"
+}
+
 export function PracticeWritingChallenge({
   targetCards,
   onSkip
@@ -143,6 +155,34 @@ export function PracticeWritingChallenge({
               </p>
             )}
           </div>
+
+          {result.grammarFindings.length ? (
+            <div>
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/30 mb-3">Tracked grammar skills</p>
+              <div className="space-y-2">
+                {result.grammarFindings.map((finding) => (
+                  <div
+                    key={`${finding.topicKey}-${finding.original}-${finding.corrected}`}
+                    className="rounded-2xl border border-white/5 bg-white/[0.025] px-5 py-4"
+                  >
+                    <div className="mb-2 flex flex-wrap items-center gap-2">
+                      <span className="text-[13px] font-bold text-white">{finding.topicKey.replaceAll("_", " ")}</span>
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${getGrammarFindingSeverityClass(finding.severity)}`}>
+                        {finding.severity}
+                      </span>
+                    </div>
+                    <p className="text-[14px] font-medium text-rose-300/80 line-through decoration-rose-500/50">
+                      {finding.original}
+                    </p>
+                    <p className="mt-1 text-[15px] font-bold text-emerald-400">{finding.corrected}</p>
+                    <p className="mt-2 text-[14px] leading-relaxed text-white/60">
+                      {finding.explanationRu}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
 
           {result.improvedText && (
             <div>

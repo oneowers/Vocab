@@ -1,4 +1,5 @@
 import {
+  BookOpenCheck,
   ChartColumnBig,
   Cog,
   House,
@@ -87,6 +88,12 @@ export const adminNavItems: NavItem[] = [
     label: "Catalog",
     icon: Cog,
     match: (pathname) => pathname.startsWith("/admin/catalog")
+  },
+  {
+    href: "/admin/grammar-topics",
+    label: "Grammar",
+    icon: BookOpenCheck,
+    match: (pathname) => pathname.startsWith("/admin/grammar-topics")
   },
   {
     href: "/admin/settings",
