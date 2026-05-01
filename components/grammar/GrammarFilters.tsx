@@ -44,20 +44,20 @@ export function GrammarFilters({
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Search grammar topics..."
-          className="h-12 w-full rounded-2xl border border-white/5 bg-white/[0.03] pl-11 pr-4 text-[15px] font-medium text-white placeholder:text-white/20 focus:border-white/10 outline-none transition-all"
+          className="h-11 w-full rounded-2xl border border-white/5 bg-white/[0.03] pl-11 pr-4 text-[14px] font-medium text-white placeholder:text-white/20 focus:border-white/10 outline-none transition-all md:h-12 md:text-[15px]"
         />
       </div>
 
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="hide-scrollbar flex gap-1 overflow-x-auto rounded-2xl bg-white/[0.03] p-1 border border-white/5">
+        <div className="hide-scrollbar -mx-4 flex gap-1 overflow-x-auto px-4 md:mx-0 md:rounded-2xl md:bg-white/[0.03] md:p-1 md:border md:border-white/5 md:px-1">
           {filterChips.map((chip) => (
             <button
               key={chip.id}
               onClick={() => onFilterChange(chip.id)}
-              className={`whitespace-nowrap rounded-xl px-4 py-2 text-[13px] font-bold transition-all ${
+              className={`whitespace-nowrap rounded-xl px-4 py-2 text-[12px] font-bold transition-all md:text-[13px] ${
                 filter === chip.id 
                   ? "bg-white text-black shadow-lg" 
-                  : "text-white/40 hover:text-white hover:bg-white/5"
+                  : "bg-white/[0.03] text-white/40 border border-white/5 hover:text-white hover:bg-white/5 md:bg-transparent md:border-none"
               }`}
             >
               {chip.label}
@@ -70,7 +70,7 @@ export function GrammarFilters({
             <select
               value={cefrFilter}
               onChange={(e) => onCefrFilterChange(e.target.value as CefrLevel | "all")}
-              className="h-10 w-full min-w-[100px] appearance-none rounded-xl border border-white/5 bg-white/[0.03] pl-3 pr-8 text-[13px] font-bold text-white outline-none"
+              className="h-10 w-full min-w-[90px] appearance-none rounded-xl border border-white/5 bg-white/[0.03] pl-3 pr-8 text-[12px] font-bold text-white outline-none md:min-w-[100px] md:text-[13px]"
             >
               <option value="all">Level: All</option>
               {CEFR_LEVELS.map((level) => (
@@ -84,7 +84,7 @@ export function GrammarFilters({
             <select
               value={sort}
               onChange={(e) => onSortChange(e.target.value as GrammarSortType)}
-              className="h-10 w-full min-w-[140px] appearance-none rounded-xl border border-white/5 bg-white/[0.03] pl-3 pr-8 text-[13px] font-bold text-white outline-none"
+              className="h-10 w-full min-w-[130px] appearance-none rounded-xl border border-white/5 bg-white/[0.03] pl-3 pr-8 text-[12px] font-bold text-white outline-none md:min-w-[140px] md:text-[13px]"
             >
               <option value="priority">Recommended</option>
               <option value="weakest">Weakest first</option>

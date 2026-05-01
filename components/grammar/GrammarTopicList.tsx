@@ -2,7 +2,7 @@
 
 import React from "react"
 import { motion } from "framer-motion"
-import type { GrammarSkillRecord } from "@/lib/types"
+import type { CefrLevel, GrammarSkillRecord } from "@/lib/types"
 import { GrammarTopicCard } from "./GrammarTopicCard"
 import { Search } from "lucide-react"
 
