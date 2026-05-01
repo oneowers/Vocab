@@ -364,7 +364,7 @@ async function handleQuizMode(userId: string): Promise<NextResponse> {
     .map((c) => ({
       word: c.original || c.catalogWord?.word || "",
       translation: c.translation || c.catalogWord?.translation || "",
-      level: c.catalogWord?.cefrLevel ?? undefined
+      level: (c.catalogWord?.cefrLevel as string) ?? undefined
     }))
     .filter((c): c is TargetWord => !!c.word && !!c.translation)
     .filter((c) => {
