@@ -1,6 +1,6 @@
 "use client"
 
-import { BookOpen, Sparkles, PenTool, Target, ChevronRight } from "lucide-react"
+import { BookOpen, Sparkles, PenTool, Target, ChevronRight, Clock, AlertCircle } from "lucide-react"
 import { motion } from "framer-motion"
 
 interface PracticeModeSelectorProps {
@@ -16,98 +16,127 @@ export function PracticeModeSelector({
   dueCount,
   weakGrammarCount
 }: PracticeModeSelectorProps) {
+  // Mock data for better visual representation
+  const mistakesCount = 3
+  const learningCount = 12
+  const estimatedTime = "5m"
+
+  const hasMistakes = mistakesCount > 0
+  const hasDue = dueCount > 0
+
   return (
     <div className="mx-auto max-w-xl px-4 pb-32 pt-6 md:pt-12">
       {/* Compact Header */}
-      <header className="mb-6 px-1">
+      <header className="mb-5 px-1">
         <h1 className="text-[28px] font-black tracking-tight text-white md:text-[36px]">
           Practice
         </h1>
-        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] font-bold text-white/30">
-          <span className={dueCount > 0 ? "text-blue-400" : ""}>
-            {dueCount} {dueCount === 1 ? "word" : "words"} due
-          </span>
-          <span className="h-1 w-1 rounded-full bg-white/10" />
-          <span className={weakGrammarCount > 0 ? "text-purple-400" : ""}>
-            {weakGrammarCount} {weakGrammarCount === 1 ? "weak topic" : "weak topics"}
+        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] font-bold text-white/40">
+          {hasDue && (
+            <span className="text-blue-400">{dueCount} due</span>
+          )}
+          {hasDue && hasMistakes && <span className="opacity-20">·</span>}
+          {hasMistakes && (
+            <span className="text-rose-400">{mistakesCount} mistakes</span>
+          )}
+          {(hasDue || hasMistakes) && <span className="opacity-20">·</span>}
+          <span className="flex items-center gap-1">
+            <Clock size={12} className="opacity-50" />
+            ~{estimatedTime}
           </span>
         </div>
       </header>
 
-      {/* Stats Row */}
-      <div className="mb-8 flex items-center gap-4 px-1">
-        <div className="flex items-center gap-1.5">
-          <span className="text-[12px] font-bold uppercase tracking-wider text-white/20">Learning</span>
-          <span className="text-[14px] font-black text-white">12</span>
+      {/* Stats Row - High Contrast Chips */}
+      <div className="mb-8 flex flex-wrap items-center gap-2 px-1">
+        <div className="flex items-center gap-2 rounded-lg bg-white/[0.03] border border-white/5 px-2.5 py-1.5">
+          <span className="text-[10px] font-black uppercase tracking-wider text-white/30">Learning</span>
+          <span className="text-[13px] font-black text-white">{learningCount}</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-[12px] font-bold uppercase tracking-wider text-white/20">Mistakes</span>
-          <span className="text-[14px] font-black text-white/40">3</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-[12px] font-bold uppercase tracking-wider text-white/20">Time</span>
-          <span className="text-[14px] font-black text-white/40">5m</span>
+        {hasMistakes && (
+          <div className="flex items-center gap-2 rounded-lg bg-rose-500/10 border border-rose-500/10 px-2.5 py-1.5">
+            <span className="text-[10px] font-black uppercase tracking-wider text-rose-400/60">Mistakes</span>
+            <span className="text-[13px] font-black text-rose-400">{mistakesCount}</span>
+          </div>
+        )}
+        <div className="flex items-center gap-2 rounded-lg bg-white/[0.03] border border-white/5 px-2.5 py-1.5">
+          <Clock size={12} className="text-white/20" />
+          <span className="text-[13px] font-black text-white/60">{estimatedTime}</span>
         </div>
       </div>
 
       <div className="space-y-3">
-        {/* Primary Action: Continue Journey */}
+        {/* Primary Action: Continue Vocabulary Review */}
         <button
           type="button"
           onClick={onSelectWords}
-          className="group relative flex h-[120px] w-full flex-col items-start justify-center overflow-hidden rounded-[2rem] bg-white p-6 shadow-2xl transition-all active:scale-[0.98]"
+          className="group relative flex w-full flex-col items-start overflow-hidden rounded-[1.75rem] border border-blue-500/20 bg-[#151a24] p-6 transition-all active:scale-[0.98] hover:bg-[#1a212e] hover:border-blue-500/30 shadow-[0_10px_30px_-10px_rgba(59,130,246,0.2)]"
         >
-          <div className="absolute right-0 top-0 -mr-4 -mt-4 h-32 w-32 rounded-full bg-blue-500/10 blur-3xl" />
-          <span className="text-[12px] font-black uppercase tracking-[0.2em] text-black/30">Continue Journey</span>
-          <h2 className="mt-1 text-[22px] font-black text-black">Vocabulary Review</h2>
-          <div className="mt-3 flex items-center gap-2">
-            <div className="h-1.5 w-32 overflow-hidden rounded-full bg-black/5">
-              <div className="h-full w-2/3 bg-blue-500" />
+          <div className="absolute right-0 top-0 -mr-6 -mt-6 h-32 w-32 rounded-full bg-blue-500/5 blur-3xl group-hover:bg-blue-500/10 transition-colors" />
+          
+          <div className="flex w-full items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500/20 text-blue-400 border border-blue-500/20">
+                <BookOpen size={20} strokeWidth={2.5} />
+              </div>
+              <div className="text-left">
+                <h2 className="text-[18px] font-black text-white leading-tight">Continue Review</h2>
+                <p className="text-[12px] font-bold text-blue-400/60">{dueCount} words waiting</p>
+              </div>
             </div>
-            <span className="text-[11px] font-black text-black/40">14/20</span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-black shadow-lg transition-transform group-hover:translate-x-1">
+              <ChevronRight size={18} />
+            </div>
           </div>
-          <Sparkles className="absolute right-6 top-1/2 -translate-y-1/2 text-blue-500" size={24} />
+
+          <div className="w-full space-y-2">
+            <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-wider text-white/30">
+              <span>Progress</span>
+              <span className="text-white/60">14 / 20</span>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-blue-500/10">
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: "70%" }}
+                className="h-full bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.5)]" 
+              />
+            </div>
+          </div>
         </button>
 
-        {/* Continue Words */}
-        <PracticeActionCard
-          title="Continue Words"
-          subtitle={dueCount > 0 ? `${dueCount} words waiting` : "All words reviewed"}
-          icon={<BookOpen size={22} strokeWidth={2.5} />}
-          onClick={onSelectWords}
-          color="blue"
-          badge={dueCount > 0 ? dueCount.toString() : undefined}
-        />
+        {/* Secondary Actions Row */}
+        <div className="grid gap-3 mt-4">
+          {/* Grammar Practice */}
+          <PracticeActionCard
+            title="Grammar Practice"
+            subtitle={weakGrammarCount > 0 ? "Past Simple needs practice" : "No weak topics detected"}
+            icon={<Sparkles size={20} strokeWidth={2.5} />}
+            onClick={onSelectGrammar}
+            color="purple"
+            badge={weakGrammarCount > 0 ? "Weak" : undefined}
+            badgeColor={weakGrammarCount > 0 ? "rose" : undefined}
+          />
 
-        {/* Grammar Practice */}
-        <PracticeActionCard
-          title="Grammar Practice"
-          subtitle={weakGrammarCount > 0 ? "Past Simple needs practice" : "No weak topics detected"}
-          icon={<Sparkles size={22} strokeWidth={2.5} />}
-          onClick={onSelectGrammar}
-          color="purple"
-          badge={weakGrammarCount > 0 ? "Weak" : undefined}
-        />
+          {/* Writing Check */}
+          <PracticeActionCard
+            title="Writing Check"
+            subtitle="30+ words · AI feedback"
+            icon={<PenTool size={20} strokeWidth={2.5} />}
+            onClick={() => {}} // This should open the writing challenge
+            color="emerald"
+          />
 
-        {/* Writing Check - Placeholder for now */}
-        <PracticeActionCard
-          title="Writing Check"
-          subtitle="30+ words & AI feedback"
-          icon={<PenTool size={22} strokeWidth={2.5} />}
-          onClick={() => {}}
-          color="emerald"
-          disabled
-        />
-
-        {/* Quick Quiz - Placeholder for now */}
-        <PracticeActionCard
-          title="Quick Quiz"
-          subtitle="5 questions"
-          icon={<Target size={22} strokeWidth={2.5} />}
-          onClick={() => {}}
-          color="orange"
-          disabled
-        />
+          {/* Quick Quiz */}
+          <PracticeActionCard
+            title="Quick Quiz"
+            subtitle="5 rapid questions"
+            icon={<Target size={20} strokeWidth={2.5} />}
+            onClick={() => {}}
+            color="orange"
+            disabled={dueCount < 3}
+            disabledReason="Need 3+ words saved"
+          />
+        </div>
       </div>
     </div>
   )
@@ -120,7 +149,9 @@ function PracticeActionCard({
   onClick,
   color,
   badge,
-  disabled = false
+  badgeColor,
+  disabled = false,
+  disabledReason
 }: {
   title: string
   subtitle: string
@@ -128,20 +159,22 @@ function PracticeActionCard({
   onClick: () => void
   color: "blue" | "purple" | "emerald" | "orange"
   badge?: string
+  badgeColor?: "rose" | "purple" | "blue" | "emerald"
   disabled?: boolean
+  disabledReason?: string
 }) {
   const colorMap = {
-    blue: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-    purple: "bg-purple-500/10 text-purple-400 border-purple-500/20",
-    emerald: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-    orange: "bg-orange-500/10 text-orange-400 border-orange-500/20"
+    blue: "bg-blue-500/10 text-blue-400 border-blue-500/10",
+    purple: "bg-purple-500/10 text-purple-400 border-purple-500/10",
+    emerald: "bg-emerald-500/10 text-emerald-400 border-emerald-500/10",
+    orange: "bg-orange-500/10 text-orange-400 border-orange-500/10"
   }
 
   const badgeColorMap = {
-    blue: "bg-blue-500/20 text-blue-300",
-    purple: "bg-purple-500/20 text-purple-300",
-    emerald: "bg-emerald-500/20 text-emerald-300",
-    orange: "bg-orange-500/20 text-orange-300"
+    rose: "bg-rose-500/20 text-rose-400 border-rose-500/20",
+    purple: "bg-purple-500/20 text-purple-400 border-purple-500/20",
+    blue: "bg-blue-500/20 text-blue-400 border-blue-500/20",
+    emerald: "bg-emerald-500/20 text-emerald-400 border-emerald-500/20"
   }
 
   return (
@@ -149,26 +182,32 @@ function PracticeActionCard({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`group relative flex h-[100px] w-full items-center gap-4 rounded-[1.5rem] border border-white/5 bg-white/[0.02] p-4 text-left transition-all active:scale-[0.98] ${
-        disabled ? "opacity-50 grayscale cursor-not-allowed" : "hover:bg-white/[0.05] hover:border-white/10"
+      className={`group relative flex h-[92px] w-full items-center gap-4 rounded-2xl border border-white/5 bg-white/[0.02] p-4 text-left transition-all active:scale-[0.98] ${
+        disabled ? "opacity-60 grayscale-[0.5] cursor-not-allowed" : "hover:bg-white/[0.04] hover:border-white/10"
       }`}
     >
-      <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border transition-colors ${colorMap[color]}`}>
+      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border transition-colors ${colorMap[color]}`}>
         {icon}
       </div>
 
       <div className="flex-1 min-w-0">
-        <h3 className="text-[17px] font-black text-white">{title}</h3>
-        <p className="truncate text-[13px] font-bold text-white/30">{subtitle}</p>
+        <h3 className="text-[16px] font-black text-white">{title}</h3>
+        <p className="truncate text-[12px] font-bold text-white/30">
+          {disabled && disabledReason ? disabledReason : subtitle}
+        </p>
       </div>
 
       <div className="flex items-center gap-2">
         {badge && (
-          <span className={`flex h-6 items-center rounded-full px-2 text-[10px] font-black uppercase tracking-wider ${badgeColorMap[color]}`}>
+          <span className={`flex h-6 items-center rounded-full border px-2 text-[9px] font-black uppercase tracking-wider ${badgeColorMap[badgeColor || color]}`}>
             {badge}
           </span>
         )}
-        <ChevronRight size={18} className="text-white/10 transition-transform group-hover:translate-x-0.5" />
+        {!disabled ? (
+          <ChevronRight size={16} className="text-white/10 transition-transform group-hover:translate-x-0.5" />
+        ) : (
+          <AlertCircle size={14} className="text-white/5" />
+        )}
       </div>
     </button>
   )
