@@ -40,12 +40,12 @@ export function GrammarFilters({
     <div className="flex flex-col gap-2 px-4 md:px-0">
       {/* Search Input */}
       <div className="relative">
-        <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20" />
+        <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/20" />
         <input 
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Search topics..."
-          className="h-9 w-full rounded-xl border border-white/5 bg-white/[0.03] pl-9 pr-4 text-[12px] font-medium text-white placeholder:text-white/10 focus:border-white/10 outline-none transition-all"
+          className="h-10 w-full rounded-xl border border-white/5 bg-white/[0.04] pl-10 pr-4 text-[13px] font-medium text-white placeholder:text-white/10 focus:border-white/10 outline-none transition-all"
         />
       </div>
 
@@ -56,10 +56,10 @@ export function GrammarFilters({
             <button
               key={chip.id}
               onClick={() => onFilterChange(chip.id)}
-              className={`whitespace-nowrap rounded-lg px-2.5 py-1 text-[10px] font-black uppercase tracking-widest transition-all ${
+              className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-[11px] font-bold transition-all ${
                 filter === chip.id 
                   ? "bg-white text-black shadow-md" 
-                  : "bg-white/5 text-white/30 border border-white/5 hover:text-white"
+                  : "bg-white/5 text-white/40 border border-white/5 hover:text-white"
               }`}
             >
               {chip.label}
@@ -68,33 +68,33 @@ export function GrammarFilters({
         </div>
 
         {/* Level and Sort */}
-        <div className="flex gap-1.5">
+        <div className="flex gap-2">
           <div className="relative flex-1 md:flex-none">
             <select
               value={cefrFilter}
               onChange={(e) => onCefrFilterChange(e.target.value as CefrLevel | "all")}
-              className="h-7 w-full min-w-[70px] appearance-none rounded-lg border border-white/5 bg-white/5 pl-2 pr-6 text-[10px] font-black uppercase tracking-widest text-white/40 outline-none"
+              className="h-9 w-full min-w-[80px] appearance-none rounded-lg border border-white/5 bg-white/5 pl-2.5 pr-7 text-[11px] font-bold text-white/60 outline-none"
             >
-              <option value="all">Level</option>
+              <option value="all">Level: All</option>
               {CEFR_LEVELS.map((level) => (
                 <option key={level} value={level}>{level}</option>
               ))}
             </select>
-            <ChevronDown size={10} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-white/10" />
+            <ChevronDown size={12} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-white/20" />
           </div>
 
           <div className="relative flex-1 md:flex-none">
             <select
               value={sort}
               onChange={(e) => onSortChange(e.target.value as GrammarSortType)}
-              className="h-7 w-full min-w-[90px] appearance-none rounded-lg border border-white/5 bg-white/5 pl-2 pr-6 text-[10px] font-black uppercase tracking-widest text-white/40 outline-none"
+              className="h-9 w-full min-w-[110px] appearance-none rounded-lg border border-white/5 bg-white/5 pl-2.5 pr-7 text-[11px] font-bold text-white/60 outline-none"
             >
-              <option value="priority">Priority</option>
+              <option value="priority">Recommended</option>
               <option value="weakest">Weakest</option>
               <option value="recent">Recent</option>
-              <option value="cefr">Level</option>
+              <option value="cefr">By Level</option>
             </select>
-            <ChevronDown size={10} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-white/10" />
+            <ChevronDown size={12} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-white/20" />
           </div>
         </div>
       </div>

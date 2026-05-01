@@ -1,19 +1,13 @@
 "use client"
 
-import React, { useMemo, useState } from "react"
+import React, { useMemo, useState, useEffect } from "react"
 import Link from "next/link"
 import { 
-  BookOpen, 
-  CheckCircle2, 
-  History, 
   Search, 
   Sparkles, 
-  TrendingUp, 
-  Zap,
-  ChevronRight,
-  ArrowRight
+  X
 } from "lucide-react"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 
 import type { 
   CefrLevel, 
@@ -21,7 +15,7 @@ import type {
   GrammarSkillsPayload 
 } from "@/lib/types"
 
-import { GrammarStatsCompact } from "./GrammarStatsCompact"
+import { GrammarStatsRow } from "./GrammarStatsRow"
 import { RecommendedTopicCard } from "./RecommendedTopicCard"
 import { GrammarTopicList } from "./GrammarTopicList"
 import { GrammarFilters } from "./GrammarFilters"
@@ -38,6 +32,25 @@ export function GrammarView({ payload }: GrammarViewProps) {
   const [filter, setFilter] = useState<GrammarFilterType>("all")
   const [cefrFilter, setCefrFilter] = useState<CefrLevel | "all">("all")
   const [sort, setSort] = useState<GrammarSortType>("priority")
+  
+  const [showIntro, setShowIntro] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    const visits = parseInt(localStorage.getItem("grammar_visits") || "0")
+    const dismissed = localStorage.getItem("grammar_intro_dismissed") === "true"
+    
+    if (dismissed || visits >= 3) {
+      setShowIntro(false)
+    } else {
+      setShowIntro(true)
+      localStorage.setItem("grammar_visits", (visits + 1).toString())
+    }
+  }, [])
+
+  const handleDismissIntro = () => {
+    localStorage.setItem("grammar_intro_dismissed", "true")
+    setShowIntro(false)
+  }
 
   // Smart Sorting Priority Logic
   const getPriority = (item: GrammarSkillRecord) => {
@@ -94,62 +107,87 @@ export function GrammarView({ payload }: GrammarViewProps) {
     return items.length > 0 ? items[0] : null
   }, [payload.items])
 
+  if (showIntro === null) return null
+
   return (
-    <div className="mx-auto max-w-5xl pb-32 md:pb-20">
-      {/* Header - Minimal & Compact */}
-      <header className="px-4 pb-2 pt-4 md:px-0 md:pb-6 md:pt-8">
-        <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-          <div className="space-y-0">
-            <h1 className="text-[24px] font-black tracking-tight text-white md:text-[40px]">
-              Grammar
-            </h1>
-            <p className="text-[12px] font-bold text-white/30 md:text-[15px] md:text-white/40">
-              Practice weak topics and improve with AI.
-            </p>
-          </div>
-          <div className="hidden md:flex">
-            <Link href="/practice" className="button-primary h-11 px-6 text-[14px]">
-              <Sparkles size={16} />
-              Start Practice
-            </Link>
-          </div>
-        </div>
-      </header>
+    <div className="mx-auto max-w-5xl pb-32">
+      {/* Intro Section or Compact Header */}
+      <AnimatePresence mode="wait">
+        {showIntro ? (
+          <motion.header
+            key="intro"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="relative px-4 pb-6 pt-6 md:px-0 md:pt-10"
+          >
+            <button 
+              onClick={handleDismissIntro}
+              className="absolute right-4 top-6 flex h-8 w-8 items-center justify-center rounded-full bg-white/5 text-white/20 transition hover:bg-white/10 hover:text-white/40 md:hidden"
+            >
+              <X size={16} />
+            </button>
+            <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+              <div className="space-y-1">
+                <h1 className="text-[32px] font-black tracking-tight text-white md:text-[44px]">
+                  Grammar
+                </h1>
+                <p className="max-w-xs text-[14px] font-medium text-white/40 md:max-w-xl md:text-[16px] md:text-white/50">
+                  Practice weak topics and improve with AI.
+                </p>
+              </div>
+              <Link href="/practice" className="button-primary h-12 px-8">
+                <Sparkles size={18} />
+                Start Grammar Practice
+              </Link>
+            </div>
+          </motion.header>
+        ) : (
+          <motion.header
+            key="compact"
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="px-4 pb-4 pt-6 md:px-0 md:pt-10"
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div className="space-y-0.5">
+                <h1 className="text-[20px] font-black tracking-tight text-white md:text-[32px]">
+                  Grammar
+                </h1>
+                <GrammarStatsRow payload={payload} />
+              </div>
+              <Link 
+                href="/practice" 
+                className="flex h-10 items-center gap-2 rounded-xl bg-white/5 px-4 text-[13px] font-black text-white border border-white/5 active:scale-[0.98] transition-transform md:h-12 md:px-6"
+              >
+                <Sparkles size={14} className="text-white/40 md:w-4 md:h-4" />
+                <span>Practice</span>
+              </Link>
+            </div>
+          </motion.header>
+        )}
+      </AnimatePresence>
 
-      {/* Primary Mobile CTA */}
-      <div className="mb-4 px-4 md:hidden">
-        <Link 
-          href="/practice" 
-          className="flex h-[52px] w-full items-center justify-center gap-2 rounded-2xl bg-white font-black text-black shadow-lg active:scale-[0.98] transition-transform"
-        >
-          <Sparkles size={18} />
-          Start Practice
-        </Link>
-      </div>
-
-      <div className="space-y-5 md:space-y-10">
-        {/* Recommended Section - Compact */}
+      <div className="mt-4 space-y-8 md:mt-12 md:space-y-16">
+        {/* Recommended Section */}
         {mainRecommended && (
-          <section className="space-y-2 px-4 md:px-0">
-            <div className="flex items-center gap-2">
-              <Sparkles size={12} className="text-amber-400" />
-              <h2 className="text-[11px] font-bold uppercase tracking-widest text-amber-400/50">Next for you</h2>
+          <section className="space-y-3 px-4 md:px-0">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles size={14} className="text-amber-400" />
+                <h2 className="text-[12px] font-bold uppercase tracking-widest text-amber-400/60">Recommendation</h2>
+              </div>
             </div>
             <RecommendedTopicCard item={mainRecommended} />
           </section>
         )}
 
-        {/* Compact Stats */}
-        <section className="px-4 md:px-0">
-          <GrammarStatsCompact payload={payload} />
-        </section>
-
         {/* Topic Library */}
-        <section className="space-y-3">
-          <div className="sticky top-0 z-20 space-y-3 bg-black/80 pb-2 pt-2 backdrop-blur-md md:static md:bg-transparent md:p-0 md:backdrop-blur-none">
+        <section className="space-y-4">
+          <div className="sticky top-0 z-20 space-y-4 bg-black/90 pb-3 pt-2 backdrop-blur-md md:static md:bg-transparent md:p-0 md:backdrop-blur-none">
             <div className="flex items-center justify-between px-4 md:px-0">
-              <h2 className="text-[18px] font-black text-white md:text-[22px]">Topic Library</h2>
-              <span className="text-[11px] font-bold text-white/20 uppercase tracking-widest">{payload.items.length} topics</span>
+              <h2 className="text-[18px] font-black text-white md:text-[24px]">Topic Library</h2>
+              <span className="text-[12px] font-bold text-white/30">{payload.items.length} topics</span>
             </div>
 
             <GrammarFilters 

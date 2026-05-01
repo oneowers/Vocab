@@ -3,7 +3,7 @@
 import React from "react"
 import { Search } from "lucide-react"
 import type { CefrLevel, GrammarSkillRecord } from "@/lib/types"
-import { GrammarTopicListItem } from "./GrammarTopicListItem"
+import { GrammarTopicRow } from "./GrammarTopicRow"
 
 export function GrammarTopicList({ items }: { items: GrammarSkillRecord[] }) {
   if (items.length === 0) {
@@ -28,18 +28,18 @@ export function GrammarTopicList({ items }: { items: GrammarSkillRecord[] }) {
   })).filter(g => g.items.length > 0)
 
   return (
-    <div className="space-y-8 px-4 pb-20 md:px-0">
+    <div className="space-y-6 px-4 pb-20 md:px-0">
       {grouped.map((group) => (
-        <div key={group.level} className="space-y-3">
+        <div key={group.level} className="space-y-2.5">
           <div className="flex items-center gap-3">
-            <span className="text-[11px] font-black text-white/20 uppercase tracking-[0.2em]">
-              Level {group.level}
+            <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">
+              {group.level}
             </span>
             <div className="h-[1px] flex-1 bg-white/5" />
           </div>
           <div className="grid gap-2 md:grid-cols-2 md:gap-4">
             {group.items.map((item, i) => (
-              <GrammarTopicListItem key={item.topic.id} item={item} index={i} />
+              <GrammarTopicRow key={item.topic.id} item={item} index={i} />
             ))}
           </div>
         </div>

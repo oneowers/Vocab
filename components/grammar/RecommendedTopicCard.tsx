@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { ChevronRight } from "lucide-react"
+import { ArrowRight, Sparkles } from "lucide-react"
 import { motion } from "framer-motion"
 import type { GrammarSkillRecord } from "@/lib/types"
 
@@ -10,43 +10,43 @@ export function RecommendedTopicCard({ item }: { item: GrammarSkillRecord }) {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="group relative overflow-hidden rounded-2xl border border-amber-500/10 bg-amber-500/[0.03] p-3 active:scale-[0.99] transition-transform md:p-4"
+      className="group relative overflow-hidden rounded-[1.5rem] border border-white/[0.08] bg-[#1a1a1f] p-4 active:scale-[0.98] transition-transform"
     >
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-4">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5 mb-1">
-            <span className="rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest text-amber-400 border border-amber-500/10">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="rounded-full bg-white/5 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-white/50 border border-white/5">
               {item.topic.cefrLevel}
             </span>
-            <span className="text-[9px] font-bold uppercase tracking-widest text-rose-400/60">Weakest</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-rose-500">Weak Area</span>
           </div>
           
-          <h3 className="truncate text-[16px] font-black text-white md:text-[18px]">
+          <h3 className="text-[17px] font-black text-white truncate">
             {item.topic.titleEn}
           </h3>
-          <p className="truncate text-[12px] font-bold text-amber-300/30">
+          <p className="text-[14px] font-bold text-white/40 truncate">
             {item.topic.titleRu}
           </p>
+          
+          {/* Progress Bar */}
+          <div className="mt-4 h-1.5 w-full max-w-[140px] overflow-hidden rounded-full bg-white/5">
+            <div 
+              className="h-full bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.4)]"
+              style={{ width: `${Math.max(10, (item.score + 100) / 2)}%` }}
+            />
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="text-right">
-            <span className="text-[18px] font-black text-amber-400 md:text-[22px]">
+        <div className="flex flex-col items-end gap-3">
+          <div className="flex items-baseline gap-0.5">
+            <span className="text-[24px] font-black text-white">
               {item.score}
             </span>
           </div>
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/5 text-white/20">
-            <ChevronRight size={14} />
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-black shadow-lg">
+            <ArrowRight size={18} />
           </div>
         </div>
-      </div>
-      
-      {/* Tiny Progress Bar */}
-      <div className="mt-3 h-0.5 w-full overflow-hidden rounded-full bg-white/5">
-        <div 
-          className="h-full bg-amber-500"
-          style={{ width: `${Math.max(10, (item.score + 100) / 2)}%` }}
-        />
       </div>
     </motion.div>
   )
