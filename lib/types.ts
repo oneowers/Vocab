@@ -256,6 +256,46 @@ export interface PracticeWritingChallengeResult {
   nextTask: string
 }
 
+export type WritingTaskType = 
+  | "words_in_sentences"
+  | "short_paragraph"
+  | "answer_question"
+  | "rewrite_sentences"
+  | "ielts_mini"
+  | "story_mode"
+  | "grammar_focused"
+
+export interface GrammarWritingFeedback {
+  type: "writing_feedback"
+  score: number
+  cefrLevel: CefrLevel
+  summaryRu: string
+  targetGrammarTopics: Array<{
+    topicKey: string
+    status: "weak" | "neutral" | "strong"
+    scoreDelta: number
+    explanationRu: string
+  }>
+  wordUsage?: Array<{
+    word: string
+    status: "correct" | "incorrect" | "missing"
+    feedbackRu: string
+  }>
+  mistakes: Array<{
+    type: "grammar" | "vocabulary" | "style"
+    topicKey?: string
+    original: string
+    corrected: string
+    explanationRu: string
+    severity: GrammarSeverity
+  }>
+  correctFragments: Array<{
+    text: string
+    reasonRu: string
+  }>
+  nextSuggestionRu: string
+}
+
 export interface ChartPoint {
   date: string
   label: string

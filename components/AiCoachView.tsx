@@ -278,7 +278,25 @@ export function AiCoachView({ isPro }: { isPro: boolean }) {
 
       {/* Sticky Input */}
       <div className="fixed inset-x-0 bottom-0 z-50 bg-gradient-to-t from-black via-black/95 to-transparent px-3 pb-8 pt-10 md:px-4 md:pb-10 md:pt-14">
-        <div className="mx-auto max-w-2xl">
+        <div className="mx-auto max-w-2xl flex flex-col gap-2">
+          <div className="hide-scrollbar flex overflow-x-auto gap-2 px-1">
+            <button
+              type="button"
+              onClick={() => setInput(prev => (prev + " /unknowncard").trim())}
+              className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] font-bold text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <Target size={12} className="text-rose-400" />
+              + /unknowncard
+            </button>
+            <button
+              type="button"
+              onClick={() => setInput("words about ")}
+              className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] font-bold text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <Layers size={12} className="text-blue-400" />
+              Topic dictionary
+            </button>
+          </div>
           <form onSubmit={e => { e.preventDefault(); sendMessage(input) }}
             className="flex items-end gap-2 rounded-[2rem] border border-white/10 bg-[#121217]/90 p-1.5 shadow-2xl backdrop-blur-3xl focus-within:border-white/20 md:rounded-[2.5rem] md:p-2"
           >

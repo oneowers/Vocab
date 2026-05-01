@@ -23,6 +23,7 @@ import {
   looksLikeAIBlock,
   type ChatMessage,
   type QuizBlock,
+  type WordListBlock,
   type AIBlock
 } from "@/lib/ai-blocks"
 
@@ -50,6 +51,128 @@ interface AiChatApiResponse {
 }
 
 // ─── QuizCard ─────────────────────────────────────────────────────────────────
+
+// ─── WordListCard ──────────────────────────────────────────────────────────────
+
+function WordListCard({ block }: { block: WordListBlock }) {
+  const [saved, setSaved] = useState<Set<string>>(new Set())
+  const [saving, setSaving] = useState<Set<string>>(new Set())
+  const [allSaved, setAllSaved] = useState(false)
+  const [savingAll, setSavingAll] = useState(false)
+
+  async function saveWord(word: string, translation: string) {
+    if (saved.has(word) || saving.has(word)) return
+    setSaving(prev => new Set(prev).add(word))
+    try {
+      const res = await fetch("/api/cards", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ original: word, translation, direction: "en-ru" })
+      })
+      if (res.ok) {
+        setSaved(prev => new Set(prev).add(word))
+      }
+    } finally {
+      setSaving(prev => { const next = new Set(prev); next.delete(word); return next })
+    }
+  }
+
+  async function saveAll() {
+    setSavingAll(true)
+    const unsaved = block.items.filter(w => !saved.has(w.word))
+    await Promise.allSettled(unsaved.map(w => saveWord(w.word, w.translation)))
+    setAllSaved(true)
+    setSavingAll(false)
+  }
+
+  const savedCount = saved.size
+  const total = block.items.length
+
+  return (
+    <div className="rounded-[1.75rem] border border-white/10 bg-[linear-gradient(145deg,#0f1117,#0a0c12)] p-4 shadow-2xl md:p-5">
+      {/* Header */}
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <div className="mb-1 flex items-center gap-2">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500/10 text-blue-400">
+              <Layers size={13} />
+            </div>
+            <span className="text-[9px] font-black uppercase tracking-widest text-white/40">Topic Dictionary</span>
+          </div>
+          <h2 className="text-[18px] font-black text-white leading-tight">{block.topic}</h2>
+          {block.description && (
+            <p className="mt-1 text-[12px] text-white/40 leading-relaxed">{block.description}</p>
+          )}
+        </div>
+        <button
+          onClick={saveAll}
+          disabled={savingAll || allSaved}
+          className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-black transition-all ${
+            allSaved
+              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+              : "bg-white text-black active:scale-95 hover:bg-white/90"
+          }`}
+        >
+          {savingAll ? (
+            <><Loader2 size={11} className="animate-spin" /> Saving...</>
+          ) : allSaved ? (
+            <><CheckCircle2 size={11} /> All saved!</>
+          ) : (
+            <><ArrowRight size={11} /> Save all ({total - savedCount})</>
+          )}
+        </button>
+      </div>
+
+      {/* Word list */}
+      <div className="space-y-1.5">
+        {block.items.map((item) => {
+          const isSaved = saved.has(item.word)
+          const isSaving = saving.has(item.word)
+          return (
+            <div
+              key={item.word}
+              className={`flex items-center gap-3 rounded-2xl border px-3.5 py-2.5 transition-all ${
+                isSaved ? "border-emerald-500/20 bg-emerald-500/5" : "border-white/5 bg-white/[0.02]"
+              }`}
+            >
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className={`text-[14px] font-bold ${ isSaved ? "text-emerald-300" : "text-white"}`}>{item.word}</span>
+                  {item.level && (
+                    <span className="rounded-full bg-white/5 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white/30">
+                      {item.level}
+                    </span>
+                  )}
+                </div>
+                <span className="text-[12px] text-white/50">{item.translation}</span>
+                {item.example && (
+                  <p className="mt-0.5 text-[11px] italic text-white/30 truncate">{item.example}</p>
+                )}
+              </div>
+              <button
+                onClick={() => saveWord(item.word, item.translation)}
+                disabled={isSaved || isSaving}
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-all ${
+                  isSaved
+                    ? "bg-emerald-500/10 text-emerald-400"
+                    : "bg-white/5 text-white/40 hover:bg-white/10 hover:text-white active:scale-95"
+                }`}
+              >
+                {isSaving ? <Loader2 size={12} className="animate-spin" /> : isSaved ? <CheckCircle2 size={12} /> : <ArrowRight size={12} />}
+              </button>
+            </div>
+          )
+        })}
+      </div>
+
+      {savedCount > 0 && (
+        <p className="mt-3 text-center text-[11px] text-white/30">
+          {savedCount} of {total} words added to your deck
+        </p>
+      )}
+    </div>
+  )
+}
 
 function QuizCard({ quiz }: { quiz: QuizBlock }) {
   const [idx, setIdx] = useState(0)
@@ -199,6 +322,10 @@ function AiMessage({ msg }: { msg: ChatMessage }) {
     return <QuizCard quiz={msg.block} />
   }
 
+  if (msg.kind === "block" && msg.block.type === "word_list") {
+    return <WordListCard block={msg.block} />
+  }
+
   if (msg.kind === "error") {
     return (
       <div className="flex justify-start">
@@ -249,4 +376,4 @@ function AiMessage({ msg }: { msg: ChatMessage }) {
   )
 }
 
-export { QuizCard, AiMessage }
+export { QuizCard, WordListCard, AiMessage }

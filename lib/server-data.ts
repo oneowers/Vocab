@@ -251,6 +251,18 @@ export function getUserReviewData(userId: string): Promise<CardsResponse> {
   )
 }
 
+export async function getPracticePageData(userId: string) {
+  const [reviewData, grammarData] = await Promise.all([
+    getUserReviewData(userId),
+    import("@/lib/grammar").then((m) => m.getUserGrammarSkillsData(userId, "weak"))
+  ])
+
+  return {
+    reviewData,
+    grammarData
+  }
+}
+
 export async function buildUserStats(userId: string): Promise<StatsPayload> {
   const prisma = getPrisma()
   const today = getTodayDateKey()

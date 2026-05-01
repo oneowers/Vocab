@@ -5,6 +5,7 @@ import { generateLexiAiText } from "@/lib/ai"
 import {
   buildQuizPrompt,
   buildQuizRepairPrompt,
+  buildWordListPrompt,
   parseAIBlockFromText,
   type TargetWord
 } from "@/lib/ai-blocks"
@@ -132,7 +133,8 @@ function pickTopLevel(profile: Awaited<ReturnType<typeof fetchCefrProfile>>) {
 function buildAiChatPrompt(
   rawMessage: string,
   history: ReturnType<typeof normalizeHistory>,
-  mode: AiChatMode
+  mode: AiChatMode,
+  userContext: string = ""
 ) {
   const modeInstruction = isInteractiveMode(mode)
     ? [
@@ -150,11 +152,12 @@ function buildAiChatPrompt(
     "If they ask about live/current information such as weather, be honest that you do not have live local data and give a useful general answer.",
     "Keep the answer concise and natural.",
     modeInstruction,
+    userContext,
     "",
     formatHistory(history),
     "",
     `Learner message: ${rawMessage}`
-  ].join("\n")
+  ].filter(Boolean).join("\n")
 }
 
 function buildFallbackStudyReply({
@@ -274,16 +277,75 @@ async function fetchAiText(prompt: string, maxTokens = 800) {
 }
 
 // ============================================================
+// WORD LIST GENERATION PIPELINE
+// ============================================================
+
+function extractTopicFromMessage(message: string): string | null {
+  const normalized = message.trim()
+
+  const patterns = [
+    /словарь\s+(?:по\s+теме\s+|на тему\s+|по\s+)?["']?(.+?)["']?$/i,
+    /слова\s+(?:по\s+теме\s+|на тему\s+|о\s+|об\s+)?["']?(.+?)["']?$/i,
+    /words?\s+(?:on|about|for|related to)\s+["']?(.+?)["']?$/i,
+    /vocabulary\s+(?:for|on|about)\s+["']?(.+?)["']?$/i,
+    /topic\s*(?:dictionary|vocab|words)?\s*[:\/]\s*["']?(.+?)["']?$/i,
+    /\/topic\s+["']?(.+?)["']?$/i,
+  ]
+
+  for (const pattern of patterns) {
+    const match = normalized.match(pattern)
+    if (match?.[1]) {
+      return match[1].trim().slice(0, 80)
+    }
+  }
+
+  return null
+}
+
+async function handleWordListMode(topic: string, cefrLevel?: string): Promise<NextResponse> {
+  const prompt = buildWordListPrompt(topic, cefrLevel)
+  const rawReply = await fetchAiText(prompt, 2500).catch(() => null)
+
+  if (!rawReply) {
+    return NextResponse.json({
+      reply: "AI coach is temporarily unavailable. Please try again in a moment.",
+      kind: "text",
+      mode: "fallback"
+    })
+  }
+
+  const parseResult = parseAIBlockFromText(rawReply)
+
+  if (parseResult.ok) {
+    return NextResponse.json({
+      kind: "block",
+      block: parseResult.block,
+      reply: null,
+      mode: "block"
+    })
+  }
+
+  return NextResponse.json({
+    reply: `Could not generate word list for "${topic}". Please try again.`,
+    kind: "text",
+    mode: "fallback"
+  })
+}
+
+// ============================================================
 // QUIZ GENERATION PIPELINE
 // ============================================================
 
 async function handleQuizMode(userId: string): Promise<NextResponse> {
   const prisma = getPrisma()
 
-  // 1. Fetch user cards
+  // 1. Fetch user cards (prioritize unknown words)
   const cards = await prisma.card.findMany({
     where: { userId },
-    orderBy: { nextReviewDate: "asc" },
+    orderBy: [
+      { lastReviewResult: "desc" }, // "unknown" sorts before "known"
+      { nextReviewDate: "asc" }
+    ],
     take: 8,
     include: { catalogWord: true }
   })
@@ -296,25 +358,25 @@ async function handleQuizMode(userId: string): Promise<NextResponse> {
     })
   }
 
-  // 2. Build deduplicated target words list (filter out cards missing word/translation)
+  // 2. Build deduplicated target words list
   const seen = new Set<string>()
   const targetWords: TargetWord[] = cards
-    .filter((c) => Boolean(c.original && c.translation))
+    .map((c) => ({
+      word: c.original || c.catalogWord?.word,
+      translation: c.translation || c.catalogWord?.translation,
+      level: c.catalogWord?.cefrLevel ?? undefined
+    }))
+    .filter((c): c is TargetWord => Boolean(c.word && c.translation))
     .filter((c) => {
-      const key = c.original!.toLowerCase()
+      const key = c.word.toLowerCase()
       if (seen.has(key)) return false
       seen.add(key)
       return true
     })
-    .map((c) => ({
-      word: c.original!,
-      translation: c.translation!,
-      level: c.catalogWord?.cefrLevel ?? undefined
-    }))
 
   // 3. Build hidden prompt and call AI
   const quizPrompt = buildQuizPrompt(targetWords)
-  const rawReply = await fetchAiText(quizPrompt, 1200).catch(() => null)
+  const rawReply = await fetchAiText(quizPrompt, 3000).catch(() => null)
 
   if (!rawReply) {
     return NextResponse.json({
@@ -343,7 +405,7 @@ async function handleQuizMode(userId: string): Promise<NextResponse> {
   }
 
   const repairPrompt = buildQuizRepairPrompt(targetWords, parseResult.error)
-  const repairReply = await fetchAiText(repairPrompt, 1200).catch(() => null)
+  const repairReply = await fetchAiText(repairPrompt, 3000).catch(() => null)
 
   if (repairReply) {
     const repairResult = parseAIBlockFromText(repairReply)
@@ -361,9 +423,11 @@ async function handleQuizMode(userId: string): Promise<NextResponse> {
     }
   }
 
-  // 6. Both failed → return friendly error
+  const finalError = repairReply ? parseAIBlockFromText(repairReply) : parseResult
+  const errorMsg = !finalError.ok ? finalError.error : "Unknown validation error"
+
   return NextResponse.json({
-    reply: "Quiz generation failed. The AI returned an unexpected response. Please try again.",
+    reply: `Quiz generation failed. Please try again. (${errorMsg})`,
     kind: "text",
     mode: "fallback"
   })
@@ -390,11 +454,44 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Slow down a little." }, { status: 429 })
   }
 
+  const prisma = getPrisma()
   const body = (await request.json().catch(() => null)) as AiChatRequestBody | null
-  const rawMessage = body?.message?.trim()
+  let rawMessage = body?.message?.trim()
 
   if (!rawMessage) {
     return NextResponse.json({ error: "Missing message." }, { status: 400 })
+  }
+
+  let userContext = ""
+  if (rawMessage.toLowerCase().includes("/unknowncard")) {
+    rawMessage = rawMessage.replace(/\/unknowncards?/gi, "").trim()
+    if (!rawMessage) {
+      rawMessage = "Can you help me practice these unknown words?"
+    }
+    
+    const unknownCards = await prisma.card.findMany({
+      where: { 
+        userId: user.id,
+        lastReviewResult: "unknown"
+      },
+      take: 10,
+      orderBy: { wrongCount: "desc" },
+      include: { catalogWord: true }
+    })
+
+    if (unknownCards.length > 0) {
+      const wordsList = unknownCards
+        .map(c => ({
+          word: c.original || c.catalogWord?.word,
+          translation: c.translation || c.catalogWord?.translation
+        }))
+        .filter(c => c.word && c.translation)
+        .map(c => `- ${c.word} (${c.translation})`)
+        .join("\n")
+      userContext = `\n\n[SYSTEM CONTEXT: The user requested to include their 'unknown/problematic' words in this conversation. Here are up to 10 of their unknown words:\n${wordsList}\nMake sure to use or refer to these words in your response if applicable.]`
+    } else {
+      userContext = `\n\n[SYSTEM CONTEXT: The user requested to include their unknown words, but they currently have no words marked as 'unknown'.]`
+    }
   }
 
   const mode = isAiChatMode(body?.mode) ? body.mode : "chat"
@@ -405,9 +502,15 @@ export async function POST(request: NextRequest) {
     return handleQuizMode(user.id)
   }
 
+  // ── Word list / topic dictionary ────────────────────────────
+  const detectedTopic = extractTopicFromMessage(rawMessage)
+  if (detectedTopic) {
+    return handleWordListMode(detectedTopic, user.cefrLevel)
+  }
+
   // ── Other interactive modes (story, memory, roleplay, review) ──
-  if (isInteractiveMode(mode) || !hasStudyIntent(rawMessage)) {
-    const aiReply = await fetchAiText(buildAiChatPrompt(rawMessage, history, mode)).catch(() => null)
+  if (isInteractiveMode(mode) || !hasStudyIntent(rawMessage) || userContext !== "") {
+    const aiReply = await fetchAiText(buildAiChatPrompt(rawMessage, history, mode, userContext)).catch(() => null)
 
     return NextResponse.json({
       reply: aiReply || "I can help with that, but the AI provider is not available right now. Try again in a moment.",
@@ -424,7 +527,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Missing message." }, { status: 400 })
   }
 
-  const prisma = getPrisma()
   const settings = await getOrCreateAppSettings(prisma)
 
   const sourceLang = hasCyrillic(message) && !hasLatin(message) ? "RU" : "EN"

@@ -22,6 +22,7 @@ export type ChatMessage =
 
 export type AIBlock =
   | QuizBlock
+  | WordListBlock
   | FlashcardBlock
   | StudyPlanBlock
   | ExampleSentencesBlock
@@ -58,6 +59,20 @@ export type QuizBlock = {
 // ============================================================
 // STUB BLOCK TYPES (ready for future implementation)
 // ============================================================
+
+export type WordListItem = {
+  word: string
+  translation: string
+  level?: string
+  example?: string
+}
+
+export type WordListBlock = {
+  type: "word_list"
+  topic: string
+  description?: string
+  items: WordListItem[]
+}
 
 export type FlashcardBlock = {
   type: "flashcard"
@@ -248,6 +263,52 @@ export function validateQuizBlock(data: unknown): ValidationResult<QuizBlock> {
   }
 }
 
+function validateWordListBlock(data: unknown): ValidationResult<WordListBlock> {
+  if (!data || typeof data !== "object") {
+    return { ok: false, error: "Data is not an object" }
+  }
+  const d = data as Record<string, unknown>
+
+  if (d.type !== "word_list") {
+    return { ok: false, error: `Expected type "word_list", got "${d.type}"` }
+  }
+
+  const topic = String(d.topic ?? "").trim()
+  if (!topic) return { ok: false, error: "word_list is missing topic" }
+
+  if (!Array.isArray(d.items) || d.items.length === 0) {
+    return { ok: false, error: "word_list has no items" }
+  }
+
+  const items: WordListItem[] = []
+  for (const item of d.items as unknown[]) {
+    if (!item || typeof item !== "object") continue
+    const it = item as Record<string, unknown>
+    const word = String(it.word ?? "").trim()
+    const translation = String(it.translation ?? "").trim()
+    if (word && translation) {
+      items.push({
+        word,
+        translation,
+        level: it.level ? String(it.level).trim() : undefined,
+        example: it.example ? String(it.example).trim() : undefined
+      })
+    }
+  }
+
+  if (items.length === 0) return { ok: false, error: "word_list has no valid items" }
+
+  return {
+    ok: true,
+    data: {
+      type: "word_list",
+      topic,
+      description: d.description ? String(d.description).trim() : undefined,
+      items
+    }
+  }
+}
+
 export function validateAIBlock(data: unknown): ValidationResult<AIBlock> {
   if (!data || typeof data !== "object") {
     return { ok: false, error: "Not an object" }
@@ -257,6 +318,8 @@ export function validateAIBlock(data: unknown): ValidationResult<AIBlock> {
   switch (d.type) {
     case "quiz":
       return validateQuizBlock(data)
+    case "word_list":
+      return validateWordListBlock(data)
     case "flashcard":
     case "study_plan":
     case "examples":
@@ -418,4 +481,35 @@ Rules:
 
 Target words:
 ${targetWordsText}`
+}
+
+export function buildWordListPrompt(topic: string, cefrLevel?: string): string {
+  const levelHint = cefrLevel ? ` at approximately ${cefrLevel} CEFR level` : ""
+
+  return `You are a vocabulary expert for English learners.
+Return only valid raw JSON. No markdown. No code fences. No explanations.
+
+Generate a list of 12 useful English words on the topic: "${topic}"${levelHint}.
+
+Required JSON structure:
+{
+  "type": "word_list",
+  "topic": "${topic}",
+  "description": "Short one-line description of why these words are useful",
+  "items": [
+    {
+      "word": "commute",
+      "translation": "добираться до работы",
+      "level": "B1",
+      "example": "I commute to work by train."
+    }
+  ]
+}
+
+Rules:
+- Include exactly 12 words.
+- Each item must have: word (English), translation (Russian), level (CEFR A1-C2), example (short English sentence).
+- Words must be practical and commonly used for the topic.
+- Do NOT wrap the JSON in markdown or code fences.
+- Return ONLY the JSON object. Nothing else.`
 }
