@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       orderBy: { nextReviewDate: "asc" },
       select: { original: true }
     })
-    targetWords = cards.map(c => c.original)
+    targetWords = cards.map(c => c.original).filter((w): w is string => !!w)
   }
 
   const prompt = `
@@ -65,6 +65,10 @@ export async function POST(request: NextRequest) {
     temperature: 0.7,
     responseMimeType: "application/json"
   })
+
+  if (!result || !result.text) {
+    return NextResponse.json({ error: "Failed to generate task" }, { status: 500 })
+  }
 
   try {
     const data = JSON.parse(result.text)

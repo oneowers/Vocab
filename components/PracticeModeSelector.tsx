@@ -159,7 +159,7 @@ function PracticeActionCard({
   onClick: () => void
   color: "blue" | "purple" | "emerald" | "orange"
   badge?: string
-  badgeColor?: "rose" | "purple" | "blue" | "emerald"
+  badgeColor?: "rose" | "purple" | "blue" | "emerald" | "orange"
   disabled?: boolean
   disabledReason?: string
 }) {
@@ -174,7 +174,8 @@ function PracticeActionCard({
     rose: "bg-rose-500/20 text-rose-400 border-rose-500/20",
     purple: "bg-purple-500/20 text-purple-400 border-purple-500/20",
     blue: "bg-blue-500/20 text-blue-400 border-blue-500/20",
-    emerald: "bg-emerald-500/20 text-emerald-400 border-emerald-500/20"
+    emerald: "bg-emerald-500/20 text-emerald-400 border-emerald-500/20",
+    orange: "bg-orange-500/20 text-orange-400 border-orange-500/20"
   }
 
   return (

@@ -91,6 +91,12 @@ export async function POST(request: NextRequest) {
       temperature: 0.2,
       responseMimeType: "application/json"
     })
+
+    if (!aiResult || !aiResult.text) {
+      attempts++
+      continue
+    }
+
     resultText = aiResult.text
     try {
       JSON.parse(resultText)

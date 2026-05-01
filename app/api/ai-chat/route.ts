@@ -361,12 +361,17 @@ async function handleQuizMode(userId: string): Promise<NextResponse> {
   // 2. Build deduplicated target words list
   const seen = new Set<string>()
   const targetWords: TargetWord[] = cards
-    .map((c) => ({
-      word: c.original || c.catalogWord?.word || "",
-      translation: c.translation || c.catalogWord?.translation || "",
-      level: (c.catalogWord?.cefrLevel as string) ?? undefined
-    }))
-    .filter((c): c is TargetWord => !!c.word && !!c.translation)
+    .map((c): TargetWord => {
+      const res: TargetWord = {
+        word: c.original || c.catalogWord?.word || "",
+        translation: c.translation || c.catalogWord?.translation || "",
+      }
+      if (c.catalogWord?.cefrLevel) {
+        res.level = c.catalogWord.cefrLevel as string
+      }
+      return res
+    })
+    .filter((c) => !!c.word && !!c.translation)
     .filter((c) => {
       const key = c.word.toLowerCase()
       if (seen.has(key)) return false

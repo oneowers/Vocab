@@ -62,6 +62,10 @@ export async function POST(request: NextRequest) {
     responseMimeType: "application/json"
   })
 
+  if (!result || !result.text) {
+    return NextResponse.json({ error: "Failed to generate evaluation" }, { status: 500 })
+  }
+
   try {
     const feedback = JSON.parse(result.text)
     return NextResponse.json({ feedback })
