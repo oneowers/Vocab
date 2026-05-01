@@ -1,10 +1,5 @@
-import { requireSignedInAppUser } from "@/lib/auth"
-import { getUserGrammarSkillsData } from "@/lib/grammar"
-import { GrammarSkillsDashboard } from "@/components/GrammarSkillsDashboard"
+import { redirect } from "next/navigation"
 
-export default async function GrammarSkillsPage() {
-  const user = await requireSignedInAppUser()
-  const payload = await getUserGrammarSkillsData(user.id, "all")
-
-  return <GrammarSkillsDashboard payload={payload} />
+export default function GrammarSkillsRedirect() {
+  redirect("/grammar")
 }

@@ -1,4 +1,5 @@
 import {
+  BookOpen,
   BookOpenCheck,
   ChartColumnBig,
   Cog,
@@ -39,6 +40,11 @@ export function getAppSidebarNavItems(role: Role | null): NavItem[] {
       label: "Practice",
       icon: Sparkles
     },
+    {
+      href: "/grammar",
+      label: "Grammar",
+      icon: BookOpen
+    },
     aiNavItem,
     {
       href: "/profile",
@@ -78,6 +84,12 @@ export function getAppMobileNavItems(role: Role | null): NavItem[] {
       label: "Practice",
       icon: Sparkles,
       match: (pathname) => pathname === "/practice" || pathname === "/review"
+    },
+    {
+      href: "/grammar",
+      label: "Grammar",
+      icon: BookOpen,
+      match: (pathname) => pathname === "/grammar"
     },
     aiNavItem
   ]
