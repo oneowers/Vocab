@@ -356,7 +356,7 @@ function AiMessage({ msg }: { msg: ChatMessage }) {
     }
   }
 
-  return (
+  return ( 
     <div className="flex justify-start">
       <div className="w-full rounded-[1.75rem] border border-white/5 bg-[#121217] px-5 py-3.5 text-[14px] leading-relaxed text-white/90 shadow-xl md:px-6 md:py-4 md:text-[15px]">
         <ReactMarkdown
