@@ -372,7 +372,7 @@ async function handleQuizMode(userId: string): Promise<NextResponse> {
       if (seen.has(key)) return false
       seen.add(key)
       return true
-    })
+    }) 
 
   // 3. Build hidden prompt and call AI
   const quizPrompt = buildQuizPrompt(targetWords)
