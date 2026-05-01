@@ -45,7 +45,8 @@ export function serializeUser(user: User): AppUserRecord {
     lastStreakRecoveryDate: user.lastStreakRecoveryDate,
     createdAt: user.createdAt.toISOString(),
     lastActiveAt: user.lastActiveAt?.toISOString() ?? null,
-    lastReviewDate: user.lastReviewDate
+    lastReviewDate: user.lastReviewDate,
+    proUntil: user.proUntil?.toISOString() ?? null
   }
 }
 

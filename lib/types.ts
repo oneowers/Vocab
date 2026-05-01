@@ -58,6 +58,7 @@ export interface AppUserRecord {
   createdAt: string
   lastActiveAt: string | null
   lastReviewDate: string | null
+  proUntil: string | null
 }
 
 export interface WordCatalogRecord {
@@ -456,4 +457,24 @@ export interface GuestReviewLog {
   cardId: string
   result: ReviewResult
   createdAt: string
+}
+
+export interface PromoCodeRecord {
+  id: string
+  code: string
+  description: string | null
+  maxUses: number | null
+  currentUses: number
+  expiresAt: string | null
+  isActive: boolean
+  proDurationDays: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface AdminPromoCodesPayload {
+  items: PromoCodeRecord[]
+  page: number
+  totalPages: number
+  totalItems: number
 }

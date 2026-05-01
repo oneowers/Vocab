@@ -2,11 +2,13 @@ import {
   BookOpenCheck,
   ChartColumnBig,
   Cog,
+  Crown,
   House,
   Library,
   MessageCircle,
   Shield,
   Sparkles,
+  Ticket,
   UserRound,
   Users
 } from "lucide-react"
@@ -21,7 +23,7 @@ const aiNavItem: NavItem = {
 }
 
 export function getAppSidebarNavItems(role: Role | null): NavItem[] {
-  return [
+  const items: NavItem[] = [
     {
       href: "/",
       label: "Home",
@@ -44,10 +46,21 @@ export function getAppSidebarNavItems(role: Role | null): NavItem[] {
       icon: UserRound
     }
   ]
+
+  if (role && role !== "PRO" && role !== "ADMIN") {
+    items.push({
+      href: "/pro",
+      label: "Get PRO",
+      icon: Crown,
+      match: (pathname) => pathname === "/pro"
+    })
+  }
+
+  return items
 }
 
 export function getAppMobileNavItems(role: Role | null): NavItem[] {
-  return [
+  const items: NavItem[] = [
     {
       href: "/",
       label: "Home",
@@ -68,6 +81,24 @@ export function getAppMobileNavItems(role: Role | null): NavItem[] {
     },
     aiNavItem
   ]
+
+  if (role && role !== "PRO" && role !== "ADMIN") {
+    items.push({
+      href: "/pro",
+      label: "Get PRO",
+      icon: Crown,
+      match: (pathname) => pathname === "/pro"
+    })
+  } else {
+    items.push({
+      href: "/profile",
+      label: "Profile",
+      icon: UserRound,
+      match: (pathname) => pathname === "/profile"
+    })
+  }
+
+  return items
 }
 
 export const adminNavItems: NavItem[] = [
@@ -94,6 +125,12 @@ export const adminNavItems: NavItem[] = [
     label: "Grammar",
     icon: BookOpenCheck,
     match: (pathname) => pathname.startsWith("/admin/grammar-topics")
+  },
+  {
+    href: "/admin/promo-codes",
+    label: "Promo Codes",
+    icon: Ticket,
+    match: (pathname) => pathname.startsWith("/admin/promo-codes")
   },
   {
     href: "/admin/settings",

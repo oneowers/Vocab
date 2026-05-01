@@ -39,6 +39,8 @@ model User {
   grammarFindings         GrammarFinding[]
   practiceSession         PracticeSessionProgress?
   writingChallenges       PracticeWritingChallenge[]
+  proUntil                DateTime?
+  promoUsages             PromoCodeUsage[]
 }
 
 enum Role {
@@ -311,4 +313,29 @@ model AppSettings {
   translationProvider String   @default("auto")
   translationPriority String[] @default(["catalog", "deepl", "langeek"])
   updatedAt           DateTime @updatedAt
+}
+
+model PromoCode {
+  id              String            @id @default(uuid())
+  code            String            @unique
+  description     String?
+  maxUses         Int?
+  currentUses     Int               @default(0)
+  expiresAt       DateTime?
+  isActive        Boolean           @default(true)
+  proDurationDays Int               @default(30)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  usages          PromoCodeUsage[]
+}
+
+model PromoCodeUsage {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  promoCodeId String
+  promoCode   PromoCode @relation(fields: [promoCodeId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+
+  @@unique([userId, promoCodeId])
 }
