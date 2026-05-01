@@ -2,14 +2,14 @@
 
 import React, { useMemo, useState } from "react"
 import Link from "next/link"
-import { 
-  BookOpen, 
-  CheckCircle2, 
-  History, 
-  PenTool, 
-  Search, 
-  Sparkles, 
-  TrendingUp, 
+import {
+  BookOpen,
+  CheckCircle2,
+  History,
+  PenTool,
+  Search,
+  Sparkles,
+  TrendingUp,
   Zap,
   ChevronDown,
   Filter,
@@ -17,10 +17,10 @@ import {
 } from "lucide-react"
 import { motion } from "framer-motion"
 
-import type { 
-  CefrLevel, 
-  GrammarSkillRecord, 
-  GrammarSkillsPayload 
+import type {
+  CefrLevel,
+  GrammarSkillRecord,
+  GrammarSkillsPayload
 } from "@/lib/types"
 
 import { GrammarStatsSummary } from "./GrammarStatsSummary"
@@ -45,7 +45,7 @@ export function GrammarView({ payload }: GrammarViewProps) {
   const getPriority = (item: GrammarSkillRecord) => {
     const score = item.score
     const mistakeCount = item.negativeEvidenceCount
-    
+
     let daysSinceLast = 0
     if (item.lastDetectedAt) {
       const last = new Date(item.lastDetectedAt).getTime()
@@ -59,10 +59,10 @@ export function GrammarView({ payload }: GrammarViewProps) {
   const sortedAndFilteredItems = useMemo(() => {
     return payload.items
       .filter(item => {
-        const matchesSearch = 
+        const matchesSearch =
           item.topic.titleEn.toLowerCase().includes(search.toLowerCase()) ||
           item.topic.titleRu.toLowerCase().includes(search.toLowerCase())
-        
+
         const matchesCefr = cefrFilter === "all" || item.topic.cefrLevel === cefrFilter
 
         let matchesFilter = true
@@ -97,89 +97,54 @@ export function GrammarView({ payload }: GrammarViewProps) {
   }, [payload.items])
 
   return (
-    <div className="relative mx-auto max-w-5xl pb-32">
+    <div className="mx-auto max-w-5xl space-y-8 pb-32">
       {/* Header */}
-      <header className="px-4 pt-4 md:px-0 md:pt-0">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div className="space-y-1 md:space-y-2">
-            <h1 className="text-[28px] font-black tracking-tight text-white md:text-[44px]">
+      <header className="px-4 md:px-0">
+        <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+          <div className="space-y-2">
+            <h1 className="text-[32px] font-black tracking-tight text-white md:text-[44px]">
               Grammar
             </h1>
-            <p className="max-w-xl text-[14px] leading-relaxed text-white/40 md:text-[16px] md:text-white/50">
-              Your weak grammar topics, practice rules, and AI feedback.
+            <p className="max-w-xl text-[15px] leading-relaxed text-white/50 md:text-[16px]">
+              Track your weak grammar topics, master complex rules, and get instant AI feedback on your writing.
             </p>
           </div>
-          <div className="hidden md:flex">
-            <Link href="/practice" className="button-primary h-12 px-8">
+          <div className="flex gap-3">
+            <Link href="/practice" className="button-primary h-12 flex-1 md:flex-none px-6">
               <Sparkles size={18} />
-              Start Grammar Practice
+              Start Practice
             </Link>
           </div>
         </div>
       </header>
 
-      {/* Mobile Primary CTA */}
-      <div className="mt-6 px-4 md:hidden">
-        <Link 
-          href="/practice" 
-          className="flex h-[54px] w-full items-center justify-center gap-2 rounded-2xl bg-white font-black text-black shadow-lg active:scale-[0.98] transition-transform"
-        >
-          <Sparkles size={20} />
-          Start Grammar Practice
-        </Link>
-      </div>
+      {/* Stats Summary */}
+      <GrammarStatsSummary payload={payload} />
 
-      <div className="mt-8 space-y-10 md:mt-12 md:space-y-16">
-        {/* Recommended Topics - Higher Priority on Mobile */}
-        {recommendedItems.length > 0 && (
-          <RecommendedGrammarTopics items={recommendedItems} />
-        )}
+      {/* Recommended Topics */}
+      {recommendedItems.length > 0 && (
+        <RecommendedGrammarTopics items={recommendedItems} />
+      )}
 
-        {/* Stats Summary */}
-        <section className="space-y-4">
-          <div className="px-4 md:hidden">
-            <h2 className="text-[14px] font-bold uppercase tracking-widest text-white/30">Your Progress</h2>
-          </div>
-          <GrammarStatsSummary payload={payload} />
-        </section>
+      {/* Main Content Area */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between px-4 md:px-0">
+          <h2 className="text-[20px] font-black text-white">Topic Library</h2>
+          <span className="text-[13px] font-bold text-white/30">{sortedAndFilteredItems.length} topics</span>
+        </div>
 
-        {/* Main Content Area / Topic Library */}
-        <section className="space-y-6">
-          <div className="flex items-center justify-between px-4 md:px-0">
-            <h2 className="text-[20px] font-black text-white md:text-[24px]">Topic Library</h2>
-            <span className="text-[13px] font-bold text-white/30">{sortedAndFilteredItems.length} topics</span>
-          </div>
+        <GrammarFilters
+          search={search}
+          onSearchChange={setSearch}
+          filter={filter}
+          onFilterChange={setFilter}
+          cefrFilter={cefrFilter}
+          onCefrFilterChange={setCefrFilter}
+          sort={sort}
+          onSortChange={setSort}
+        />
 
-          <GrammarFilters 
-            search={search}
-            onSearchChange={setSearch}
-            filter={filter}
-            onFilterChange={setFilter}
-            cefrFilter={cefrFilter}
-            onCefrFilterChange={setCefrFilter}
-            sort={sort}
-            onSortChange={setSort}
-          />
-
-          <GrammarTopicList items={sortedAndFilteredItems} />
-        </section>
-      </div>
-
-      {/* Mobile Sticky CTA */}
-      <div className="fixed bottom-[72px] left-0 right-0 z-30 px-4 pb-4 md:hidden">
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="pointer-events-auto"
-        >
-          <Link 
-            href="/practice" 
-            className="flex h-[56px] w-full items-center justify-center gap-2 rounded-2xl bg-white font-black text-black shadow-[0_8px_30px_rgb(0,0,0,0.4)] active:scale-[0.98] transition-transform"
-          >
-            <Sparkles size={20} />
-            Start Grammar Practice
-          </Link>
-        </motion.div>
+        <GrammarTopicList items={sortedAndFilteredItems} />
       </div>
     </div>
   )

@@ -7,91 +7,64 @@ import type { GrammarSkillRecord } from "@/lib/types"
 
 export function GrammarTopicCard({ item, index }: { item: GrammarSkillRecord, index: number }) {
   const hasEvidence = item.evidenceCount > 0
-  const scoreBand = item.score < -30 ? "Weak" : item.score < 30 ? "Learning" : "Strong"
-  
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: (index % 10) * 0.05 }}
-      className="group relative flex flex-col rounded-[1.5rem] border border-white/5 bg-white/[0.02] p-4 transition-all hover:bg-white/[0.05] active:scale-[0.99] md:rounded-[2rem] md:p-5"
+      className="group relative flex flex-col rounded-[2rem] border border-white/5 bg-white/[0.02] p-5 transition-all hover:bg-white/[0.05] active:scale-[0.99]"
     >
-      {/* Mobile Row Layout */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 mb-0.5 md:mb-1">
-            <h3 className="truncate text-[16px] font-black text-white md:text-[18px]">
-              {item.topic.titleEn}
-            </h3>
-            <span className="hidden rounded-full bg-white/5 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-white/40 md:block">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="rounded-full bg-white/5 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-white/40 border border-white/5">
               {item.topic.cefrLevel}
             </span>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <p className="truncate text-[12px] font-bold text-white/30 md:text-[13px]">
-              {item.topic.titleRu}
-            </p>
             {hasEvidence && (
-              <div className="flex items-center gap-1.5 md:hidden">
-                <span className="h-1 w-1 rounded-full bg-white/10" />
-                <span className={`text-[10px] font-black uppercase tracking-widest ${
-                  item.score < -30 ? "text-rose-400" :
-                  item.score < 30 ? "text-amber-400" :
-                  "text-emerald-400"
+              <span className={`rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-widest border ${item.score < -30 ? "bg-rose-500/10 text-rose-400 border-rose-500/20" :
+                  item.score < 30 ? "bg-amber-500/10 text-amber-400 border-amber-500/20" :
+                    "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
                 }`}>
-                  {scoreBand}
-                </span>
-                <span className="text-[10px] font-black text-white/40">·</span>
-                <span className="text-[10px] font-black text-white/60">{item.score}</span>
-              </div>
+                {item.score < -30 ? "Weak" : item.score < 30 ? "Learning" : "Strong"}
+              </span>
             )}
           </div>
+          <h3 className="text-[18px] font-black text-white truncate">{item.topic.titleEn}</h3>
+          <p className="text-[13px] font-bold text-white/30">{item.topic.titleRu}</p>
         </div>
-
-        {/* Score & Chevron for Mobile */}
-        <div className="flex items-center gap-3 md:hidden">
-          <ChevronRight size={18} className="text-white/10" />
-        </div>
-
-        {/* Desktop Score */}
         {hasEvidence && (
-          <div className="hidden text-right md:block">
-            <span className={`text-[24px] font-black ${
-              item.score < -30 ? "text-rose-400" :
-              item.score < 30 ? "text-amber-400" :
-              "text-emerald-400"
-            }`}>
+          <div className="text-right">
+            <span className={`text-[24px] font-black ${item.score < -30 ? "text-rose-400" :
+                item.score < 30 ? "text-amber-400" :
+                  "text-emerald-400"
+              }`}>
               {item.score}
             </span>
           </div>
         )}
       </div>
 
-      {/* Progress Bar - Minimal on Mobile */}
-      {hasEvidence && (
-        <div className="mt-3 md:mt-6">
-          <div className="h-1 w-full overflow-hidden rounded-full bg-white/5 md:h-1.5">
-            <div 
-              className={`h-full transition-all duration-1000 ${
-                item.score < -30 ? "bg-rose-500" :
-                item.score < 30 ? "bg-amber-500" :
-                "bg-emerald-500"
-              }`}
-              style={{ width: `${Math.max(5, (item.score + 100) / 2)}%` }}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Description - Desktop only or expandable? Let's hide on mobile for row-feel */}
-      <p className="mt-4 hidden line-clamp-2 text-[14px] leading-relaxed text-white/50 md:block">
+      <p className="mt-4 line-clamp-2 text-[14px] leading-relaxed text-white/50">
         {item.topic.description}
       </p>
 
-      {/* Latest Finding - Hidden on mobile Topic Library to keep it row-like */}
+      {/* Progress Line */}
+      {hasEvidence && (
+        <div className="mt-6 h-1.5 w-full overflow-hidden rounded-full bg-white/5">
+          <div
+            className={`h-full transition-all duration-1000 ${item.score < -30 ? "bg-rose-500" :
+                item.score < 30 ? "bg-amber-500" :
+                  "bg-emerald-500"
+              }`}
+            style={{ width: `${Math.max(5, (item.score + 100) / 2)}%` }}
+          />
+        </div>
+      )}
+
+      {/* Latest Finding */}
       {item.latestFinding && !item.latestFinding.isCorrect && (
-        <div className="mt-5 hidden rounded-2xl border border-rose-500/10 bg-rose-500/5 p-4 md:block">
+        <div className="mt-5 rounded-2xl border border-rose-500/10 bg-rose-500/5 p-4">
           <div className="flex items-center gap-2 mb-2">
             <History size={12} className="text-rose-400" />
             <span className="text-[10px] font-bold uppercase tracking-widest text-rose-400/50">Last Error</span>
@@ -105,9 +78,15 @@ export function GrammarTopicCard({ item, index }: { item: GrammarSkillRecord, in
         </div>
       )}
 
-      {/* Footer Stats - Desktop only */}
+      {!hasEvidence && (
+        <div className="mt-6 flex items-center justify-between">
+          <span className="text-[11px] font-bold uppercase tracking-widest text-white/20">No data yet</span>
+          <ChevronRight size={16} className="text-white/10" />
+        </div>
+      )}
+
       {hasEvidence && (
-        <div className="mt-4 hidden items-center gap-4 text-[11px] font-bold uppercase tracking-widest text-white/20 md:flex md:mt-6">
+        <div className="mt-6 flex items-center gap-4 text-[11px] font-bold uppercase tracking-widest text-white/20">
           <div className="flex items-center gap-1">
             <CheckCircle2 size={12} className="text-emerald-500/50" />
             <span>{item.positiveEvidenceCount}</span>
