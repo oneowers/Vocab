@@ -97,19 +97,19 @@ export function GrammarView({ payload }: GrammarViewProps) {
   return (
     <div className="mx-auto max-w-5xl pb-32 md:pb-20">
       {/* Header - Minimal & Compact */}
-      <header className="px-4 py-4 md:px-0 md:py-8">
-        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-          <div className="space-y-0.5">
-            <h1 className="text-[24px] font-black tracking-tight text-white md:text-[44px]">
+      <header className="px-4 pb-2 pt-4 md:px-0 md:pb-6 md:pt-8">
+        <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+          <div className="space-y-0">
+            <h1 className="text-[24px] font-black tracking-tight text-white md:text-[40px]">
               Grammar
             </h1>
-            <p className="text-[13px] font-medium text-white/40 md:text-[16px] md:text-white/50">
-              Practice weak topics and master rules with AI.
+            <p className="text-[12px] font-bold text-white/30 md:text-[15px] md:text-white/40">
+              Practice weak topics and improve with AI.
             </p>
           </div>
           <div className="hidden md:flex">
-            <Link href="/practice" className="button-primary h-12 px-8">
-              <Sparkles size={18} />
+            <Link href="/practice" className="button-primary h-11 px-6 text-[14px]">
+              <Sparkles size={16} />
               Start Practice
             </Link>
           </div>
@@ -117,7 +117,7 @@ export function GrammarView({ payload }: GrammarViewProps) {
       </header>
 
       {/* Primary Mobile CTA */}
-      <div className="mb-6 px-4 md:hidden">
+      <div className="mb-4 px-4 md:hidden">
         <Link 
           href="/practice" 
           className="flex h-[52px] w-full items-center justify-center gap-2 rounded-2xl bg-white font-black text-black shadow-lg active:scale-[0.98] transition-transform"
@@ -127,13 +127,13 @@ export function GrammarView({ payload }: GrammarViewProps) {
         </Link>
       </div>
 
-      <div className="space-y-6 md:space-y-12">
+      <div className="space-y-5 md:space-y-10">
         {/* Recommended Section - Compact */}
         {mainRecommended && (
-          <section className="space-y-3 px-4 md:px-0">
+          <section className="space-y-2 px-4 md:px-0">
             <div className="flex items-center gap-2">
-              <Sparkles size={14} className="text-amber-400" />
-              <h2 className="text-[12px] font-bold uppercase tracking-widest text-amber-400/60">Recommendation</h2>
+              <Sparkles size={12} className="text-amber-400" />
+              <h2 className="text-[11px] font-bold uppercase tracking-widest text-amber-400/50">Next for you</h2>
             </div>
             <RecommendedTopicCard item={mainRecommended} />
           </section>
@@ -145,11 +145,11 @@ export function GrammarView({ payload }: GrammarViewProps) {
         </section>
 
         {/* Topic Library */}
-        <section className="space-y-4">
-          <div className="sticky top-0 z-20 space-y-4 bg-black/80 pb-2 pt-2 backdrop-blur-md md:static md:bg-transparent md:p-0 md:backdrop-blur-none">
+        <section className="space-y-3">
+          <div className="sticky top-0 z-20 space-y-3 bg-black/80 pb-2 pt-2 backdrop-blur-md md:static md:bg-transparent md:p-0 md:backdrop-blur-none">
             <div className="flex items-center justify-between px-4 md:px-0">
-              <h2 className="text-[18px] font-black text-white md:text-[24px]">Topic Library</h2>
-              <span className="text-[12px] font-bold text-white/30">{payload.items.length} topics</span>
+              <h2 className="text-[18px] font-black text-white md:text-[22px]">Topic Library</h2>
+              <span className="text-[11px] font-bold text-white/20 uppercase tracking-widest">{payload.items.length} topics</span>
             </div>
 
             <GrammarFilters 

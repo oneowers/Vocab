@@ -15,36 +15,16 @@ export function GrammarStatsCompact({ payload }: { payload: GrammarSkillsPayload
   const totalMistakes = payload.items.reduce((acc, i) => acc + i.negativeEvidenceCount, 0)
 
   return (
-    <div className="grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-4">
-      <StatBox 
-        label="Weak" 
-        value={payload.weakCount} 
-        color="rose" 
-        icon={<AlertCircle size={12} />} 
-      />
-      <StatBox 
-        label="Learning" 
-        value={learningCount} 
-        color="amber" 
-        icon={<BookOpen size={12} />} 
-      />
-      <StatBox 
-        label="Strong" 
-        value={strongCount} 
-        color="emerald" 
-        icon={<CheckCircle2 size={12} />} 
-      />
-      <StatBox 
-        label="Mistakes" 
-        value={totalMistakes} 
-        color="white" 
-        icon={<History size={12} />} 
-      />
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-white/5 bg-white/[0.02] px-4 py-3 md:grid md:grid-cols-4 md:gap-4 md:p-4">
+      <StatItem label="Weak" value={payload.weakCount} color="text-rose-400" icon={<AlertCircle size={10} />} />
+      <StatItem label="Learning" value={learningCount} color="text-amber-400" icon={<BookOpen size={10} />} />
+      <StatItem label="Strong" value={strongCount} color="text-emerald-400" icon={<CheckCircle2 size={10} />} />
+      <StatItem label="Mistakes" value={totalMistakes} color="text-white/40" icon={<History size={10} />} />
     </div>
   )
 }
 
-function StatBox({ 
+function StatItem({ 
   label, 
   value, 
   color, 
@@ -52,29 +32,18 @@ function StatBox({
 }: { 
   label: string
   value: number
-  color: "rose" | "amber" | "emerald" | "white"
+  color: string
   icon: React.ReactNode
 }) {
-  const colors = {
-    rose: "text-rose-400 bg-rose-500/10 border-rose-500/10",
-    amber: "text-amber-400 bg-amber-500/10 border-amber-500/10",
-    emerald: "text-emerald-400 bg-emerald-500/10 border-emerald-500/10",
-    white: "text-white/40 bg-white/5 border-white/5"
-  }
-
   return (
-    <div className={`flex items-center justify-between rounded-2xl border p-3 md:p-4 ${colors[color]}`}>
-      <div className="flex flex-col">
-        <span className="text-[18px] font-black leading-none text-white md:text-[24px]">
-          {value}
-        </span>
-        <span className="mt-1 text-[10px] font-bold uppercase tracking-widest text-white/30">
-          {label}
-        </span>
+    <div className="flex items-center gap-1.5 md:flex-col md:items-start md:gap-1">
+      <div className="flex items-center gap-1">
+        <span className={color}>{icon}</span>
+        <span className="text-[14px] font-black text-white md:text-[20px]">{value}</span>
       </div>
-      <div className={`flex h-6 w-6 items-center justify-center rounded-lg ${colors[color]} border-none bg-white/5`}>
-        {icon}
-      </div>
+      <span className="text-[10px] font-bold uppercase tracking-widest text-white/20">
+        {label}
+      </span>
     </div>
   )
 }
