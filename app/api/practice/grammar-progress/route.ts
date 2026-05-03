@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const body = await request.json()
-  const { topicKey, scoreDelta, exerciseId, isCorrect } = body
+  const { topicKey, scoreDelta, exerciseId, isCorrect, sessionId } = body
 
   if (!topicKey) return NextResponse.json({ error: "Missing topicKey" }, { status: 400 })
 
