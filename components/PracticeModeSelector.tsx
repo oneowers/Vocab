@@ -1,6 +1,6 @@
 "use client"
 
-import { BookOpen, Sparkles, PenTool, Target, ChevronRight, Clock, AlertCircle } from "lucide-react"
+import { BookOpen, Sparkles, PenTool, Target, ChevronRight, Clock, AlertCircle, Languages } from "lucide-react"
 import { motion } from "framer-motion"
 
 interface PracticeModeSelectorProps {
@@ -8,6 +8,7 @@ interface PracticeModeSelectorProps {
   onSelectGrammar: () => void
   onSelectWriting: () => void
   onSelectQuiz: () => void
+  onSelectTranslation: () => void
   dueCount: number
   weakGrammarCount: number
 }
@@ -17,6 +18,7 @@ export function PracticeModeSelector({
   onSelectGrammar,
   onSelectWriting,
   onSelectQuiz,
+  onSelectTranslation,
   dueCount,
   weakGrammarCount
 }: PracticeModeSelectorProps) {
@@ -139,6 +141,17 @@ export function PracticeModeSelector({
             color="orange"
             disabled={dueCount < 3}
             disabledReason="Need 3+ words saved"
+          />
+
+          {/* Translation Challenge */}
+          <PracticeActionCard
+            title="Translation"
+            subtitle="RU → EN · AI Check"
+            icon={<Languages size={20} strokeWidth={2.5} />}
+            onClick={onSelectTranslation}
+            color="blue"
+            badge="New"
+            badgeColor="blue"
           />
         </div>
       </div>

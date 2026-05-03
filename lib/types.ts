@@ -265,6 +265,24 @@ export type WritingTaskType =
   | "story_mode"
   | "grammar_focused"
 
+export interface TranslationChallengeTask {
+  russianText: string
+  suggestedWords?: string[]
+}
+
+export interface TranslationChallengeResult {
+  score: number
+  feedbackRu: string
+  correctedEnglishText: string
+  mistakes: Array<{
+    original: string
+    corrected: string
+    explanationRu: string
+    severity: GrammarSeverity
+  }>
+  grammarFindings: PracticeWritingGrammarFinding[]
+}
+
 export interface GrammarWritingFeedback {
   type: "writing_feedback"
   score: number

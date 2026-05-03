@@ -39,6 +39,7 @@ model User {
   grammarFindings         GrammarFinding[]
   practiceSession         PracticeSessionProgress?
   writingChallenges       PracticeWritingChallenge[]
+  translationChallenges   PracticeTranslationChallenge[]
   proUntil                DateTime?
   promoUsages             PromoCodeUsage[]
 }
@@ -97,6 +98,7 @@ enum GrammarSeverity {
 
 enum GrammarFindingSourceType {
   writing_challenge
+  translation_challenge
 }
 
 model Card {
@@ -338,4 +340,21 @@ model PromoCodeUsage {
   createdAt   DateTime  @default(now())
 
   @@unique([userId, promoCodeId])
+}
+
+model PracticeTranslationChallenge {
+  id                    String   @id @default(uuid())
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  russianText           String
+  userTranslation       String
+  score                 Int
+  feedbackRu            String
+  correctedEnglishText  String
+  mistakes              Json
+  grammarFindings       Json     @default("[]")
+  grammarScoreAppliedAt DateTime?
+  createdAt             DateTime @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
 }

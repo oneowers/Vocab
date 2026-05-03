@@ -92,7 +92,7 @@ export function AdminShell({ user, children }: AdminShellProps) {
         </aside>
 
         <div className="flex min-h-screen min-w-0 flex-1 flex-col">
-          <div className="page-with-tabbar flex-1 px-4 py-4 md:px-8 md:py-8">
+          <div className="page-with-tabbar flex-1">
             <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 md:gap-6">
               {/* Mobile Back Button */}
               <div className="md:hidden">

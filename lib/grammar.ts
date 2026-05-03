@@ -325,6 +325,107 @@ export async function applyGrammarFindingsToWritingChallenge(
   return appliedFindings.map(toClientGrammarFinding)
 }
 
+export async function applyGrammarFindingsToTranslationChallenge(
+  tx: Prisma.TransactionClient,
+  options: {
+    userId: string
+    challengeId: string
+    findings: NormalizedGrammarFinding[]
+  }
+): Promise<PracticeWritingGrammarFinding[]> {
+  const now = new Date()
+  const marked = await tx.practiceTranslationChallenge.updateMany({
+    where: {
+      id: options.challengeId,
+      userId: options.userId,
+      grammarScoreAppliedAt: null
+    },
+    data: {
+      grammarScoreAppliedAt: now
+    }
+  })
+
+  if (marked.count !== 1) {
+    return []
+  }
+
+  const appliedFindings = selectStrongestAppliedFindings(options.findings)
+
+  for (const finding of appliedFindings) {
+    const scoreDelta = finding.isCorrect ? 2 : GRAMMAR_SEVERITY_DELTAS[finding.severity]
+
+    await tx.grammarFinding.create({
+      data: {
+        userId: options.userId,
+        topicId: finding.topicId,
+        sourceType: "translation_challenge",
+        sourceId: options.challengeId,
+        originalText: finding.original,
+        correctedText: finding.corrected,
+        explanationRu: finding.explanationRu,
+        severity: finding.severity,
+        confidence: finding.confidence,
+        isCorrect: finding.isCorrect || false,
+        scoreDelta
+      }
+    })
+
+    await tx.userGrammarSkill.upsert({
+      where: {
+        userId_topicId: {
+          userId: options.userId,
+          topicId: finding.topicId
+        }
+      },
+      create: {
+        userId: options.userId,
+        topicId: finding.topicId,
+        score: scoreDelta,
+        evidenceCount: 1,
+        negativeEvidenceCount: finding.isCorrect ? 0 : 1,
+        positiveEvidenceCount: finding.isCorrect ? 1 : 0,
+        lastDetectedAt: now
+      },
+      update: {
+        score: {
+          increment: scoreDelta
+        },
+        evidenceCount: {
+          increment: 1
+        },
+        negativeEvidenceCount: {
+          increment: finding.isCorrect ? 0 : 1
+        },
+        positiveEvidenceCount: {
+          increment: finding.isCorrect ? 1 : 0
+        },
+        lastDetectedAt: now
+      }
+    })
+    
+    // Clamp scores
+    await tx.userGrammarSkill.updateMany({
+      where: {
+        userId: options.userId,
+        topicId: finding.topicId,
+        score: { lt: -100 }
+      },
+      data: { score: -100 }
+    })
+
+    await tx.userGrammarSkill.updateMany({
+      where: {
+        userId: options.userId,
+        topicId: finding.topicId,
+        score: { gt: 100 }
+      },
+      data: { score: 100 }
+    })
+  }
+
+  return appliedFindings.map(toClientGrammarFinding)
+}
+
 function serializeLatestGrammarFinding(
   finding: {
     id: string

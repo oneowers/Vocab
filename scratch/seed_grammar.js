@@ -159,6 +159,24 @@ async function main() {
       description: "Adverbs of manner, frequency, and time.",
       examples: ["He runs quickly.", "I always drink coffee."]
     },
+    {
+      key: "stative_verbs",
+      titleEn: "Stative Verbs",
+      titleRu: "Глаголы состояния",
+      category: "Verbs",
+      cefrLevel: "A2",
+      description: "Verbs that are usually not used in continuous forms.",
+      examples: ["I love it.", "She understands."]
+    },
+    {
+      key: "phrasal_verbs_intro",
+      titleEn: "Phrasal Verbs Intro",
+      titleRu: "Фразовые глаголы (интро)",
+      category: "Verbs",
+      cefrLevel: "A2",
+      description: "Introduction to common phrasal verbs.",
+      examples: ["Get up", "Look for", "Turn off"]
+    },
 
     // B1 - Intermediate
     {
@@ -169,6 +187,15 @@ async function main() {
       cefrLevel: "B1",
       description: "Actions with present results or experience.",
       examples: ["I have lost my keys.", "Have you ever been to Paris?"]
+    },
+    {
+      key: "future_continuous",
+      titleEn: "Future Continuous",
+      titleRu: "Будущее продолженное",
+      category: "Tenses",
+      cefrLevel: "B1",
+      description: "Actions in progress at a specific time in the future.",
+      examples: ["I will be working at 5 PM.", "What will you be doing?"]
     },
     {
       key: "conditionals_0_1",
@@ -206,6 +233,33 @@ async function main() {
       description: "Reporting what someone said.",
       examples: ["He said he was tired.", "She asked if I was ready."]
     },
+    {
+      key: "reported_questions_commands",
+      titleEn: "Reported Questions & Commands",
+      titleRu: "Косвенные вопросы и команды",
+      category: "Structures",
+      cefrLevel: "B1",
+      description: "How to report questions and orders.",
+      examples: ["He asked where I lived.", "She told me to wait."]
+    },
+    {
+      key: "used_to_would",
+      titleEn: "Used to / Would",
+      titleRu: "Used to / Would",
+      category: "Structures",
+      cefrLevel: "B1",
+      description: "Past habits and states.",
+      examples: ["I used to smoke.", "When I was young, I would play."]
+    },
+    {
+      key: "linking_words",
+      titleEn: "Linking Words",
+      titleRu: "Слова-связки",
+      category: "Basics",
+      cefrLevel: "B1",
+      description: "Words that connect ideas.",
+      examples: ["However", "Although", "Because of"]
+    },
 
     // B2 - Upper Intermediate
     {
@@ -227,6 +281,24 @@ async function main() {
       examples: ["The train had left when I arrived.", "I had already eaten."]
     },
     {
+      key: "future_perfect",
+      titleEn: "Future Perfect",
+      titleRu: "Будущее завершенное",
+      category: "Tenses",
+      cefrLevel: "B2",
+      description: "Actions that will be completed by a point in the future.",
+      examples: ["I will have finished by June.", "Will you have eaten?"]
+    },
+    {
+      key: "past_perfect_continuous",
+      titleEn: "Past Perfect Continuous",
+      titleRu: "Прошедшее завершенное продолженное",
+      category: "Tenses",
+      cefrLevel: "B2",
+      description: "Duration of an action up to a point in the past.",
+      examples: ["I had been running for an hour.", "How long had he been waiting?"]
+    },
+    {
       key: "conditionals_2_3",
       titleEn: "Conditionals 2 & 3",
       titleRu: "Условные предложения 2 и 3",
@@ -234,6 +306,15 @@ async function main() {
       cefrLevel: "B2",
       description: "Hypothetical situations in the present and past.",
       examples: ["If I were rich, I'd travel.", "If I'd known, I would've helped."]
+    },
+    {
+      key: "wishes_regrets",
+      titleEn: "Wishes & Regrets",
+      titleRu: "Желания и сожаления",
+      category: "Structures",
+      cefrLevel: "B2",
+      description: "Expressing regret about present or past situations.",
+      examples: ["I wish I were taller.", "If only I hadn't said that."]
     },
     {
       key: "passive_voice_advanced",
@@ -273,6 +354,15 @@ async function main() {
     },
 
     // C1 - Advanced
+    {
+      key: "mixed_conditionals",
+      titleEn: "Mixed Conditionals",
+      titleRu: "Смешанные условные предложения",
+      category: "Conditionals",
+      cefrLevel: "C1",
+      description: "Mixing past conditions with present results (and vice versa).",
+      examples: ["If I had studied, I would be rich now.", "If I were smarter, I would have passed."]
+    },
     {
       key: "subjunctive",
       titleEn: "Subjunctive",
