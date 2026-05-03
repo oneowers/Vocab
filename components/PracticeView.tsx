@@ -11,10 +11,14 @@ interface PracticeViewProps {
     reviewData: CardsResponse
     grammarData: GrammarSkillsPayload
   }
+  initialMode?: "SELECT" | "WORDS" | "GRAMMAR"
 }
 
-export function PracticeView({ initialData }: PracticeViewProps) {
-  const [mode, setMode] = useState<"SELECT" | "WORDS" | "GRAMMAR">("SELECT")
+export function PracticeView({ initialData, initialMode }: PracticeViewProps) {
+  const [mode, setMode] = useState<"SELECT" | "WORDS" | "GRAMMAR">(
+    (initialMode?.toUpperCase() as any) || "SELECT"
+  )
+  const [grammarSubMode, setGrammarSubMode] = useState<any>(null)
 
   if (mode === "WORDS") {
     return (
@@ -28,7 +32,11 @@ export function PracticeView({ initialData }: PracticeViewProps) {
     return (
       <GrammarPracticeView 
         grammarData={initialData.grammarData} 
-        onBack={() => setMode("SELECT")}
+        onBack={() => {
+          setMode("SELECT")
+          setGrammarSubMode(null)
+        }}
+        initialSubMode={grammarSubMode}
       />
     )
   }
@@ -37,6 +45,14 @@ export function PracticeView({ initialData }: PracticeViewProps) {
     <PracticeModeSelector
       onSelectWords={() => setMode("WORDS")}
       onSelectGrammar={() => setMode("GRAMMAR")}
+      onSelectWriting={() => {
+        setGrammarSubMode("WRITING_CHALLENGE")
+        setMode("GRAMMAR")
+      }}
+      onSelectQuiz={() => {
+        setGrammarSubMode("QUIZ")
+        setMode("GRAMMAR")
+      }}
       dueCount={initialData.reviewData.summary.dueToday}
       weakGrammarCount={initialData.grammarData.weakCount}
     />

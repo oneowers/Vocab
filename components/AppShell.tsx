@@ -87,9 +87,9 @@ export function AppShell({ user, children }: AppShellProps) {
   const mobileNavItems = getAppMobileNavItems(navRole)
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-bg-primary">
       <div className="mx-auto flex min-h-screen w-full max-w-[1600px]">
-        <aside className="relative z-20 hidden min-h-screen w-[288px] flex-col justify-between border-r border-white/[0.06] bg-black/88 px-6 py-8 backdrop-blur-xl md:flex">
+        <aside className="relative z-20 hidden min-h-screen w-[288px] flex-col justify-between border-r border-line bg-bg-secondary/80 px-6 py-8 backdrop-blur-xl md:flex">
           <div className="space-y-8">
             <Link href="/" prefetch className="flex items-center gap-3">
               <div className="brand-mark h-12 w-12 text-lg font-semibold">
@@ -113,8 +113,8 @@ export function AppShell({ user, children }: AppShellProps) {
                     prefetch
                     aria-current={active ? "page" : undefined}
                     className={`flex min-h-[52px] items-center gap-3 rounded-[22px] px-4 text-[16px] font-semibold transition ${active
-                      ? "bg-[#f2f2f4] text-black"
-                      : "text-text-secondary hover:bg-white/[0.06] hover:text-text-primary"
+                      ? "bg-ink text-bg-primary"
+                      : "text-muted hover:bg-bg-tertiary hover:text-ink"
                       }`}
                   >
                     <Icon size={20} strokeWidth={active ? 2.4 : 2} />
@@ -128,8 +128,8 @@ export function AppShell({ user, children }: AppShellProps) {
                   prefetch
                   aria-current={pathname.startsWith("/admin") ? "page" : undefined}
                   className={`flex min-h-[52px] items-center gap-3 rounded-[22px] px-4 text-[16px] font-semibold transition ${pathname.startsWith("/admin")
-                    ? "bg-[#f2f2f4] text-black"
-                    : "text-text-secondary hover:bg-white/[0.06] hover:text-text-primary"
+                    ? "bg-ink text-bg-primary"
+                    : "text-muted hover:bg-bg-tertiary hover:text-ink"
                     }`}
                 >
                   <ArrowRight size={20} strokeWidth={pathname.startsWith("/admin") ? 2.4 : 2} />
@@ -141,15 +141,15 @@ export function AppShell({ user, children }: AppShellProps) {
 
           <div className="panel space-y-4 p-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#292930] text-sm font-semibold text-text-primary">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-bg-tertiary text-sm font-semibold text-ink">
                 {initials}
               </div>
               <div>
-                <p className="text-[15px] font-semibold text-text-primary">{accountLabel}</p>
-                <p className="text-[13px] text-text-tertiary">{accountRole}</p>
+                <p className="text-[15px] font-semibold text-ink">{accountLabel}</p>
+                <p className="text-[13px] text-quiet">{accountRole}</p>
               </div>
             </div>
-            <button type="button" onClick={handleExit} className="button-secondary w-full">
+            <button type="button" onClick={handleExit} className="button-secondary w-full bg-ink text-bg-primary hover:scale-[1.02] active:scale-[0.98] transition-all">
               <LogOut size={18} />
               {guestActive ? "Exit guest" : user ? "Sign out" : "Open login"}
             </button>

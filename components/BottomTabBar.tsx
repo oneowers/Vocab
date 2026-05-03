@@ -47,7 +47,7 @@ export function BottomTabBar({
   return (
     <nav
       aria-label={variant === "admin" ? "Admin navigation" : "Primary navigation"}
-      className={`fixed inset-x-0 bottom-0 z-50 border-t border-white/[0.06] bg-black/82 backdrop-blur-[24px] transition-[transform,opacity] duration-200 ease-out md:hidden ${
+      className={`fixed inset-x-0 bottom-0 z-50 border-t border-line bg-bg-secondary/80 backdrop-blur-[24px] transition-[transform,opacity] duration-200 ease-out md:hidden ${
         keyboardActive ? "pointer-events-none translate-y-full opacity-0" : "translate-y-0 opacity-100"
       }`}
       style={{
@@ -65,7 +65,7 @@ export function BottomTabBar({
               href={item.href}
               prefetch
               aria-current={active ? "page" : undefined}
-              className={`flex min-w-0 flex-1 scale-100 flex-col items-center justify-center gap-0.5 px-2 text-[10px] font-semibold leading-none transition-transform duration-300 ease-[var(--ease-standard)] active:scale-[0.88] motion-reduce:transition-none ${active ? "text-white" : "text-text-tertiary"
+              className={`flex min-w-0 flex-1 scale-100 flex-col items-center justify-center gap-0.5 px-2 text-[10px] font-semibold leading-none transition-transform duration-300 ease-[var(--ease-standard)] active:scale-[0.88] motion-reduce:transition-none ${active ? "text-ink" : "text-muted"
                 }`}
             >
               <Icon

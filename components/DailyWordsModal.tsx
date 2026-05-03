@@ -173,7 +173,7 @@ export function DailyWordsModal({
     <AnimatePresence>
       {open ? (
         <motion.div
-          className="fixed inset-0 z-[70] bg-black px-2 py-2 md:flex md:items-center md:justify-center md:px-4 md:py-4"
+          className="fixed inset-0 z-[70] bg-black/60 px-2 py-2 backdrop-blur-sm md:flex md:items-center md:justify-center md:px-4 md:py-4"
           initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={prefersReducedMotion ? { opacity: 1 } : { opacity: 0 }}
@@ -190,17 +190,17 @@ export function DailyWordsModal({
             transition={{ duration: prefersReducedMotion ? 0 : 0.18 }}
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="border-b border-white/[0.06] px-4 py-3.5 md:px-5">
+            <div className="border-b border-line px-4 py-3.5 md:px-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <div className="inline-flex items-center gap-1.5 rounded-full bg-[#2b2b31] px-2.5 py-1 text-[10px] font-semibold text-[#c8cad2]">
+                  <div className="inline-flex items-center gap-1.5 rounded-full bg-bg-tertiary px-2.5 py-1 text-[10px] font-semibold text-muted border border-line">
                     <Sparkles size={12} />
                     Band {cefrLabel}
                   </div>
-                  <h2 className="mt-2.5 text-[20px] font-bold tracking-[-0.04em] text-white md:text-[22px]">
+                  <h2 className="mt-2.5 text-[20px] font-bold tracking-[-0.04em] text-ink md:text-[22px]">
                     New words for today
                   </h2>
-                  <p className="mt-1 text-[12px] text-white/50 md:text-[13px]">
+                  <p className="mt-1 text-[12px] text-muted md:text-[13px]">
                     {loading
                       ? "Loading today's set..."
                       : `Selected ${selectedCount} of ${selectionLimit || 0}`}
@@ -210,7 +210,7 @@ export function DailyWordsModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#2b2b31] text-[#c8cad2] transition hover:bg-[#34343c] hover:text-white"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-bg-tertiary text-muted transition hover:bg-bg-secondary hover:text-ink border border-line"
                   aria-label="Close"
                 >
                   <X size={16} />
@@ -224,21 +224,21 @@ export function DailyWordsModal({
                   {Array.from({ length: 5 }).map((_, index) => (
                     <div
                       key={index}
-                      className="skeleton h-20 rounded-[18px] border border-[#2b2b31] bg-[#232329]"
+                      className="skeleton h-20 rounded-[18px] border border-line bg-bg-tertiary"
                     />
                   ))}
                 </div>
               ) : preview?.limitReached ? (
-                <div className="translate-card rounded-[22px] p-5 text-center">
-                  <p className="text-[18px] font-semibold text-white">Today's limit is already completed.</p>
-                  <p className="mt-2 text-[13px] text-white/50">
+                <div className="translate-card rounded-[22px] p-5 text-center bg-bg-tertiary border border-line">
+                  <p className="text-[18px] font-semibold text-ink">Today's limit is already completed.</p>
+                  <p className="mt-2 text-[13px] text-muted">
                     Come back tomorrow for a fresh set of words.
                   </p>
                 </div>
               ) : !preview?.items.length ? (
-                <div className="translate-card rounded-[22px] p-5 text-center">
-                  <p className="text-[18px] font-semibold text-white">No words available right now.</p>
-                  <p className="mt-2 text-[13px] text-white/50">
+                <div className="translate-card rounded-[22px] p-5 text-center bg-bg-tertiary border border-line">
+                  <p className="text-[18px] font-semibold text-ink">No words available right now.</p>
+                  <p className="mt-2 text-[13px] text-muted">
                     We couldn't find new words for your current level yet.
                   </p>
                 </div>
@@ -252,32 +252,32 @@ export function DailyWordsModal({
                         key={item.id}
                         type="button"
                         onClick={() => toggleSelection(item.id)}
-                        className={`translate-card relative flex w-full items-center gap-3 rounded-[22px] px-3 pb-2 pt-3 text-left transition-all duration-200 ${
+                        className={`translate-card relative flex w-full items-center gap-3 rounded-[22px] px-3 pb-2 pt-3 text-left transition-all duration-200 border border-line bg-bg-tertiary ${
                           selected
-                            ? "ring-1 ring-inset ring-[#5a5f6d]"
-                            : "hover:brightness-110"
+                            ? "ring-1 ring-inset ring-ink/20 bg-bg-secondary"
+                            : "hover:bg-bg-secondary"
                         }`}
                       >
                         <div
                           className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
                             selected
-                              ? "bg-[#f2f2f4] text-black"
-                              : "bg-[#2b2b31] text-transparent"
+                              ? "bg-ink text-bg-primary"
+                              : "bg-bg-secondary text-transparent"
                           }`}
                         >
                           <Check size={16} strokeWidth={2.8} />
                         </div>
                         <div className="min-w-0 pr-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <p className="truncate text-[24px] font-bold tracking-[-0.3px] text-white">
+                            <p className="truncate text-[24px] font-bold tracking-[-0.3px] text-ink">
                               {item.word}
                             </p>
-                            <span className="inline-flex shrink-0 items-center rounded-full bg-[#2b2b31] px-2 py-0.5 text-[11px] font-black uppercase tracking-tight text-[#c8cad2]">
+                            <span className="inline-flex shrink-0 items-center rounded-full bg-bg-secondary px-2 py-0.5 text-[11px] font-black uppercase tracking-tight text-muted border border-line">
                               {item.cefrLevel}
                             </span>
                           </div>
                           <div className="mt-0.5 flex items-center justify-between gap-3">
-                            <p className="truncate text-[12px] font-medium leading-snug text-[#b2b6c2]">
+                            <p className="truncate text-[12px] font-medium leading-snug text-muted">
                               {item.translation}
                             </p>
                           </div>
@@ -289,15 +289,15 @@ export function DailyWordsModal({
               )}
             </div>
 
-            <div className="border-t border-white/[0.06] px-3 py-3 md:px-4">
+            <div className="border-t border-line px-3 py-3 md:px-4">
               <button
                 type="button"
                 onClick={() => void handleSubmit()}
                 disabled={!canSubmit}
                 className={`w-full rounded-full px-4 py-3 text-[15px] font-black transition ${
                   canSubmit
-                    ? "bg-[#f2f2f4] text-black hover:bg-white"
-                    : "cursor-not-allowed bg-[#2b2b31] text-[#7e8496]"
+                    ? "bg-ink text-bg-primary hover:opacity-90"
+                    : "cursor-not-allowed bg-bg-tertiary text-muted opacity-50"
                 }`}
               >
                 {submitting

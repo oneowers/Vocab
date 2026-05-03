@@ -1,27 +1,39 @@
-"use client"
-
-import { Book, ChevronRight, Layout, PenTool, Sparkles, Trophy } from "lucide-react"
-import { useState } from "react"
+import { Book, ChevronRight, Layout, PenTool, Sparkles, Trophy, Search, X } from "lucide-react"
+import { useState, useMemo, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import type { GrammarSkillsPayload, WritingTaskType, GrammarWritingFeedback } from "@/lib/types"
+import type { GrammarSkillsPayload, WritingTaskType, GrammarWritingFeedback, GrammarSkillRecord, CefrLevel } from "@/lib/types"
 import { WritingTaskSelector } from "./WritingTaskSelector"
 import { WritingChallengePage } from "./WritingChallengePage"
 import { WritingFeedbackPage } from "./WritingFeedbackPage"
-import { GrammarLibraryView } from "./GrammarLibraryView"
 import { GrammarLessonView } from "./GrammarLessonView"
 import { useToast } from "./Toast"
+
+// Sub-components from the grammar folder
+import { GrammarStatsRow } from "./grammar/GrammarStatsRow"
+import { RecommendedTopicCard } from "./grammar/RecommendedTopicCard"
+import { GrammarTopicList } from "./grammar/GrammarTopicList"
+import { GrammarFilters } from "./grammar/GrammarFilters"
 
 interface GrammarPracticeViewProps {
   grammarData: GrammarSkillsPayload
   onBack: () => void
+  initialSubMode?: GrammarViewMode
 }
 
 type GrammarViewMode = "DASHBOARD" | "LIBRARY" | "WRITING_CHALLENGE" | "LESSON" | "QUIZ"
+export type GrammarFilterType = "all" | "weak" | "learning" | "strong" | "no_data"
+export type GrammarSortType = "priority" | "weakest" | "recent" | "cefr"
 
-export function GrammarPracticeView({ grammarData, onBack }: GrammarPracticeViewProps) {
+export function GrammarPracticeView({ grammarData, onBack, initialSubMode }: GrammarPracticeViewProps) {
   const { showToast } = useToast()
-  const [mode, setMode] = useState<GrammarViewMode>("DASHBOARD")
+  const [mode, setMode] = useState<GrammarViewMode>(initialSubMode || "DASHBOARD")
   
+  // Library / Dashboard State
+  const [search, setSearch] = useState("")
+  const [filter, setFilter] = useState<GrammarFilterType>("all")
+  const [cefrFilter, setCefrFilter] = useState<CefrLevel | "all">("all")
+  const [sort, setSort] = useState<GrammarSortType>("priority")
+
   // Writing Challenge state
   const [writingStep, setWritingStep] = useState<"SELECT" | "CHALLENGE" | "FEEDBACK">("SELECT")
   const [taskType, setTaskType] = useState<WritingTaskType | null>(null)
@@ -34,12 +46,60 @@ export function GrammarPracticeView({ grammarData, onBack }: GrammarPracticeView
   // Lesson state
   const [selectedTopicKey, setSelectedTopicKey] = useState<string | null>(null)
 
+  // Priority Logic (same as in GrammarView)
+  const getPriority = (item: GrammarSkillRecord) => {
+    const score = item.score
+    const mistakeCount = item.negativeEvidenceCount
+    let daysSinceLast = 0
+    if (item.lastDetectedAt) {
+      const last = new Date(item.lastDetectedAt).getTime()
+      daysSinceLast = (Date.now() - last) / (1000 * 60 * 60 * 24)
+    }
+    return Math.max(0, -score) + (mistakeCount * 2) + (daysSinceLast * 0.2)
+  }
+
+  const sortedAndFilteredItems = useMemo(() => {
+    return grammarData.items
+      .filter(item => {
+        const matchesSearch = 
+          item.topic.titleEn.toLowerCase().includes(search.toLowerCase()) ||
+          item.topic.titleRu.toLowerCase().includes(search.toLowerCase())
+        const matchesCefr = cefrFilter === "all" || item.topic.cefrLevel === cefrFilter
+        let matchesFilter = true
+        if (filter === "weak") matchesFilter = item.score < -30
+        if (filter === "learning") matchesFilter = item.score >= -30 && item.score < 30
+        if (filter === "strong") matchesFilter = item.score >= 30
+        if (filter === "no_data") matchesFilter = item.evidenceCount === 0
+        return matchesSearch && matchesCefr && matchesFilter
+      })
+      .sort((a, b) => {
+        if (sort === "priority") return getPriority(b) - getPriority(a)
+        if (sort === "weakest") return a.score - b.score
+        if (sort === "recent") {
+          if (!a.lastDetectedAt) return 1
+          if (!b.lastDetectedAt) return -1
+          return new Date(b.lastDetectedAt).getTime() - new Date(a.lastDetectedAt).getTime()
+        }
+        if (sort === "cefr") {
+          const levels: Record<CefrLevel, number> = { A1: 1, A2: 2, B1: 3, B2: 4, C1: 5, C2: 6 }
+          return levels[a.topic.cefrLevel] - levels[b.topic.cefrLevel]
+        }
+        return 0
+      })
+  }, [grammarData.items, search, filter, cefrFilter, sort])
+
+  const mainRecommended = useMemo(() => {
+    const items = grammarData.items
+      .filter(item => item.score < 0)
+      .sort((a, b) => getPriority(b) - getPriority(a))
+    return items.length > 0 ? items[0] : null
+  }, [grammarData.items])
+
   const handleStartWriting = async (type: WritingTaskType) => {
     setTaskType(type)
     setLoadingTask(true)
     setWritingStep("CHALLENGE")
     setUserText("")
-    
     try {
       const response = await fetch("/api/practice/grammar-challenge/generate", {
         method: "POST",
@@ -83,24 +143,11 @@ export function GrammarPracticeView({ grammarData, onBack }: GrammarPracticeView
     }
   }
 
-  if (mode === "LIBRARY") {
-    return (
-      <GrammarLibraryView 
-        grammarData={grammarData} 
-        onBack={() => setMode("DASHBOARD")}
-        onSelectTopic={(key) => {
-          setSelectedTopicKey(key)
-          setMode("LESSON")
-        }}
-      />
-    )
-  }
-
   if (mode === "LESSON" && selectedTopicKey) {
     return (
       <GrammarLessonView 
         topicKey={selectedTopicKey} 
-        onBack={() => setMode("LIBRARY")} 
+        onBack={() => setMode("DASHBOARD")} 
       />
     )
   }
@@ -112,13 +159,13 @@ export function GrammarPracticeView({ grammarData, onBack }: GrammarPracticeView
           <header className="mb-10 flex items-center gap-4">
             <button
               onClick={() => setMode("DASHBOARD")}
-              className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/5 text-white/60 hover:bg-white/10 transition-all border border-white/5"
+              className="flex h-12 w-12 items-center justify-center rounded-2xl bg-bg-tertiary text-muted hover:bg-bg-tertiary/80 transition-all border border-line"
             >
               <ArrowLeft size={24} />
             </button>
             <div>
-              <h1 className="text-[28px] font-black tracking-tight text-white">Writing Practice</h1>
-              <p className="text-[15px] font-medium text-white/40">Choose your challenge type</p>
+              <h1 className="text-[28px] font-black tracking-tight text-ink">Writing Practice</h1>
+              <p className="text-[15px] font-medium text-muted">Choose your challenge type</p>
             </div>
           </header>
           <WritingTaskSelector onSelect={handleStartWriting} />
@@ -151,98 +198,108 @@ export function GrammarPracticeView({ grammarData, onBack }: GrammarPracticeView
     }
   }
 
-  // Dashboard
+  // Unified Practice Dashboard
   return (
-    <div className="mx-auto max-w-xl px-4 py-8">
+    <div className="mx-auto max-w-xl px-4 py-8 pb-32">
       <header className="mb-10 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button
             onClick={onBack}
-            className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/5 text-white/60 hover:bg-white/10 transition-all border border-white/5"
+            className="flex h-12 w-12 items-center justify-center rounded-2xl bg-bg-tertiary text-muted hover:bg-bg-tertiary/80 transition-all border border-line"
           >
             <ArrowLeft size={24} />
           </button>
           <div>
-            <h1 className="text-[28px] font-black tracking-tight text-white">Learn Grammar</h1>
-            <p className="text-[15px] font-medium text-white/40">Master English structures</p>
+            <h1 className="text-[28px] font-black tracking-tight text-ink">Grammar Practice</h1>
+            <p className="text-[15px] font-medium text-muted">Improve your accuracy</p>
           </div>
         </div>
-        
         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
           <Trophy size={24} />
         </div>
       </header>
 
-      {/* Main Actions */}
-      <div className="grid gap-4">
-        {/* Continue Weak Topic */}
-        {grammarData.items.length > 0 && (
-          <button
-            onClick={() => {
-              setSelectedTopicKey(grammarData.items[0].topic.key)
-              setMode("LESSON")
-            }}
-            className="group relative flex items-center justify-between overflow-hidden rounded-[2rem] border border-purple-500/30 bg-purple-500/10 p-6 text-left transition-all hover:bg-purple-500/20 active:scale-[0.98]"
-          >
-            <div className="flex items-center gap-5">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-500/20 text-purple-400 border border-purple-500/30">
-                <Sparkles size={24} />
-              </div>
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-purple-400/70">Continue learning</span>
-                <h2 className="text-[18px] font-black text-white">{grammarData.items[0].topic.titleEn}</h2>
-              </div>
-            </div>
-            <ChevronRight size={24} className="text-purple-400" />
-          </button>
-        )}
-
-        <div className="grid grid-cols-2 gap-4">
-          <button
-            onClick={() => setMode("LIBRARY")}
-            className="group flex flex-col items-start gap-4 rounded-[2rem] border border-white/10 bg-white/[0.03] p-6 text-left transition-all hover:bg-white/[0.06] active:scale-[0.98]"
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/20 text-blue-400 border border-blue-500/30">
-              <Book size={20} />
-            </div>
-            <div>
-              <h3 className="text-[16px] font-black text-white">Grammar Library</h3>
-              <p className="mt-1 text-[12px] text-white/40">Browse all topics</p>
-            </div>
-          </button>
-
+      <div className="space-y-6">
+        {/* Main Practice Actions */}
+        <div className="grid gap-4">
           <button
             onClick={() => {
               setMode("WRITING_CHALLENGE")
               setWritingStep("SELECT")
             }}
-            className="group flex flex-col items-start gap-4 rounded-[2rem] border border-white/10 bg-white/[0.03] p-6 text-left transition-all hover:bg-white/[0.06] active:scale-[0.98]"
+            className="group relative flex items-center justify-between overflow-hidden rounded-[2rem] border border-emerald-500/20 bg-emerald-500/5 p-6 text-left transition-all hover:bg-emerald-500/10 active:scale-[0.98]"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-              <PenTool size={20} />
+            <div className="flex items-center gap-5">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/20">
+                <PenTool size={24} />
+              </div>
+              <div>
+                <h2 className="text-[18px] font-black text-ink">Writing Check</h2>
+                <p className="text-[13px] text-emerald-500/60">AI feedback on your text</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-[16px] font-black text-white">Writing Practice</h3>
-              <p className="mt-1 text-[12px] text-white/40">Use AI to check text</p>
+            <ChevronRight size={24} className="text-emerald-400/40" />
+          </button>
+
+          <button
+            onClick={() => setMode("QUIZ")}
+            className="group relative flex items-center justify-between overflow-hidden rounded-[2rem] border border-amber-500/20 bg-amber-500/5 p-6 text-left transition-all hover:bg-amber-500/10 active:scale-[0.98]"
+          >
+            <div className="flex items-center gap-5">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/20">
+                <Layout size={24} />
+              </div>
+              <div>
+                <h2 className="text-[18px] font-black text-ink">Quick Quiz</h2>
+                <p className="text-[13px] text-amber-400/60">Rapid grammar test</p>
+              </div>
             </div>
+            <ChevronRight size={24} className="text-amber-400/40" />
           </button>
         </div>
 
-        <button
-          onClick={() => setMode("QUIZ")}
-          className="group relative flex items-center justify-between overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.03] p-6 text-left transition-all hover:bg-white/[0.06] active:scale-[0.98]"
-        >
-          <div className="flex items-center gap-5">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
-              <Layout size={24} />
+        {/* Recommended Lesson */}
+        {mainRecommended && (
+          <div className="pt-4">
+            <div className="flex items-center gap-2 mb-4 px-1">
+              <Sparkles size={14} className="text-purple-400" />
+              <h2 className="text-[11px] font-black uppercase tracking-widest text-purple-400/60">Targeted Practice</h2>
             </div>
-            <div>
-              <h2 className="text-[18px] font-black text-white">Quick Quiz</h2>
-              <p className="text-[13px] text-white/40">Test your grammar knowledge</p>
-            </div>
+            <RecommendedTopicCard 
+              item={mainRecommended} 
+              onClick={() => {
+                setSelectedTopicKey(mainRecommended.topic.key)
+                setMode("LESSON")
+              }}
+            />
           </div>
-          <ChevronRight size={24} className="text-white/20" />
-        </button>
+        )}
+
+        {/* Theory Link - Beautiful Banner */}
+        <div className="pt-8">
+          <div className="relative overflow-hidden rounded-[2rem] border border-line bg-bg-secondary/40 p-8 shadow-sm backdrop-blur-sm">
+            <div className="relative z-10 flex flex-col items-center text-center">
+              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                <Book size={28} />
+              </div>
+              <h3 className="text-[20px] font-black text-ink">Grammar Library</h3>
+              <p className="mt-2 max-w-[240px] text-[14px] font-medium text-muted">
+                Explore all topics, rules, and track your progress in the theory hub.
+              </p>
+              <a 
+                href="/grammar" 
+                className="mt-6 flex h-12 items-center gap-2 rounded-2xl bg-ink px-8 text-[14px] font-black text-bg-primary transition-transform hover:scale-105 active:scale-95"
+              >
+                Go to Theory
+                <ChevronRight size={18} />
+              </a>
+            </div>
+            
+            {/* Decorative Background Elements */}
+            <div className="absolute -bottom-12 -right-12 h-40 w-40 rounded-full bg-blue-500/5 blur-3xl" />
+            <div className="absolute -left-12 -top-12 h-40 w-40 rounded-full bg-purple-500/5 blur-3xl" />
+          </div>
+        </div>
       </div>
     </div>
   )

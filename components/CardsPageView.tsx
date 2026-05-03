@@ -217,7 +217,7 @@ export function CardsPageView({ initialData = null, user = null }: CardsPageView
             </div>
             <button
               onClick={() => showToast("Menu coming soon", "info")}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/[0.05] text-text-secondary active:scale-95 transition-transform"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-bg-secondary text-muted border border-line active:scale-95 transition-transform"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
             </button>
@@ -227,13 +227,13 @@ export function CardsPageView({ initialData = null, user = null }: CardsPageView
             {waitingCount > 0 ? (
               <button
                 onClick={() => window.location.href = "/review"}
-                className="flex-1 pill-glass bg-white text-black h-[52px] font-black text-[15px] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                className="flex-1 pill-glass bg-ink text-bg-primary h-[52px] font-black text-[15px] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
               >
                 Review {waitingCount} cards
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
               </button>
             ) : (
-              <div className="flex-1 h-[52px] rounded-full border border-white/10 bg-white/[0.03] flex items-center justify-center gap-2 text-[14px] font-bold text-text-tertiary">
+              <div className="flex-1 h-[52px] rounded-full border border-line bg-bg-secondary flex items-center justify-center gap-2 text-[14px] font-bold text-quiet">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
                 All caught up
               </div>

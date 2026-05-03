@@ -145,7 +145,7 @@ export function CardList({
   return (
     <section className="space-y-4">
       {/* Search & Tabs */}
-      <div className="sticky top-0 z-40 -mx-4 bg-black/95 px-4 pb-2 pt-3 backdrop-blur-xl md:-mx-6 md:px-6 md:pt-4">
+      <div className="sticky top-0 z-40 -mx-4 bg-bg-primary/95 px-4 pb-2 pt-3 backdrop-blur-xl md:-mx-6 md:px-6 md:pt-4">
         <div className="space-y-3">
           {/* Search */}
           <div className="relative">
@@ -169,8 +169,8 @@ export function CardList({
                 key={level}
                 onClick={() => onSelectLevel(level)}
                 className={`h-7 shrink-0 rounded-full px-3 text-[11px] font-black uppercase tracking-wider transition-all ${selectedLevel === level
-                  ? "bg-white text-black"
-                  : "bg-white/[0.05] text-text-tertiary hover:bg-white/[0.1] hover:text-text-secondary"
+                  ? "bg-ink text-bg-primary"
+                  : "bg-bg-tertiary text-muted hover:bg-bg-tertiary/80 hover:text-ink"
                   }`}
               >
                 {level}
@@ -187,18 +187,18 @@ export function CardList({
                 <button
                   key={status}
                   onClick={() => onSelectStatus(status as CardStatusFilter)}
-                  className={`relative flex flex-1 items-center justify-center gap-1.5 rounded-[13px] text-[13px] font-bold transition-all ${isActive ? "text-black" : "text-text-tertiary hover:text-text-secondary"
+                  className={`relative flex flex-1 items-center justify-center gap-1.5 rounded-[13px] text-[13px] font-bold transition-all ${isActive ? "text-bg-primary" : "text-muted hover:text-ink"
                     }`}
                 >
                   {isActive && (
                     <motion.div
                       layoutId="activeTab"
-                      className="absolute inset-0 rounded-[13px] bg-white"
+                      className="absolute inset-0 rounded-[13px] bg-ink"
                       transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                     />
                   )}
                   <span className="relative z-10">{status}</span>
-                  <span className={`relative z-10 text-[10px] opacity-60 ${isActive ? "text-black/60" : ""}`}>
+                  <span className={`relative z-10 text-[10px] opacity-60 ${isActive ? "text-bg-primary/60" : ""}`}>
                     {count}
                   </span>
                 </button>
@@ -250,7 +250,7 @@ export function CardList({
                           initial={{ opacity: 0, scale: 0.9, x: 10 }}
                           animate={{ opacity: 1, scale: 1, x: 0 }}
                           exit={{ opacity: 0, scale: 0.9, x: 10 }}
-                          className="absolute right-9 top-0 z-50 rounded-2xl bg-[#1a1a20] p-1.5 shadow-2xl border border-white/10"
+                          className="absolute right-9 top-0 z-50 rounded-2xl bg-bg-tertiary p-1.5 shadow-2xl border border-line"
                         >
                           <button
                             onClick={() => { onDeleteRequest(card); setActiveCardMenu(null) }}
@@ -308,7 +308,7 @@ export function CardList({
                         initial={{ opacity: 0, scale: 0.9, y: -5 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: -5 }}
-                        className="absolute right-0 top-9 z-50 min-w-[120px] rounded-2xl bg-[#1a1a20] p-1.5 shadow-2xl border border-white/10"
+                        className="absolute right-0 top-9 z-50 min-w-[120px] rounded-2xl bg-bg-tertiary p-1.5 shadow-2xl border border-line"
                       >
                         <button
                           onClick={(e) => { e.stopPropagation(); onDeleteRequest(card); setActiveCardMenu(null) }}

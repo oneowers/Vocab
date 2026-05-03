@@ -4,6 +4,7 @@ import NextTopLoader from "nextjs-toploader"
 import { StartupSplash } from "@/components/StartupSplash"
 import { ToastProvider } from "@/components/Toast"
 import { UpdateNotifier } from "@/components/UpdateNotifier"
+import { ThemeProvider } from "@/lib/theme-context"
 import "@/styles/apple-theme.css"
 import "./globals.css"
 
@@ -34,10 +35,12 @@ export default function RootLayout({
           showSpinner={false}
         />
         <StartupSplash />
-        <ToastProvider>
-          {children}
-          <UpdateNotifier />
-        </ToastProvider>
+        <ThemeProvider>
+          <ToastProvider>
+            {children}
+            <UpdateNotifier />
+          </ToastProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

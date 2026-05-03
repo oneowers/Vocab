@@ -89,7 +89,7 @@ function WordListCard({ block }: { block: WordListBlock }) {
   const total = block.items.length
 
   return (
-    <div className="rounded-[1.75rem] border border-white/10 bg-[linear-gradient(145deg,#0f1117,#0a0c12)] p-4 shadow-2xl md:p-5">
+    <div className="rounded-[1.75rem] border border-line bg-bg-secondary p-4 shadow-modal md:p-5">
       {/* Header */}
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
@@ -97,11 +97,11 @@ function WordListCard({ block }: { block: WordListBlock }) {
             <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500/10 text-blue-400">
               <Layers size={13} />
             </div>
-            <span className="text-[9px] font-black uppercase tracking-widest text-white/40">Topic Dictionary</span>
+            <span className="text-[9px] font-black uppercase tracking-widest text-muted">Topic Dictionary</span>
           </div>
-          <h2 className="text-[18px] font-black text-white leading-tight">{block.topic}</h2>
+          <h2 className="text-[18px] font-black text-ink leading-tight">{block.topic}</h2>
           {block.description && (
-            <p className="mt-1 text-[12px] text-white/40 leading-relaxed">{block.description}</p>
+            <p className="mt-1 text-[12px] text-muted leading-relaxed">{block.description}</p>
           )}
         </div>
         <button
@@ -110,7 +110,7 @@ function WordListCard({ block }: { block: WordListBlock }) {
           className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-black transition-all ${
             allSaved
               ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-              : "bg-white text-black active:scale-95 hover:bg-white/90"
+              : "bg-ink text-bg-primary active:scale-95 hover:opacity-90"
           }`}
         >
           {savingAll ? (
@@ -132,21 +132,21 @@ function WordListCard({ block }: { block: WordListBlock }) {
             <div
               key={item.word}
               className={`flex items-center gap-3 rounded-2xl border px-3.5 py-2.5 transition-all ${
-                isSaved ? "border-emerald-500/20 bg-emerald-500/5" : "border-white/5 bg-white/[0.02]"
+                isSaved ? "border-emerald-500/20 bg-emerald-500/5" : "border-line bg-bg-tertiary"
               }`}
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className={`text-[14px] font-bold ${ isSaved ? "text-emerald-300" : "text-white"}`}>{item.word}</span>
+                  <span className={`text-[14px] font-bold ${ isSaved ? "text-emerald-500" : "text-ink"}`}>{item.word}</span>
                   {item.level && (
-                    <span className="rounded-full bg-white/5 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white/30">
+                    <span className="rounded-full bg-bg-secondary px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-muted">
                       {item.level}
                     </span>
                   )}
                 </div>
-                <span className="text-[12px] text-white/50">{item.translation}</span>
+                <span className="text-[12px] text-muted">{item.translation}</span>
                 {item.example && (
-                  <p className="mt-0.5 text-[11px] italic text-white/30 truncate">{item.example}</p>
+                  <p className="mt-0.5 text-[11px] italic text-quiet truncate">{item.example}</p>
                 )}
               </div>
               <button
@@ -155,7 +155,7 @@ function WordListCard({ block }: { block: WordListBlock }) {
                 className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-all ${
                   isSaved
                     ? "bg-emerald-500/10 text-emerald-400"
-                    : "bg-white/5 text-white/40 hover:bg-white/10 hover:text-white active:scale-95"
+                    : "bg-bg-secondary text-muted hover:bg-bg-tertiary hover:text-ink active:scale-95"
                 }`}
               >
                 {isSaving ? <Loader2 size={12} className="animate-spin" /> : isSaved ? <CheckCircle2 size={12} /> : <ArrowRight size={12} />}
@@ -166,7 +166,7 @@ function WordListCard({ block }: { block: WordListBlock }) {
       </div>
 
       {savedCount > 0 && (
-        <p className="mt-3 text-center text-[11px] text-white/30">
+        <p className="mt-3 text-center text-[11px] text-quiet">
           {savedCount} of {total} words added to your deck
         </p>
       )}
@@ -208,42 +208,42 @@ function QuizCard({ quiz }: { quiz: QuizBlock }) {
   }
 
   if (done) return (
-    <div className="rounded-[1.75rem] border border-white/10 bg-[linear-gradient(145deg,#1a1a20,#121217)] p-6 text-center shadow-2xl">
+    <div className="rounded-[1.75rem] border border-line bg-bg-secondary p-6 text-center shadow-modal">
       <div className="mb-3 flex h-12 w-12 mx-auto items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400">
         <CheckCircle2 size={24} />
       </div>
-      <p className="text-[11px] font-black uppercase tracking-widest text-amber-400/70 mb-1">Quiz Complete</p>
-      <p className="text-[24px] font-black text-white">You scored {score} / {items.length}</p>
-      <p className="mt-1 text-[13px] text-white/40">
+      <p className="text-[11px] font-black uppercase tracking-widest text-amber-500 mb-1">Quiz Complete</p>
+      <p className="text-[24px] font-black text-ink">You scored {score} / {items.length}</p>
+      <p className="mt-1 text-[13px] text-muted">
         {score === items.length ? "Perfect score! 🎉" : score >= items.length / 2 ? "Good job! Keep practising." : "Keep going, you'll get there!"}
       </p>
     </div>
   )
 
   return (
-    <div className="rounded-[1.75rem] border border-white/10 bg-[linear-gradient(145deg,#1a1a20,#121217)] p-4 shadow-2xl md:p-6">
+    <div className="rounded-[1.75rem] border border-line bg-bg-secondary p-4 shadow-modal md:p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <div className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-400/10 text-amber-400">
             <Target size={13} />
           </div>
-          <span className="text-[9px] font-black uppercase tracking-widest text-white/40">{quiz.title}</span>
+          <span className="text-[9px] font-black uppercase tracking-widest text-muted">{quiz.title}</span>
         </div>
-        <span className="text-[10px] font-black text-white/30">{idx + 1} / {items.length}</span>
+        <span className="text-[10px] font-black text-quiet">{idx + 1} / {items.length}</span>
       </div>
 
       {/* Word */}
       <div className="mb-4 text-center">
-        <h2 className="text-[26px] font-black text-white leading-tight">{item.word}</h2>
+        <h2 className="text-[26px] font-black text-ink leading-tight">{item.word}</h2>
         {item.level && (
-          <span className="mt-1 inline-block rounded-full bg-white/5 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white/40">
+          <span className="mt-1 inline-block rounded-full bg-bg-tertiary px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-muted">
             {item.level}
           </span>
         )}
       </div>
 
-      <p className="mb-4 text-center text-[13px] font-bold text-white/60">{item.question}</p>
+      <p className="mb-4 text-center text-[13px] font-bold text-muted">{item.question}</p>
 
       {/* Options */}
       <div className="space-y-2">
@@ -254,7 +254,7 @@ function QuizCard({ quiz }: { quiz: QuizBlock }) {
           const isSelected = selected === opt.id
           const answered   = selected !== null
 
-          let cls = "border-white/5 bg-white/[0.03] text-white/70 hover:bg-white/[0.06]"
+          let cls = "border-line bg-bg-tertiary/40 text-muted hover:bg-bg-tertiary hover:text-ink"
           if (answered) {
             if (isCorrect)             cls = "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
             else if (isSelected)       cls = "border-rose-500/30 bg-rose-500/10 text-rose-400"
@@ -293,7 +293,7 @@ function QuizCard({ quiz }: { quiz: QuizBlock }) {
             </div>
             <button
               onClick={handleNext}
-              className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-white text-black text-[13px] font-black transition active:scale-[0.98]"
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-ink text-bg-primary text-[13px] font-black transition active:scale-[0.98]"
             >
               {isLast ? "Finish Quiz" : "Next Question"}
               <ArrowRight size={15} />
@@ -311,7 +311,7 @@ function AiMessage({ msg }: { msg: ChatMessage }) {
   if (msg.role === "user") {
     return (
       <div className="flex justify-end">
-        <div className="max-w-[88%] rounded-[1.75rem] bg-white px-5 py-3.5 text-[14px] font-semibold text-black shadow-xl">
+        <div className="max-w-[88%] rounded-[1.75rem] bg-ink px-5 py-3.5 text-[14px] font-semibold text-bg-primary shadow-lg border border-line">
           {msg.content}
         </div>
       </div>
@@ -348,7 +348,7 @@ function AiMessage({ msg }: { msg: ChatMessage }) {
     if (!result.ok) {
       return (
         <div className="flex justify-start">
-          <div className="max-w-[88%] rounded-[1.75rem] border border-white/5 bg-[#121217] px-5 py-3.5 text-[14px] text-rose-300/80">
+          <div className="max-w-[88%] rounded-[1.75rem] border border-line bg-bg-secondary px-5 py-3.5 text-[14px] text-rose-500">
             Quiz data is incomplete. Please regenerate.
           </div>
         </div>
@@ -358,15 +358,15 @@ function AiMessage({ msg }: { msg: ChatMessage }) {
 
   return (
     <div className="flex justify-start">
-      <div className="w-full rounded-[1.75rem] border border-white/5 bg-[#121217] px-5 py-3.5 text-[14px] leading-relaxed text-white/90 shadow-xl md:px-6 md:py-4 md:text-[15px]">
+      <div className="w-full rounded-[1.75rem] border border-line bg-bg-secondary px-5 py-3.5 text-[14px] leading-relaxed text-ink shadow-modal md:px-6 md:py-4 md:text-[15px]">
         <ReactMarkdown
           components={{
-            strong: ({ children }) => <strong className="font-black text-amber-400 bg-amber-400/10 px-1 rounded-md mx-0.5">{children}</strong>,
+            strong: ({ children }) => <strong className="font-black text-amber-500 bg-amber-500/10 px-1 rounded-md mx-0.5">{children}</strong>,
             p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
-            ul: ({ children }) => <ul className="mb-3 mt-2 list-disc pl-5 space-y-1 text-white/70">{children}</ul>,
-            ol: ({ children }) => <ol className="mb-3 mt-2 list-decimal pl-5 space-y-1 text-white/70">{children}</ol>,
+            ul: ({ children }) => <ul className="mb-3 mt-2 list-disc pl-5 space-y-1 text-muted">{children}</ul>,
+            ol: ({ children }) => <ol className="mb-3 mt-2 list-decimal pl-5 space-y-1 text-muted">{children}</ol>,
             li: ({ children }) => <li className="pl-1">{children}</li>,
-            em: ({ children }) => <em className="italic text-white/60">{children}</em>,
+            em: ({ children }) => <em className="italic text-quiet">{children}</em>,
           }}
         >
           {content}

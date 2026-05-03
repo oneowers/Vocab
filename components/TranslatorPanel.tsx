@@ -338,7 +338,7 @@ export function TranslatorPanel({
   return (
     <section className="translate-phone-surface space-y-5">
       <div
-        className="pointer-events-none fixed inset-x-0 top-0 z-20 h-[14rem] bg-gradient-to-b from-black via-black/78 to-transparent"
+        className="pointer-events-none fixed inset-x-0 top-0 z-20 h-[14rem] bg-gradient-to-b from-bg-primary via-bg-primary/80 to-transparent"
         aria-hidden="true"
       />
 
@@ -350,11 +350,11 @@ export function TranslatorPanel({
           </div>
 
           {/* Center: Language Switcher */}
-          <div className="relative flex rounded-full border border-white/[0.06] bg-white/[0.03] p-1 shadow-[0_4px_20px_rgba(0,0,0,0.2)]">
+          <div className="relative flex rounded-full border border-line bg-bg-secondary/40 p-1 shadow-modal backdrop-blur-xl">
             <div className="relative grid grid-cols-2 items-center">
               <motion.div
                 aria-hidden="true"
-                className="pointer-events-none absolute bottom-1 top-1 z-0 w-[calc(50%-0.25rem)] rounded-full border border-white/[0.1] bg-white/[0.08] shadow-[0_2px_8px_rgba(0,0,0,0.1)]"
+                className="pointer-events-none absolute bottom-1 top-1 z-0 w-[calc(50%-0.25rem)] rounded-full border border-line/20 bg-bg-tertiary shadow-sm"
                 initial={false}
                 animate={{
                   x: direction === "en-ru" ? "0%" : "100%"
@@ -366,8 +366,8 @@ export function TranslatorPanel({
                 type="button"
                 onClick={() => handleDirectionChange("en-ru")}
                 className={`relative z-10 flex min-w-[100px] items-center justify-center rounded-full px-4 py-3 text-[13px] font-bold transition-all duration-300 md:min-w-[140px] md:text-[14px] ${direction === "en-ru"
-                  ? "text-white"
-                  : "text-white/50 hover:text-white"
+                  ? "text-ink"
+                  : "text-muted hover:text-ink"
                   }`}
               >
                 English
@@ -376,8 +376,8 @@ export function TranslatorPanel({
                 type="button"
                 onClick={() => handleDirectionChange("ru-en")}
                 className={`relative z-10 flex min-w-[100px] items-center justify-center rounded-full px-4 py-3 text-[13px] font-bold transition-all duration-300 md:min-w-[140px] md:text-[14px] ${direction === "ru-en"
-                  ? "text-white"
-                  : "text-white/50 hover:text-white"
+                  ? "text-ink"
+                  : "text-muted hover:text-ink"
                   }`}
               >
                 Russian
@@ -390,7 +390,7 @@ export function TranslatorPanel({
             <Link
               href="/profile"
               aria-label="Open profile"
-              className="flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-full border border-white/[0.06] bg-white/[0.03] text-white/74 shadow-[0_4px_20px_rgba(0,0,0,0.2)] transition hover:bg-white/[0.06] hover:text-white"
+              className="flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-full border border-line bg-bg-secondary/40 text-muted shadow-modal backdrop-blur-xl transition hover:bg-bg-tertiary hover:text-ink"
             >
               <UserRound size={20} />
             </Link>
@@ -413,7 +413,7 @@ export function TranslatorPanel({
         >
           <div className="flex flex-1 flex-col">
             <div className="mb-3 flex items-center justify-between gap-3">
-              <span className="text-[12px] font-bold uppercase tracking-[0.08em] text-white/42">
+              <span className="text-[12px] font-bold uppercase tracking-[0.08em] text-muted/60">
                 {sourceLabel}
               </span>
             </div>
@@ -432,7 +432,7 @@ export function TranslatorPanel({
                   spellCheck={false}
                   placeholder={direction === "en-ru" ? "Enter text" : "Введите текст"}
                   rows={translation ? 1 : 3}
-                  className={`w-full overflow-hidden resize-none border-0 bg-transparent p-0 font-black tracking-tight text-white outline-none placeholder:text-white/24 ${translation
+                  className={`w-full overflow-hidden resize-none border-0 bg-transparent p-0 font-black tracking-tight text-ink outline-none placeholder:text-muted/30 ${translation
                       ? "min-h-[42px] text-[26px] md:text-[32px]"
                       : "min-h-[110px] flex-1 text-[26px] md:text-[32px]"
                     }`}
@@ -467,7 +467,7 @@ export function TranslatorPanel({
                       ))}
                     </div>
                     {selectedCefrWord && (
-                      <div className="mt-3 inline-flex items-center gap-2 rounded-2xl border border-white/[0.08] bg-[#202028] px-3 py-2 text-[13px] font-medium text-white/78 shadow-[0_12px_30px_rgba(0,0,0,0.24)]">
+                      <div className="mt-3 inline-flex items-center gap-2 rounded-2xl border border-line bg-bg-tertiary px-3 py-2 text-[13px] font-medium text-ink shadow-modal">
                         <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${CEFR_STYLES[selectedCefrWord.level as CefrLevel]?.badge ?? "bg-amber-500/10 text-amber-300"}`}>
                           {selectedCefrWord.level}
                         </span>
@@ -486,9 +486,9 @@ export function TranslatorPanel({
             </div>
 
             {direction === "en-ru" && phonetic && translation ? (
-              <p className="mt-1 text-[14px] font-medium text-white/48">{phonetic}</p>
+              <p className="mt-1 text-[14px] font-medium text-quiet">{phonetic}</p>
             ) : direction === "en-ru" && phonetic ? (
-              <p className="mt-2 text-[15px] font-medium text-white/48">{phonetic}</p>
+              <p className="mt-2 text-[15px] font-medium text-quiet">{phonetic}</p>
             ) : null}
             <div className="mt-4 flex items-center justify-between gap-3">
               <div>
@@ -496,7 +496,7 @@ export function TranslatorPanel({
                   <button
                     type="button"
                     onClick={() => speakText(query, ttsLanguage)}
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-[#292930] text-white/68 transition hover:bg-[#34343c] hover:text-white"
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-bg-tertiary text-muted transition hover:bg-bg-tertiary/80 hover:text-ink"
                     aria-label="Speak source word"
                   >
                     <Volume2 size={18} />
@@ -508,7 +508,7 @@ export function TranslatorPanel({
                 type="button"
                 onClick={() => void handleTranslate()}
                 disabled={loading || !query.trim()}
-                className="min-h-10 rounded-full bg-[#f2f2f4] px-5 text-[14px] font-black text-black transition hover:bg-white disabled:opacity-45"
+                className="min-h-10 rounded-full bg-ink px-5 text-[14px] font-black text-bg-primary transition hover:opacity-90 disabled:opacity-45"
               >
                 {loading ? (
                   <span className="inline-flex items-center gap-2">
@@ -547,18 +547,18 @@ export function TranslatorPanel({
             <div key={`${direction}-${translation}`} className="translate-result-enter flex flex-1 flex-col">
               <div className="flex-1">
                 <div className="mb-4 flex items-center justify-between gap-3">
-                  <span className="text-[12px] font-bold uppercase tracking-[0.08em] text-white/42">
+                  <span className="text-[12px] font-bold uppercase tracking-[0.08em] text-muted/60">
                     {targetLabel}
                   </span>
                   {translationSourceLabel && (
-                    <span className="rounded-full bg-white/[0.06] px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.08em] text-white/45">
+                    <span className="rounded-full bg-bg-tertiary px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.08em] text-quiet">
                       {translationSourceLabel}
                     </span>
                   )}
                 </div>
 
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-[30px] font-black tracking-tight text-white md:text-[40px]">{translation}</p>
+                  <p className="text-[30px] font-black tracking-tight text-ink md:text-[40px]">{translation}</p>
                   {direction === "ru-en" && cefrLevel && (
                     <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[13px] font-bold ${CEFR_STYLES[cefrLevel].badge}`}>
                       <span className={`h-1.5 w-1.5 rounded-full ${CEFR_STYLES[cefrLevel].dot}`} />
@@ -567,7 +567,7 @@ export function TranslatorPanel({
                   )}
                 </div>
                 {direction === "ru-en" && phonetic && (
-                  <p className="mt-2 text-[15px] font-medium text-white/50">{phonetic}</p>
+                  <p className="mt-2 text-[15px] font-medium text-quiet">{phonetic}</p>
                 )}
                 <div className="mt-6 space-y-5">
                   {translationAlternatives.length > 0 && (
@@ -577,7 +577,7 @@ export function TranslatorPanel({
                         {translationAlternatives.map((item, index) => (
                           <span
                             key={item}
-                            className="translate-chip-enter rounded-full bg-white/[0.06] px-2.5 py-1 text-[14px] font-medium text-white/64"
+                            className="translate-chip-enter rounded-full bg-bg-tertiary px-2.5 py-1 text-[14px] font-medium text-muted"
                             style={{ animationDelay: `${90 + index * 38}ms` }}
                           >
                             {item}
@@ -601,7 +601,7 @@ export function TranslatorPanel({
                     <button
                       type="button"
                       onClick={() => speakText(translation, translatedLanguage)}
-                      className="flex h-10 w-10 items-center justify-center rounded-full bg-[#292930] text-white/68 transition hover:bg-[#34343c] hover:text-white"
+                      className="flex h-10 w-10 items-center justify-center rounded-full bg-bg-tertiary text-muted transition hover:bg-bg-tertiary/80 hover:text-ink"
                       aria-label="Speak translated text"
                     >
                       <Volume2 size={18} />
@@ -614,7 +614,7 @@ export function TranslatorPanel({
                   onClick={() => void handleAddCard()}
                   disabled={guestMode || saving}
                   title={guestMode ? getTooltipMessage() : undefined}
-                  className="min-h-10 rounded-full bg-[#292930] px-5 text-[14px] font-black text-white transition hover:bg-[#34343c] disabled:opacity-45"
+                  className="min-h-10 rounded-full bg-bg-tertiary px-5 text-[14px] font-black text-ink transition hover:bg-bg-tertiary/80 disabled:opacity-45 border border-line"
                 >
                   {saving ? "Saving..." : "Add to cards"}
                 </button>

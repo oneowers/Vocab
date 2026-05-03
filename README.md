@@ -1,6 +1,6 @@
 # LexiFlow
 
-LexiFlow is a Next.js 14 vocabulary learning app for Russian-speaking English learners. It supports Google OAuth with Supabase, a Neon PostgreSQL database through Prisma, spaced repetition review modes, per-user statistics, and an admin panel.
+LexiFlow is a Next.js 14 vocabulary learning app for Russian-speaking English learners. It supports Google OAuth with Supabase, a Neon PostgreSQL database through Prisma, spaced repetition review modes, per-user statistics, and an admin panel. For architectural details and the design system, see the [Design Doc](docs/design-doc.md).
 
 ## Stack
 
@@ -12,8 +12,9 @@ LexiFlow is a Next.js 14 vocabulary learning app for Russian-speaking English le
 - Neon PostgreSQL
 - Vercel deployment target
 
-## Features
-
+- **Liquid Glass Design System**: Premium iOS-inspired aesthetic with dynamic Light/Dark mode support.
+- **Grammar Theory Hub**: Structured grammar topics aligned with CEFR levels (A1-B2).
+- **AI-Powered Learning**: Writing challenges with real-time AI feedback and coaching.
 - Translator panel with MyMemory translation proxy and Free Dictionary metadata proxy
 - Guest mode with local demo deck and disabled write actions
 - Dashboard with deck management, tag filters, JSON export/import, and TTS

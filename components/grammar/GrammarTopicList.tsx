@@ -5,7 +5,7 @@ import { Search } from "lucide-react"
 import type { CefrLevel, GrammarSkillRecord } from "@/lib/types"
 import { GrammarTopicRow } from "./GrammarTopicRow"
 
-export function GrammarTopicList({ items }: { items: GrammarSkillRecord[] }) {
+export function GrammarTopicList({ items, onSelect }: { items: GrammarSkillRecord[]; onSelect?: (item: GrammarSkillRecord) => void }) {
   if (items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center px-4">
@@ -39,7 +39,12 @@ export function GrammarTopicList({ items }: { items: GrammarSkillRecord[] }) {
           </div>
           <div className="grid gap-2 md:grid-cols-2 md:gap-4">
             {group.items.map((item, i) => (
-              <GrammarTopicRow key={item.topic.id} item={item} index={i} />
+              <GrammarTopicRow 
+                key={item.topic.id} 
+                item={item} 
+                index={i} 
+                onClick={() => onSelect?.(item)} 
+              />
             ))}
           </div>
         </div>

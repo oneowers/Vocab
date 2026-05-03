@@ -6,6 +6,8 @@ import { motion } from "framer-motion"
 interface PracticeModeSelectorProps {
   onSelectWords: () => void
   onSelectGrammar: () => void
+  onSelectWriting: () => void
+  onSelectQuiz: () => void
   dueCount: number
   weakGrammarCount: number
 }
@@ -13,6 +15,8 @@ interface PracticeModeSelectorProps {
 export function PracticeModeSelector({
   onSelectWords,
   onSelectGrammar,
+  onSelectWriting,
+  onSelectQuiz,
   dueCount,
   weakGrammarCount
 }: PracticeModeSelectorProps) {
@@ -28,10 +32,10 @@ export function PracticeModeSelector({
     <div className="mx-auto max-w-xl px-4 pb-32 pt-6 md:pt-12">
       {/* Compact Header */}
       <header className="mb-5 px-1">
-        <h1 className="text-[28px] font-black tracking-tight text-white md:text-[36px]">
+        <h1 className="text-[28px] font-black tracking-tight text-ink md:text-[36px]">
           Practice
         </h1>
-        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] font-bold text-white/40">
+        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] font-bold text-quiet">
           {hasDue && (
             <span className="text-blue-400">{dueCount} due</span>
           )}
@@ -49,9 +53,9 @@ export function PracticeModeSelector({
 
       {/* Stats Row - High Contrast Chips */}
       <div className="mb-8 flex flex-wrap items-center gap-2 px-1">
-        <div className="flex items-center gap-2 rounded-lg bg-white/[0.03] border border-white/5 px-2.5 py-1.5">
-          <span className="text-[10px] font-black uppercase tracking-wider text-white/30">Learning</span>
-          <span className="text-[13px] font-black text-white">{learningCount}</span>
+        <div className="flex items-center gap-2 rounded-lg bg-bg-secondary border border-line px-2.5 py-1.5 shadow-sm">
+          <span className="text-[10px] font-black uppercase tracking-wider text-quiet">Learning</span>
+          <span className="text-[13px] font-black text-ink">{learningCount}</span>
         </div>
         {hasMistakes && (
           <div className="flex items-center gap-2 rounded-lg bg-rose-500/10 border border-rose-500/10 px-2.5 py-1.5">
@@ -59,9 +63,9 @@ export function PracticeModeSelector({
             <span className="text-[13px] font-black text-rose-400">{mistakesCount}</span>
           </div>
         )}
-        <div className="flex items-center gap-2 rounded-lg bg-white/[0.03] border border-white/5 px-2.5 py-1.5">
-          <Clock size={12} className="text-white/20" />
-          <span className="text-[13px] font-black text-white/60">{estimatedTime}</span>
+        <div className="flex items-center gap-2 rounded-lg bg-bg-secondary border border-line px-2.5 py-1.5 shadow-sm">
+          <Clock size={12} className="text-quiet" />
+          <span className="text-[13px] font-black text-muted">{estimatedTime}</span>
         </div>
       </div>
 
@@ -70,7 +74,7 @@ export function PracticeModeSelector({
         <button
           type="button"
           onClick={onSelectWords}
-          className="group relative flex w-full flex-col items-start overflow-hidden rounded-[1.75rem] border border-blue-500/20 bg-[#151a24] p-6 transition-all active:scale-[0.98] hover:bg-[#1a212e] hover:border-blue-500/30 shadow-[0_10px_30px_-10px_rgba(59,130,246,0.2)]"
+          className="group relative flex w-full flex-col items-start overflow-hidden rounded-[1.75rem] border border-blue-500/20 bg-bg-secondary p-6 transition-all active:scale-[0.98] hover:bg-blue-500/[0.03] hover:border-blue-500/30 shadow-panel"
         >
           <div className="absolute right-0 top-0 -mr-6 -mt-6 h-32 w-32 rounded-full bg-blue-500/5 blur-3xl group-hover:bg-blue-500/10 transition-colors" />
           
@@ -80,25 +84,25 @@ export function PracticeModeSelector({
                 <BookOpen size={20} strokeWidth={2.5} />
               </div>
               <div className="text-left">
-                <h2 className="text-[18px] font-black text-white leading-tight">Continue Review</h2>
+                <h2 className="text-[18px] font-black text-ink leading-tight">Continue Review</h2>
                 <p className="text-[12px] font-bold text-blue-400/60">{dueCount} words waiting</p>
               </div>
             </div>
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-black shadow-lg transition-transform group-hover:translate-x-1">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-ink text-bg-primary shadow-lg transition-transform group-hover:translate-x-1">
               <ChevronRight size={18} />
             </div>
           </div>
 
           <div className="w-full space-y-2">
-            <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-wider text-white/30">
+            <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-wider text-quiet">
               <span>Progress</span>
-              <span className="text-white/60">14 / 20</span>
+              <span className="text-muted">14 / 20</span>
             </div>
             <div className="h-2 w-full overflow-hidden rounded-full bg-blue-500/10">
               <motion.div 
                 initial={{ width: 0 }}
                 animate={{ width: "70%" }}
-                className="h-full bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.5)]" 
+                className="h-full bg-blue-500 shadow-accent" 
               />
             </div>
           </div>
@@ -122,7 +126,7 @@ export function PracticeModeSelector({
             title="Writing Check"
             subtitle="30+ words · AI feedback"
             icon={<PenTool size={20} strokeWidth={2.5} />}
-            onClick={() => {}} // This should open the writing challenge
+            onClick={onSelectWriting}
             color="emerald"
           />
 
@@ -131,7 +135,7 @@ export function PracticeModeSelector({
             title="Quick Quiz"
             subtitle="5 rapid questions"
             icon={<Target size={20} strokeWidth={2.5} />}
-            onClick={() => {}}
+            onClick={onSelectQuiz}
             color="orange"
             disabled={dueCount < 3}
             disabledReason="Need 3+ words saved"
@@ -183,8 +187,8 @@ function PracticeActionCard({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`group relative flex h-[92px] w-full items-center gap-4 rounded-2xl border border-white/5 bg-white/[0.02] p-4 text-left transition-all active:scale-[0.98] ${
-        disabled ? "opacity-60 grayscale-[0.5] cursor-not-allowed" : "hover:bg-white/[0.04] hover:border-white/10"
+      className={`group relative flex h-[92px] w-full items-center gap-4 rounded-2xl border border-line bg-bg-secondary p-4 text-left transition-all active:scale-[0.98] shadow-sm ${
+        disabled ? "opacity-60 grayscale-[0.5] cursor-not-allowed" : "hover:bg-bg-tertiary hover:border-accent/20"
       }`}
     >
       <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border transition-colors ${colorMap[color]}`}>
@@ -192,8 +196,8 @@ function PracticeActionCard({
       </div>
 
       <div className="flex-1 min-w-0">
-        <h3 className="text-[16px] font-black text-white">{title}</h3>
-        <p className="truncate text-[12px] font-bold text-white/30">
+        <h3 className="text-[16px] font-black text-ink">{title}</h3>
+        <p className="truncate text-[12px] font-bold text-quiet">
           {disabled && disabledReason ? disabledReason : subtitle}
         </p>
       </div>
@@ -205,9 +209,9 @@ function PracticeActionCard({
           </span>
         )}
         {!disabled ? (
-          <ChevronRight size={16} className="text-white/10 transition-transform group-hover:translate-x-0.5" />
+          <ChevronRight size={16} className="text-quiet transition-transform group-hover:translate-x-0.5" />
         ) : (
-          <AlertCircle size={14} className="text-white/5" />
+          <AlertCircle size={14} className="text-line" />
         )}
       </div>
     </button>

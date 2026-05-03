@@ -62,9 +62,9 @@ function mkNow() { return new Date().toISOString() }
 
 function Badge({ icon: Icon, label, loading }: { icon: LucideIcon; label: string; loading?: boolean }) {
   return (
-    <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] font-bold text-white/70 backdrop-blur-md">
-      <Icon size={10} className="text-white/40" />
-      {loading ? <div className="h-2 w-6 animate-pulse rounded bg-white/10" /> : label}
+    <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-line bg-bg-tertiary px-2.5 py-1 text-[10px] font-bold text-muted backdrop-blur-md">
+      <Icon size={10} className="text-quiet" />
+      {loading ? <div className="h-2 w-6 animate-pulse rounded bg-line" /> : label}
     </div>
   )
 }
@@ -84,16 +84,16 @@ function ActionCard({ action, onClick }: { action: SuggestedAction; onClick: () 
   return (
     <button
       onClick={onClick}
-      className="group flex w-full items-center gap-3.5 rounded-[22px] border border-white/[0.06] bg-white/[0.03] p-3.5 text-left transition-all hover:bg-white/[0.06] active:scale-[0.98] md:flex-col md:items-start md:rounded-3xl md:p-5"
+      className="group flex w-full items-center gap-3.5 rounded-[22px] border border-line bg-bg-secondary/40 p-3.5 text-left transition-all hover:bg-bg-tertiary active:scale-[0.98] md:flex-col md:items-start md:rounded-3xl md:p-5 backdrop-blur-sm shadow-sm"
     >
-      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.05] ${action.color} md:h-11 md:w-11 md:rounded-2xl`}>
+      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-bg-tertiary ${action.color} md:h-11 md:w-11 md:rounded-2xl`}>
         <action.icon size={20} />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="truncate text-[14px] font-bold text-white">{action.title}</p>
-        <p className="truncate text-[12px] text-white/40 md:whitespace-normal md:mt-1">{action.description}</p>
+        <p className="truncate text-[14px] font-bold text-ink">{action.title}</p>
+        <p className="truncate text-[12px] text-muted md:whitespace-normal md:mt-1">{action.description}</p>
       </div>
-      <ChevronRight size={16} className="text-white/20 md:hidden" />
+      <ChevronRight size={16} className="text-quiet md:hidden" />
     </button>
   )
 }
@@ -207,17 +207,17 @@ export function AiCoachView({ isPro }: { isPro: boolean }) {
   const isEmpty = messages.length <= 1
 
   return (
-    <div className="relative min-h-screen bg-black pb-32 pt-20 text-white md:pb-40 md:pt-28">
+    <div className="relative min-h-screen bg-bg-primary pb-32 pt-20 text-ink md:pb-40 md:pt-28 transition-colors duration-300">
       {/* Top Nav */}
       <div className="fixed inset-x-0 top-0 z-[60] flex justify-center px-3 py-3 md:px-4 md:py-5">
         <div className="flex w-full max-w-2xl items-center gap-2">
-          <div className="hide-scrollbar flex flex-1 items-center gap-1 overflow-x-auto rounded-full border border-white/[0.06] bg-black/70 p-1 backdrop-blur-2xl">
+          <div className="hide-scrollbar flex flex-1 items-center gap-1 overflow-x-auto rounded-full border border-line bg-bg-secondary/80 p-1 backdrop-blur-2xl shadow-modal">
             {aiModes.map(m => (
               <button
                 key={m.id}
                 onClick={() => setMode(m.id)}
                 className={`flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[12px] font-bold transition-all ${
-                  activeMode === m.id ? "bg-white text-black" : "text-white/40 hover:text-white hover:bg-white/5"
+                  activeMode === m.id ? "bg-ink text-bg-primary" : "text-muted hover:text-ink hover:bg-bg-tertiary"
                 }`}
               >
                 <m.icon size={13} />
@@ -225,7 +225,7 @@ export function AiCoachView({ isPro }: { isPro: boolean }) {
               </button>
             ))}
           </div>
-          <Link href="/profile" className="flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-full border border-white/[0.06] bg-black/70 text-white/50 backdrop-blur-2xl transition hover:text-white">
+          <Link href="/profile" className="flex h-[40px] w-[40px] shrink-0 items-center justify-center rounded-full border border-line bg-bg-secondary/80 text-muted backdrop-blur-2xl transition hover:text-ink shadow-modal">
             <UserRound size={18} />
           </Link>
         </div>
@@ -238,15 +238,15 @@ export function AiCoachView({ isPro }: { isPro: boolean }) {
             <motion.div key="hero" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
               className="flex flex-col items-center py-4 text-center md:py-10"
             >
-              <div className="relative mb-4 flex h-14 w-14 items-center justify-center rounded-[20px] bg-gradient-to-br from-amber-400 to-orange-600 p-[1px] md:h-20 md:w-20 md:rounded-3xl">
-                <div className="flex h-full w-full items-center justify-center rounded-[19px] bg-black md:rounded-[1.4rem]">
+              <div className="relative mb-4 flex h-14 w-14 items-center justify-center rounded-[20px] bg-gradient-to-br from-amber-400 to-orange-600 p-[1px] md:h-20 md:w-20 md:rounded-3xl shadow-lg shadow-orange-500/20">
+                <div className="flex h-full w-full items-center justify-center rounded-[19px] bg-bg-secondary md:rounded-[1.4rem]">
                   <Sparkles size={24} className="text-amber-400 md:size-8" />
                 </div>
               </div>
-              <h1 className="max-w-[280px] text-[20px] font-black leading-tight md:max-w-none md:text-4xl">
+              <h1 className="max-w-[280px] text-[20px] font-black leading-tight md:max-w-none md:text-4xl text-ink">
                 Practice English with <span className="text-amber-400">saved words</span>
               </h1>
-              <p className="mt-2 max-w-[300px] text-[13px] text-white/40 md:mt-3 md:max-w-md md:text-base">
+              <p className="mt-2 max-w-[300px] text-[13px] text-muted md:mt-3 md:max-w-md md:text-base">
                 Explain words, quiz yourself, or build a study plan.
               </p>
               <DeckBadges total={deckCards.length} due={dueCount} level={level} loading={cardsLoading} />
@@ -265,7 +265,7 @@ export function AiCoachView({ isPro }: { isPro: boolean }) {
               ))}
               {loading && (
                 <div className="flex justify-start">
-                  <div className="flex items-center gap-2 rounded-full border border-white/5 bg-white/[0.03] px-3.5 py-1.5 text-[12px] font-bold text-white/40">
+                  <div className="flex items-center gap-2 rounded-full border border-line bg-bg-tertiary px-3.5 py-1.5 text-[12px] font-bold text-muted">
                     <Loader2 size={12} className="animate-spin" />
                     AI coach is thinking...
                   </div>
@@ -277,13 +277,13 @@ export function AiCoachView({ isPro }: { isPro: boolean }) {
       </div>
 
       {/* Sticky Input */}
-      <div className="fixed inset-x-0 bottom-0 z-50 bg-gradient-to-t from-black via-black/95 to-transparent px-3 pb-8 pt-10 md:px-4 md:pb-10 md:pt-14">
+      <div className="fixed inset-x-0 bottom-0 z-50 bg-gradient-to-t from-bg-primary via-bg-primary/95 to-transparent px-3 pb-8 pt-10 md:px-4 md:pb-10 md:pt-14">
         <div className="mx-auto max-w-2xl flex flex-col gap-2">
           <div className="hide-scrollbar flex overflow-x-auto gap-2 px-1">
             <button
               type="button"
               onClick={() => setInput(prev => (prev + " /unknowncard").trim())}
-              className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] font-bold text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+              className="flex items-center gap-1.5 rounded-full border border-line bg-bg-secondary/80 px-3 py-1.5 text-[11px] font-bold text-muted transition-colors hover:bg-bg-tertiary hover:text-ink backdrop-blur-md"
             >
               <Target size={12} className="text-rose-400" />
               + /unknowncard
@@ -291,25 +291,25 @@ export function AiCoachView({ isPro }: { isPro: boolean }) {
             <button
               type="button"
               onClick={() => setInput("words about ")}
-              className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[11px] font-bold text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+              className="flex items-center gap-1.5 rounded-full border border-line bg-bg-secondary/80 px-3 py-1.5 text-[11px] font-bold text-muted transition-colors hover:bg-bg-tertiary hover:text-ink backdrop-blur-md"
             >
               <Layers size={12} className="text-blue-400" />
               Topic dictionary
             </button>
           </div>
           <form onSubmit={e => { e.preventDefault(); sendMessage(input) }}
-            className="flex items-end gap-2 rounded-[2rem] border border-white/10 bg-[#121217]/90 p-1.5 shadow-2xl backdrop-blur-3xl focus-within:border-white/20 md:rounded-[2.5rem] md:p-2"
+            className="flex items-end gap-2 rounded-[2rem] border border-line bg-bg-secondary/90 p-1.5 shadow-modal backdrop-blur-3xl focus-within:border-accent/40 md:rounded-[2.5rem] md:p-2"
           >
             <textarea
               ref={inputRef} rows={1} value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(input) } }}
               placeholder="Ask AI coach..."
-              className="flex-1 resize-none bg-transparent px-3 py-2.5 text-[15px] leading-relaxed text-white outline-none placeholder:text-white/20 md:px-4 md:py-3"
+              className="flex-1 resize-none bg-transparent px-3 py-2.5 text-[15px] leading-relaxed text-ink outline-none placeholder:text-muted/40 md:px-4 md:py-3"
             />
             <button type="submit" disabled={!input.trim() || loading}
               className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all md:h-12 md:w-12 ${
-                input.trim() && !loading ? "bg-white text-black active:scale-95" : "bg-white/5 text-white/20"
+                input.trim() && !loading ? "bg-ink text-bg-primary active:scale-95" : "bg-bg-tertiary text-muted/20"
               }`}
             >
               <ArrowUp size={18} strokeWidth={2.5} />

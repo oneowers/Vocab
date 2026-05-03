@@ -5,7 +5,8 @@ import Link from "next/link"
 import { 
   Search, 
   Sparkles, 
-  X
+  X,
+  ChevronDown
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 
@@ -19,6 +20,7 @@ import { GrammarStatsRow } from "./GrammarStatsRow"
 import { RecommendedTopicCard } from "./RecommendedTopicCard"
 import { GrammarTopicList } from "./GrammarTopicList"
 import { GrammarFilters } from "./GrammarFilters"
+import { GrammarLessonView } from "../GrammarLessonView"
 
 interface GrammarViewProps {
   payload: GrammarSkillsPayload
@@ -31,9 +33,11 @@ export function GrammarView({ payload }: GrammarViewProps) {
   const [search, setSearch] = useState("")
   const [filter, setFilter] = useState<GrammarFilterType>("all")
   const [cefrFilter, setCefrFilter] = useState<CefrLevel | "all">("all")
-  const [sort, setSort] = useState<GrammarSortType>("priority")
+  const [sort, setSort] = useState<GrammarSortType>("weakest")
   
   const [showIntro, setShowIntro] = useState<boolean | null>(null)
+  const [selectedTopicKey, setSelectedTopicKey] = useState<string | null>(null)
+  const [showNoInfo, setShowNoInfo] = useState(false)
 
   useEffect(() => {
     const visits = parseInt(localStorage.getItem("grammar_visits") || "0")
@@ -67,8 +71,8 @@ export function GrammarView({ payload }: GrammarViewProps) {
     return Math.max(0, -score) + (mistakeCount * 2) + (daysSinceLast * 0.2)
   }
 
-  const sortedAndFilteredItems = useMemo(() => {
-    return payload.items
+  const { activeItems, noInfoItems } = useMemo(() => {
+    const sorted = payload.items
       .filter(item => {
         const matchesSearch = 
           item.topic.titleEn.toLowerCase().includes(search.toLowerCase()) ||
@@ -98,6 +102,11 @@ export function GrammarView({ payload }: GrammarViewProps) {
         }
         return 0
       })
+
+    return {
+      activeItems: sorted.filter(i => i.evidenceCount > 0),
+      noInfoItems: sorted.filter(i => i.evidenceCount === 0)
+    }
   }, [payload.items, search, filter, cefrFilter, sort])
 
   const mainRecommended = useMemo(() => {
@@ -106,6 +115,15 @@ export function GrammarView({ payload }: GrammarViewProps) {
       .sort((a, b) => getPriority(b) - getPriority(a))
     return items.length > 0 ? items[0] : null
   }, [payload.items])
+
+  if (selectedTopicKey) {
+    return (
+      <GrammarLessonView 
+        topicKey={selectedTopicKey} 
+        onBack={() => setSelectedTopicKey(null)} 
+      />
+    )
+  }
 
   if (showIntro === null) return null
 
@@ -133,12 +151,12 @@ export function GrammarView({ payload }: GrammarViewProps) {
                   Grammar
                 </h1>
                 <p className="max-w-xs text-[14px] font-medium text-white/40 md:max-w-xl md:text-[16px] md:text-white/50">
-                  Practice weak topics and improve with AI.
+                  Study theory and explore English structures.
                 </p>
               </div>
-              <Link href="/practice" className="button-primary h-12 px-8">
+              <Link href="/practice?mode=grammar" className="button-primary h-12 px-8">
                 <Sparkles size={18} />
-                Start Grammar Practice
+                Go to Practice
               </Link>
             </div>
           </motion.header>
@@ -152,12 +170,12 @@ export function GrammarView({ payload }: GrammarViewProps) {
             <div className="flex items-center justify-between gap-4">
               <div className="space-y-0.5">
                 <h1 className="text-[20px] font-black tracking-tight text-white md:text-[32px]">
-                  Grammar
+                  Grammar Hub
                 </h1>
                 <GrammarStatsRow payload={payload} />
               </div>
               <Link 
-                href="/practice" 
+                href="/practice?mode=grammar" 
                 className="flex h-10 items-center gap-2 rounded-xl bg-white/5 px-4 text-[13px] font-black text-white border border-white/5 active:scale-[0.98] transition-transform md:h-12 md:px-6"
               >
                 <Sparkles size={14} className="text-white/40 md:w-4 md:h-4" />
@@ -178,13 +196,16 @@ export function GrammarView({ payload }: GrammarViewProps) {
                 <h2 className="text-[12px] font-bold uppercase tracking-widest text-amber-400/60">Recommendation</h2>
               </div>
             </div>
-            <RecommendedTopicCard item={mainRecommended} />
+            <RecommendedTopicCard 
+              item={mainRecommended} 
+              onClick={() => setSelectedTopicKey(mainRecommended.topic.key)}
+            />
           </section>
         )}
 
         {/* Topic Library */}
         <section className="space-y-4">
-          <div className="sticky top-0 z-20 space-y-4 bg-black/90 pb-3 pt-2 backdrop-blur-md md:static md:bg-transparent md:p-0 md:backdrop-blur-none">
+          <div className="sticky top-0 z-20 space-y-4 bg-[#0a0c10]/90 pb-3 pt-2 backdrop-blur-md md:static md:bg-transparent md:p-0 md:backdrop-blur-none">
             <div className="flex items-center justify-between px-4 md:px-0">
               <h2 className="text-[18px] font-black text-white md:text-[24px]">Topic Library</h2>
               <span className="text-[12px] font-bold text-white/30">{payload.items.length} topics</span>
@@ -202,7 +223,46 @@ export function GrammarView({ payload }: GrammarViewProps) {
             />
           </div>
 
-          <GrammarTopicList items={sortedAndFilteredItems} />
+          <GrammarTopicList 
+            items={activeItems} 
+            onSelect={(item) => setSelectedTopicKey(item.topic.key)}
+          />
+
+          {/* Collapsible No Info Section */}
+          {noInfoItems.length > 0 && (
+            <div className="px-4 md:px-0 pt-4">
+              <button
+                onClick={() => setShowNoInfo(!showNoInfo)}
+                className="flex items-center gap-3 w-full py-4 border-t border-white/5 group"
+              >
+                <div className={`transition-transform duration-300 ${showNoInfo ? 'rotate-180' : ''}`}>
+                  <ChevronDown size={18} className="text-white/20 group-hover:text-white/40" />
+                </div>
+                <span className="text-[13px] font-black text-white/20 group-hover:text-white/40 uppercase tracking-widest">
+                  {showNoInfo ? 'Hide' : 'Show'} {noInfoItems.length} New Topics
+                </span>
+                <div className="h-[1px] flex-1 bg-white/5" />
+              </button>
+
+              <AnimatePresence>
+                {showNoInfo && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="pt-4">
+                      <GrammarTopicList 
+                        items={noInfoItems} 
+                        onSelect={(item) => setSelectedTopicKey(item.topic.key)}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
         </section>
       </div>
     </div>

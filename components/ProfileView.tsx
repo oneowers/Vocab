@@ -3,7 +3,8 @@
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowRight, ChevronDown, LogOut, Shield, User as UserIcon } from "lucide-react"
+import { ArrowRight, ChevronDown, LogOut, Moon, Shield, Sun, User as UserIcon } from "lucide-react"
+import { useTheme } from "@/lib/theme-context"
 
 import { CEFR_LEVELS } from "@/lib/catalog"
 import { useToast } from "@/components/Toast"
@@ -204,23 +205,25 @@ export function ProfileView({ user, initialActivity = null }: ProfileViewProps) 
     }
   }
 
+  const { theme, toggleTheme } = useTheme()
+
   return (
     <div className="space-y-4">
-      <section className="panel overflow-hidden border-none bg-gradient-to-br from-[#2b2b31] to-[#1b1b20] p-4 shadow-xl">
+      <section className="panel overflow-hidden border-none bg-gradient-to-br from-bg-secondary to-bg-primary p-4 shadow-xl">
         <div className="flex items-center gap-3">
           <div className="relative">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/[0.08] backdrop-blur-md">
-              <UserIcon size={24} className="text-white/40" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent-soft backdrop-blur-md">
+              <UserIcon size={24} className="text-muted" />
             </div>
           </div>
           <div className="flex-1">
-            <h1 className="text-[20px] font-black tracking-tight text-white">
+            <h1 className="text-[20px] font-black tracking-tight text-ink">
               {name}
             </h1>
             <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5">
-              <span className="text-[12px] font-semibold text-white/50">{subtitle}</span>
+              <span className="text-[12px] font-semibold text-muted">{subtitle}</span>
               {profileUser?.createdAt && (
-                <span className="text-[12px] font-medium text-white/20">
+                <span className="text-[12px] font-medium text-quiet">
                   Joined {new Date(profileUser.createdAt).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
                 </span>
               )}
@@ -229,27 +232,27 @@ export function ProfileView({ user, initialActivity = null }: ProfileViewProps) 
         </div>
 
         <div className="mt-4 grid grid-cols-3 gap-2">
-          <div className="rounded-[16px] bg-white/[0.04] p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Streak</p>
-            <p className="text-[18px] font-black text-white">
+          <div className="rounded-[16px] bg-bg-tertiary p-3">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-quiet">Streak</p>
+            <p className="text-[18px] font-black text-ink">
               {guestActive ? 0 : profileUser?.streak ?? 0}
-              <span className="ml-1 text-[11px] font-medium text-text-tertiary">d</span>
+              <span className="ml-1 text-[11px] font-medium text-quiet">d</span>
             </p>
           </div>
-          <div className="rounded-[16px] bg-white/[0.04] p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Active</p>
+          <div className="rounded-[16px] bg-bg-tertiary p-3">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-quiet">Active</p>
             {activityLoading && !hasActivityData ? (
               <div className="mt-1 skeleton skeleton-soft h-6 w-12" />
             ) : (
-              <p className="text-[18px] font-black text-white">
+              <p className="text-[18px] font-black text-ink">
                 {resolvedActivity.activeDaysLastYear}
-                <span className="ml-1 text-[11px] font-medium text-text-tertiary">d</span>
+                <span className="ml-1 text-[11px] font-medium text-quiet">d</span>
               </p>
             )}
           </div>
-          <div className="rounded-[16px] bg-white/[0.04] p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Status</p>
-            <p className="truncate text-[15px] font-black text-white">
+          <div className="rounded-[16px] bg-bg-tertiary p-3">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-quiet">Status</p>
+            <p className="truncate text-[15px] font-black text-ink">
               {guestActive ? "Guest" : "Pro"}
             </p>
           </div>
@@ -263,12 +266,12 @@ export function ProfileView({ user, initialActivity = null }: ProfileViewProps) 
             {activityLoading && !hasActivityData ? (
               <div className="mt-2 skeleton skeleton-soft h-6 w-20" />
             ) : (
-              <h2 className="mt-1 text-[17px] font-bold text-white">
+              <h2 className="mt-1 text-[17px] font-bold text-ink">
                 {resolvedActivity.activeDaysLastYear} days
               </h2>
             )}
           </div>
-          <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-text-tertiary">
+          <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted">
             <div className="flex gap-0.5">
               {[0, 1, 2, 3, 4].map((level) => (
                 <div key={level} className="h-2 w-2 rounded-[1px]" style={{ backgroundColor: `var(--activity-level-${level})` }} aria-hidden="true" />
@@ -282,13 +285,13 @@ export function ProfileView({ user, initialActivity = null }: ProfileViewProps) 
         ) : (
           <div className={`mt-4 overflow-x-auto pb-1 hide-scrollbar native-scroll ${activityRefreshing ? "opacity-70" : ""}`}>
             <div className="min-w-fit">
-              <div className="relative ml-6 h-4 text-[9px] font-bold uppercase tracking-widest text-text-tertiary" style={{ width: `${heatmapWidth}px` }}>
+              <div className="relative ml-6 h-4 text-[9px] font-bold uppercase tracking-widest text-muted" style={{ width: `${heatmapWidth}px` }}>
                 {visibleMonths.map((month) => (
                   <span key={`${month.label}-${month.weekIndex}`} className="absolute top-0" style={{ left: `${month.weekIndex * (heatmapCellSize + heatmapGap)}px` }}>{month.label}</span>
                 ))}
               </div>
               <div className="mt-1 flex gap-2">
-                <div className="grid grid-rows-7 gap-[3px] text-[8px] font-bold text-text-tertiary">
+                <div className="grid grid-rows-7 gap-[3px] text-[8px] font-bold text-muted">
                   {["", "M", "", "W", "", "F", ""].map((label, index) => (
                     <span key={`${label}-${index}`} className="flex h-[10px] items-center">{label}</span>
                   ))}
@@ -306,10 +309,10 @@ export function ProfileView({ user, initialActivity = null }: ProfileViewProps) 
         <Link
           href="/stats"
           prefetch
-          className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-text-primary transition hover:text-white"
+          className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-muted transition hover:text-ink"
         >
           <span>View detailed stats</span>
-          <ArrowRight size={14} className="text-text-tertiary" />
+          <ArrowRight size={14} className="text-quiet" />
         </Link>
       </section>
 
@@ -319,27 +322,27 @@ export function ProfileView({ user, initialActivity = null }: ProfileViewProps) 
             <p className="section-label">Grammar Progress</p>
             <div className="mt-2 flex items-center gap-4">
               <div className="flex flex-col">
-                <span className="text-[18px] font-black text-white">
+                <span className="text-[18px] font-black text-ink">
                   {grammarLoading && !grammarSkills ? "..." : resolvedGrammarSkills.weakCount}
                 </span>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-rose-400/70">Weak</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-rose-500/80">Weak</span>
               </div>
-              <div className="h-8 w-[1px] bg-white/10" />
+              <div className="h-8 w-[1px] bg-line" />
               <div className="flex flex-col">
-                <span className="text-[18px] font-black text-white">
+                <span className="text-[18px] font-black text-ink">
                   {grammarLoading && !grammarSkills ? "..." : resolvedGrammarSkills.items.filter(i => i.score >= -30 && i.score < 30 && i.evidenceCount > 0).length}
                 </span>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-amber-400/70">Learning</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-amber-500/80">Learning</span>
               </div>
             </div>
           </div>
           <Link
             href="/grammar"
             prefetch
-            className="flex h-11 items-center gap-2 rounded-2xl bg-white/[0.04] px-4 text-[13px] font-bold text-white transition hover:bg-white/[0.08] active:scale-[0.98]"
+            className="flex h-11 items-center gap-2 rounded-2xl bg-bg-tertiary px-4 text-[13px] font-bold text-ink transition hover:bg-bg-tertiary/80 active:scale-[0.98] border border-line"
           >
             <span>Open Grammar</span>
-            <ArrowRight size={14} className="text-white/40" />
+            <ArrowRight size={14} className="text-quiet" />
           </Link>
         </div>
       </section>
@@ -347,16 +350,16 @@ export function ProfileView({ user, initialActivity = null }: ProfileViewProps) 
       <section className="panel overflow-hidden p-2">
         <div className="space-y-0.5">
           {canManageCefrLevel ? (
-            <div className="rounded-[16px] border border-white/[0.04] bg-white/[0.02] px-3 py-3">
+            <div className="rounded-[16px] border border-line bg-bg-secondary px-3 py-3">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Target level</p>
-                  <p className="mt-1 text-[12px] leading-relaxed text-text-tertiary">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted">Target level</p>
+                  <p className="mt-1 text-[12px] leading-relaxed text-quiet">
                     Admin-only override for recommendation difficulty.
                   </p>
                 </div>
                 {savingLevel ? (
-                  <span className="text-[11px] font-bold text-white/45">Saving...</span>
+                  <span className="text-[11px] font-bold text-quiet">Saving...</span>
                 ) : null}
               </div>
 
@@ -365,32 +368,32 @@ export function ProfileView({ user, initialActivity = null }: ProfileViewProps) 
                   value={guestActive ? "A1" : cefrLevel}
                   disabled={guestActive || savingLevel}
                   onChange={(event) => void handleCefrLevelChange(event.target.value as CefrLevel)}
-                  className="h-11 w-full appearance-none rounded-[14px] border border-white/[0.08] bg-white/[0.04] px-4 pr-10 text-[14px] font-bold text-white outline-none transition hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-45"
+                  className="h-11 w-full appearance-none rounded-[14px] border border-line bg-bg-secondary px-4 pr-10 text-[14px] font-bold text-ink outline-none transition hover:bg-bg-tertiary disabled:cursor-not-allowed disabled:opacity-45"
                 >
                   {CEFR_LEVELS.map((value) => (
-                    <option key={value} value={value} className="bg-[#16161b] text-white">
+                    <option key={value} value={value} className="bg-bg-secondary text-ink">
                       {value}
                     </option>
                   ))}
                 </select>
                 <ChevronDown
                   size={16}
-                  className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-white/36"
+                  className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-quiet"
                 />
               </div>
             </div>
           ) : (
-            <div className="rounded-[16px] border border-white/[0.04] bg-white/[0.02] px-3 py-3">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-text-tertiary">Vocabulary level</p>
-              <p className="mt-1 text-[12px] leading-relaxed text-text-tertiary">
+            <div className="rounded-[16px] border border-line bg-bg-secondary px-3 py-3">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-muted">Vocabulary level</p>
+              <p className="mt-1 text-[12px] leading-relaxed text-quiet">
                 This will be guided by onboarding and the upcoming level test instead of manual selection.
               </p>
             </div>
           )}
 
-          <div className="flex min-h-[40px] items-center justify-between rounded-[12px] px-3 transition hover:bg-white/[0.04]">
-            <span className="text-[13px] font-semibold text-text-primary">Email</span>
-            <span className="text-[12px] text-text-tertiary">{profileUser?.email || "Guest"}</span>
+          <div className="flex min-h-[40px] items-center justify-between rounded-[12px] px-3 transition hover:bg-bg-tertiary">
+            <span className="text-[13px] font-semibold text-ink">Email</span>
+            <span className="text-[12px] text-muted">{profileUser?.email || "Guest"}</span>
           </div>
 
           {profileUser && (profileUser.role === "ADMIN" || profileUser.email === "admin@localhost") && (
@@ -398,8 +401,8 @@ export function ProfileView({ user, initialActivity = null }: ProfileViewProps) 
               <p className="text-[10px] font-bold uppercase tracking-wider text-amber-500/60">Developer Settings</p>
               <div className="mt-2 flex items-center justify-between">
                 <div>
-                  <p className="text-[13px] font-bold text-white">Toggle Dev Role</p>
-                  <p className="text-[11px] text-white/40">Switch between Admin and User view</p>
+                  <p className="text-[13px] font-bold text-ink">Toggle Dev Role</p>
+                  <p className="text-[11px] text-quiet">Switch between Admin and User view</p>
                 </div>
                 <button
                   onClick={async () => {
@@ -417,19 +420,38 @@ export function ProfileView({ user, initialActivity = null }: ProfileViewProps) 
             </div>
           )}
 
+          {/* Appearance Section */}
+          <div className="mt-4 rounded-[16px] border border-line bg-bg-secondary p-3">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-quiet">Appearance</p>
+            <div className="mt-2 flex items-center justify-between">
+              <div>
+                <p className="text-[13px] font-bold text-ink">Theme</p>
+                <p className="text-[11px] text-quiet">{theme === 'dark' ? 'Dark' : 'Light'} mode active</p>
+              </div>
+              <button
+                onClick={toggleTheme}
+                className="flex h-10 w-20 items-center rounded-full bg-bg-secondary p-1 transition-all border border-line shadow-inner"
+              >
+                <div className={`flex h-8 w-8 items-center justify-center rounded-full shadow-lg transition-transform duration-300 ${theme === 'dark' ? 'translate-x-10 bg-indigo-950' : 'translate-x-0 bg-white'}`}>
+                  {theme === 'dark' ? <Moon size={14} className="text-indigo-200" /> : <Sun size={14} className="text-amber-500" />}
+                </div>
+              </button>
+            </div>
+          </div>
+
           {profileUser?.role === "ADMIN" ? (
-            <Link href="/admin" prefetch className="flex min-h-[40px] items-center justify-between rounded-[12px] px-3 transition hover:bg-white/[0.04]">
-              <span className="inline-flex items-center gap-3 text-[13px] font-semibold text-text-primary">
+            <Link href="/admin" prefetch className="flex min-h-[40px] items-center justify-between rounded-[12px] px-3 transition hover:bg-bg-tertiary">
+              <span className="inline-flex items-center gap-3 text-[13px] font-semibold text-ink">
                 <Shield size={14} className="text-emerald-400" />
                 Admin Dashboard
               </span>
-              <ArrowRight size={14} className="text-text-tertiary" />
+              <ArrowRight size={14} className="text-muted" />
             </Link>
           ) : null}
           <button
             type="button"
             onClick={handleExit}
-            className="flex min-h-[40px] w-full items-center justify-between rounded-[12px] px-3 text-[13px] font-bold text-dangerText transition hover:bg-white/[0.04] active:scale-[0.98]"
+            className="flex min-h-[40px] w-full items-center justify-between rounded-[12px] px-3 text-[13px] font-bold text-dangerText transition hover:bg-bg-tertiary active:scale-[0.98]"
           >
             <span className="inline-flex items-center gap-3">
               <LogOut size={14} />

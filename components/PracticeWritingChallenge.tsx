@@ -16,14 +16,14 @@ interface PracticeWritingChallengeProps {
 
 function getGrammarFindingSeverityClass(severity: PracticeWritingChallengeResult["grammarFindings"][number]["severity"]) {
   if (severity === "high") {
-    return "bg-red-500/20 text-red-200"
+    return "bg-rose-500/10 text-rose-500 border border-rose-500/20"
   }
 
   if (severity === "medium") {
-    return "bg-rose-500/15 text-rose-200"
+    return "bg-rose-500/5 text-rose-500 border border-rose-500/10"
   }
 
-  return "bg-amber-500/15 text-amber-200"
+  return "bg-amber-500/10 text-amber-500 border border-amber-500/20"
 }
 
 export function PracticeWritingChallenge({
@@ -81,7 +81,7 @@ export function PracticeWritingChallenge({
       <motion.div 
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="relative overflow-hidden border border-white/10 bg-white/[0.03] p-8 shadow-[0_18px_36px_-18px_rgba(0,0,0,0.45)] md:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] rounded-[2rem] md:rounded-[2.5rem]"
+        className="relative overflow-hidden border border-line bg-bg-secondary p-8 shadow-modal rounded-[2rem] md:rounded-[2.5rem]"
       >
         <div 
           className={styles.heroCardGlow} 
@@ -96,36 +96,36 @@ export function PracticeWritingChallenge({
             <CheckCircle2 size={24} strokeWidth={2.5} />
           </div>
           <div>
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/30">AI feedback</p>
-            <h2 className="mt-1 text-[24px] font-black text-white leading-tight">Score: {result.score}/100</h2>
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-muted">AI feedback</p>
+            <h2 className="mt-1 text-[24px] font-black text-ink leading-tight">Score: {result.score}/100</h2>
           </div>
         </div>
 
         <div className="relative z-10 mt-5 space-y-6">
-          <div className="rounded-3xl bg-white/[0.04] p-6 border border-white/5 shadow-inner">
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/30 mb-2">Feedback</p>
-            <p className="text-[15px] leading-relaxed text-white/80 font-medium">{result.levelFeedback}</p>
+          <div className="rounded-3xl bg-bg-tertiary p-6 border border-line shadow-inner">
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-muted mb-2">Feedback</p>
+            <p className="text-[15px] leading-relaxed text-ink/80 font-medium">{result.levelFeedback}</p>
           </div>
 
           <div>
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/30 mb-3">Target words</p>
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-muted mb-3">Target words</p>
             <div className="space-y-2">
               {result.usedWords.map((item) => (
                 <div
                   key={item.word}
-                  className="rounded-2xl border border-white/5 bg-white/[0.02] px-5 py-4"
+                  className="rounded-2xl border border-line bg-bg-tertiary px-5 py-4"
                 >
                   <div className="flex items-center justify-between gap-3 mb-2">
-                    <span className="text-[16px] font-bold text-white">{item.word}</span>
+                    <span className="text-[16px] font-bold text-ink">{item.word}</span>
                     <span className={`text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${
                       item.used 
-                        ? item.correct ? "bg-emerald-500/20 text-emerald-300" : "bg-warning-soft text-warning" 
-                        : "bg-white/10 text-white/50"
+                        ? item.correct ? "bg-emerald-500/10 text-emerald-500" : "bg-amber-500/10 text-amber-500" 
+                        : "bg-bg-secondary text-muted"
                     }`}>
                       {item.used ? (item.correct ? "Used well" : "Has issues") : "Not used"}
                     </span>
                   </div>
-                  <p className="text-[14px] leading-relaxed text-white/60">{item.feedback}</p>
+                  <p className="text-[14px] leading-relaxed text-muted">{item.feedback}</p>
                 </div>
               ))}
             </div>
@@ -133,13 +133,13 @@ export function PracticeWritingChallenge({
 
           {result.whatWasGood && (
             <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/30 mb-2">What was good</p>
-              <p className="text-[15px] leading-relaxed text-white/80">{result.whatWasGood}</p>
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-muted mb-2">What was good</p>
+              <p className="text-[15px] leading-relaxed text-ink/80">{result.whatWasGood}</p>
             </div>
           )}
 
           <div>
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/30 mb-3">Grammar</p>
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-muted mb-3">Grammar</p>
             {result.grammarMistakes.length ? (
               <div className="space-y-2">
                 {result.grammarMistakes.map((mistake, index) => (
@@ -147,16 +147,16 @@ export function PracticeWritingChallenge({
                     key={`${mistake.original}-${index}`}
                     className="rounded-2xl border border-rose-500/20 bg-rose-500/5 px-5 py-4"
                   >
-                    <p className="text-[14px] font-medium text-rose-300/80 line-through decoration-rose-500/50">{mistake.original}</p>
-                    <p className="mt-1 text-[16px] font-bold text-emerald-400">{mistake.corrected}</p>
-                    <p className="mt-2 text-[14px] leading-relaxed text-white/60">
+                    <p className="text-[14px] font-medium text-rose-500/80 line-through decoration-rose-500/50">{mistake.original}</p>
+                    <p className="mt-1 text-[16px] font-bold text-emerald-600">{mistake.corrected}</p>
+                    <p className="mt-2 text-[14px] leading-relaxed text-muted">
                       {mistake.explanationRu}
                     </p>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-[15px] leading-relaxed text-white/80">
+              <p className="text-[15px] leading-relaxed text-ink/80">
                 Грубых грамматических ошибок AI не нашёл.
               </p>
             )}
@@ -169,19 +169,19 @@ export function PracticeWritingChallenge({
                 {result.grammarFindings.map((finding) => (
                   <div
                     key={`${finding.topicKey}-${finding.original}-${finding.corrected}`}
-                    className="rounded-2xl border border-white/5 bg-white/[0.025] px-5 py-4"
+                    className="rounded-2xl border border-line bg-bg-tertiary px-5 py-4"
                   >
                     <div className="mb-2 flex flex-wrap items-center gap-2">
-                      <span className="text-[13px] font-bold text-white">{finding.topicKey.replaceAll("_", " ")}</span>
+                      <span className="text-[13px] font-bold text-ink">{finding.topicKey.replaceAll("_", " ")}</span>
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${getGrammarFindingSeverityClass(finding.severity)}`}>
                         {finding.severity}
                       </span>
                     </div>
-                    <p className="text-[14px] font-medium text-rose-300/80 line-through decoration-rose-500/50">
+                    <p className="text-[14px] font-medium text-rose-500/80 line-through decoration-rose-500/50">
                       {finding.original}
                     </p>
-                    <p className="mt-1 text-[15px] font-bold text-emerald-400">{finding.corrected}</p>
-                    <p className="mt-2 text-[14px] leading-relaxed text-white/60">
+                    <p className="mt-1 text-[15px] font-bold text-emerald-600">{finding.corrected}</p>
+                    <p className="mt-2 text-[14px] leading-relaxed text-muted">
                       {finding.explanationRu}
                     </p>
                   </div>
@@ -192,9 +192,9 @@ export function PracticeWritingChallenge({
 
           {result.improvedText && (
             <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/30 mb-2">Improved version</p>
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-muted mb-2">Improved version</p>
               <div className="rounded-3xl bg-emerald-500/5 border border-emerald-500/20 p-6 shadow-inner">
-                 <p className="text-[15px] leading-relaxed text-emerald-100 font-medium">
+                 <p className="text-[15px] leading-relaxed text-emerald-700 dark:text-emerald-100 font-medium">
                   {result.improvedText}
                  </p>
               </div>
@@ -203,13 +203,13 @@ export function PracticeWritingChallenge({
 
           {result.nextTask && (
             <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/30 mb-2">Next task</p>
-              <p className="text-[15px] leading-relaxed text-white/80">{result.nextTask}</p>
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-muted mb-2">Next task</p>
+              <p className="text-[15px] leading-relaxed text-ink/80">{result.nextTask}</p>
             </div>
           )}
         </div>
 
-        <div className="relative z-10 mt-8 pt-6 border-t border-white/10">
+        <div className="relative z-10 mt-8 pt-6 border-t border-line">
           <button type="button" onClick={onSkip} className={styles.glassButtonPrimary}>
             Finish Session
             <ArrowRight size={18} />
@@ -220,21 +220,21 @@ export function PracticeWritingChallenge({
   }
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, scale: 0.98 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="relative overflow-hidden border border-white/10 bg-white/[0.03] p-8 shadow-[0_18px_36px_-18px_rgba(0,0,0,0.45)] md:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] rounded-[2rem] md:rounded-[2.5rem]"
-    >
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="relative overflow-hidden border border-line bg-bg-secondary p-8 shadow-modal rounded-[2rem] md:rounded-[2.5rem]"
+      >
       <div className={styles.heroCardGlow} style={{ opacity: 0.05 }} />
 
       <div className="relative z-10 flex flex-col md:flex-row md:items-start justify-between gap-6 mb-8">
         <div>
           <div className="flex items-center gap-2 mb-2">
             <Sparkles size={16} className="text-blue-400" />
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-white/30">AI Challenge</p>
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-muted">AI Challenge</p>
           </div>
-          <h2 className="text-[28px] font-black text-white leading-tight">Use these words</h2>
-          <p className="mt-2 text-[15px] leading-relaxed text-white/60 max-w-[280px]">
+          <h2 className="text-[28px] font-black text-ink leading-tight">Use these words</h2>
+          <p className="mt-2 text-[15px] leading-relaxed text-muted max-w-[280px]">
             Write a short text. AI will check words, grammar, and naturalness.
           </p>
         </div>
@@ -247,7 +247,7 @@ export function PracticeWritingChallenge({
         {targetCards.map((card) => (
           <span
             key={card.id}
-            className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[13px] font-bold text-white shadow-inner"
+            className="rounded-full border border-line bg-bg-tertiary px-4 py-2 text-[13px] font-bold text-ink shadow-inner"
           >
             {card.original}
           </span>
@@ -259,7 +259,7 @@ export function PracticeWritingChallenge({
           value={userText}
           onChange={(event) => setUserText(event.target.value)}
           placeholder="Write 3–6 sentences using today's words..."
-          className="min-h-[200px] w-full resize-y rounded-3xl border border-white/10 bg-black/40 px-6 py-5 text-[16px] leading-relaxed text-white placeholder:text-white/20 focus:border-white/30 focus:bg-black/60 focus:outline-none transition-all duration-300 shadow-inner"
+          className="min-h-[200px] w-full resize-y rounded-3xl border border-line bg-bg-tertiary px-6 py-5 text-[16px] leading-relaxed text-ink placeholder:text-muted focus:border-ink/30 focus:bg-bg-secondary focus:outline-none transition-all duration-300 shadow-inner"
         />
       </div>
 
