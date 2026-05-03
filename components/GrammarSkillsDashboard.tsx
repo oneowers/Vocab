@@ -381,7 +381,7 @@ function GrammarTopicCard({ item }: { item: GrammarSkillRecord }) {
           <div className="space-y-1">
             <p className="text-[9px] font-bold uppercase tracking-widest text-text-tertiary md:text-[10px]">Examples</p>
             <div className="flex flex-wrap gap-1.5">
-              {item.topic.examples.slice(0, 2).map((example, i) => (
+              {item.topic.examples.slice(0, 2).map((example: any, i: number) => (
                 <span 
                   key={i} 
                   className="rounded-lg bg-white/[0.03] border border-white/[0.02] px-2 py-0.5 text-[11px] font-medium text-text-secondary md:px-2.5 md:py-1 md:text-[12px]"

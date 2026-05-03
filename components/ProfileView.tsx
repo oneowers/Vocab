@@ -22,7 +22,8 @@ interface ProfileViewProps {
 
 const emptyGrammarSkills: GrammarSkillsPayload = {
   items: [],
-  weakCount: 0
+  weakCount: 0,
+  trend: []
 }
 
 function formatDetectedDate(value: string | null) {

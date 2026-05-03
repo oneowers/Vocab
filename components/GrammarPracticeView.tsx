@@ -6,6 +6,7 @@ import { WritingTaskSelector } from "./WritingTaskSelector"
 import { WritingChallengePage } from "./WritingChallengePage"
 import { WritingFeedbackPage } from "./WritingFeedbackPage"
 import { GrammarLessonView } from "./GrammarLessonView"
+import { GRAMMAR_TOPICS } from "@/lib/grammar-content"
 import { useToast } from "./Toast"
 
 // Sub-components from the grammar folder
@@ -144,9 +145,10 @@ export function GrammarPracticeView({ grammarData, onBack, initialSubMode }: Gra
   }
 
   if (mode === "LESSON" && selectedTopicKey) {
+    const lessonTopic = GRAMMAR_TOPICS[selectedTopicKey] ?? null
     return (
       <GrammarLessonView 
-        topicKey={selectedTopicKey} 
+        topic={lessonTopic} 
         onBack={() => setMode("DASHBOARD")} 
       />
     )
