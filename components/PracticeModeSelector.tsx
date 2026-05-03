@@ -9,6 +9,7 @@ interface PracticeModeSelectorProps {
   onSelectWriting: () => void
   onSelectQuiz: () => void
   onSelectTranslation: () => void
+  onSelectHistory: () => void
   dueCount: number
   weakGrammarCount: number
 }
@@ -19,6 +20,7 @@ export function PracticeModeSelector({
   onSelectWriting,
   onSelectQuiz,
   onSelectTranslation,
+  onSelectHistory,
   dueCount,
   weakGrammarCount
 }: PracticeModeSelectorProps) {
@@ -152,6 +154,15 @@ export function PracticeModeSelector({
             color="blue"
             badge="New"
             badgeColor="blue"
+          />
+
+          {/* Activity Log */}
+          <PracticeActionCard
+            title="Activity Log"
+            subtitle="View recent scores and mistakes"
+            icon={<Clock size={20} strokeWidth={2.5} />}
+            onClick={onSelectHistory}
+            color="purple"
           />
         </div>
       </div>

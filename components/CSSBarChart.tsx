@@ -1,3 +1,8 @@
+"use client"
+
+import React from "react"
+import { Area, AreaChart, ResponsiveContainer, Tooltip, YAxis } from "recharts"
+import { motion } from "framer-motion"
 import { formatDateLabel } from "@/lib/date"
 import type { ChartPoint } from "@/lib/types"
 
@@ -13,143 +18,115 @@ interface CSSBarChartProps {
 
 const toneMap = {
   ink: {
-    bar: "var(--accent)",
+    stroke: "var(--accent)",
     glow: "rgba(0,122,255,0.28)",
-    gradient: "linear-gradient(180deg, rgba(0,122,255,0.9) 0%, rgba(0,122,255,0.55) 100%)"
+    fill: "var(--accent)"
   },
   gold: {
-    bar: "var(--warning)",
+    stroke: "var(--warning)",
     glow: "rgba(255,159,10,0.28)",
-    gradient: "linear-gradient(180deg, rgba(255,159,10,0.95) 0%, rgba(255,159,10,0.55) 100%)"
+    fill: "var(--warning)"
   },
   green: {
-    bar: "var(--success)",
+    stroke: "var(--success)",
     glow: "rgba(52,199,89,0.28)",
-    gradient: "linear-gradient(180deg, rgba(52,199,89,0.95) 0%, rgba(52,199,89,0.55) 100%)"
+    fill: "var(--success)"
   },
   rose: {
-    bar: "var(--destructive)",
+    stroke: "var(--destructive)",
     glow: "rgba(255,69,58,0.28)",
-    gradient: "linear-gradient(180deg, rgba(255,69,58,0.95) 0%, rgba(255,69,58,0.55) 100%)"
+    fill: "var(--destructive)"
   }
-} satisfies Record<NonNullable<CSSBarChartProps["tone"]>, { bar: string; glow: string; gradient: string }>
-
-function formatAxisValue(value: number) {
-  if (value >= 1_000_000) return `${Math.round(value / 1_000_000)}M`
-  if (value >= 1_000) return `${Math.round(value / 1_000)}K`
-  return String(value)
-}
+} satisfies Record<NonNullable<CSSBarChartProps["tone"]>, { stroke: string; glow: string; fill: string }>
 
 export function CSSBarChart({
   title,
   points,
   tone = "ink",
-  heightClassName = "h-36",
+  heightClassName = "h-40",
   summaryLabel,
   periodLabel,
   valueSuffix = ""
 }: CSSBarChartProps) {
-  const peak = Math.max(...points.map((p) => p.value), 1)
   const total = points.reduce((sum, p) => sum + p.value, 0)
   const summary = summaryLabel ? `${total}${valueSuffix} ${summaryLabel}` : `Last ${points.length} days`
-  const ticks = [0, 0.5, 1].map((step) => Math.round(peak * step))
   const colors = toneMap[tone]
 
+  const chartData = points.map(p => ({
+    ...p,
+    displayLabel: p.label || formatDateLabel(p.date)
+  }))
+
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="rounded-xl border border-white/10 bg-black/80 px-3 py-2 shadow-xl backdrop-blur-md">
+          <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-white/40">
+            {payload[0].payload.displayLabel}
+          </p>
+          <p className="text-[14px] font-black text-white">
+            {payload[0].value}{valueSuffix}
+          </p>
+        </div>
+      )
+    }
+    return null
+  }
+
   return (
-    <section className="panel-admin rounded-[2rem] p-6">
+    <section className="panel-admin rounded-[2rem] p-6 bg-bg-secondary/40 border border-line backdrop-blur-sm shadow-panel overflow-hidden">
       {/* Header */}
-      <div className="flex items-end justify-between gap-2">
+      <div className="flex items-start justify-between gap-2 mb-6">
         <div>
-          <h2 className="text-[18px] font-bold tracking-tight text-ink">{title}</h2>
-          <p className="mt-0.5 text-xs uppercase tracking-[0.2em] text-quiet">
+          <h2 className="text-[18px] font-black tracking-tight text-ink">{title}</h2>
+          <p className="mt-0.5 text-[11px] font-bold uppercase tracking-[0.2em] text-quiet">
             {periodLabel || summary}
           </p>
         </div>
-        <span
-          className="rounded-full px-3 py-1 text-[13px] font-bold"
+        <div 
+          className="rounded-xl px-3 py-1.5 text-[14px] font-black border"
           style={{
             background: colors.glow,
-            color: colors.bar
+            borderColor: `${colors.stroke}33`,
+            color: colors.stroke
           }}
         >
           {total}{valueSuffix}
-        </span>
+        </div>
       </div>
 
       {/* Chart */}
-      <div className="mt-5">
-        <div className="relative pl-10">
-          <div className={`relative ${heightClassName}`}>
-            {/* Grid lines */}
-            {ticks.map((tick, index) => {
-              const bottom = `${(index / (ticks.length - 1)) * 100}%`
-              return (
-                <div
-                  key={`${title}-tick-${tick}-${index}`}
-                  className="absolute inset-x-0"
-                  style={{ bottom }}
-                >
-                  <div className="absolute -left-10 -translate-y-1/2 text-right text-[10px] font-semibold text-quiet/70">
-                    {formatAxisValue(tick)}{valueSuffix}
-                  </div>
-                  <div
-                    className="border-t"
-                    style={{ borderColor: "var(--separator)", opacity: index === 0 ? 0.6 : 0.3 }}
-                  />
-                </div>
-              )
-            })}
+      <div className={`relative w-full ${heightClassName} -mx-2`}>
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+            <defs>
+              <linearGradient id={`gradient-${tone}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={colors.stroke} stopOpacity={0.4}/>
+                <stop offset="95%" stopColor={colors.stroke} stopOpacity={0}/>
+              </linearGradient>
+            </defs>
+            <Tooltip 
+              content={<CustomTooltip />} 
+              cursor={{ stroke: colors.stroke, strokeWidth: 1, strokeDasharray: '4 4', opacity: 0.2 }} 
+            />
+            <Area 
+              type="monotone" 
+              dataKey="value" 
+              stroke={colors.stroke} 
+              strokeWidth={3}
+              fillOpacity={1}
+              fill={`url(#gradient-${tone})`}
+              activeDot={{ r: 5, strokeWidth: 0, fill: colors.stroke }}
+              animationDuration={1500}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
 
-            {/* Bars */}
-            <div className="absolute inset-x-0 bottom-0 top-0 flex items-end gap-2">
-              {points.map((point) => {
-                const barHeight = Math.max((point.value / peak) * 100, point.value > 0 ? 6 : 0)
-
-                return (
-                  <div
-                    key={point.date}
-                    className="group relative flex h-full min-w-0 flex-1 flex-col justify-end"
-                  >
-                    {/* Tooltip on hover */}
-                    <span
-                      className="pointer-events-none absolute left-1/2 z-10 -translate-x-1/2 -translate-y-1 rounded-lg px-2 py-0.5 text-center text-[11px] font-bold opacity-0 shadow-subtle transition-all duration-150 group-hover:opacity-100"
-                      style={{
-                        bottom: point.value > 0
-                          ? `clamp(8px, calc(${barHeight}% + 6px), calc(100% - 24px))`
-                          : "8px",
-                        background: colors.bar,
-                        color: "#fff"
-                      }}
-                    >
-                      {point.value}{valueSuffix}
-                    </span>
-
-                    {/* Bar */}
-                    <div
-                      className="w-full rounded-t-[6px] transition-all duration-300 group-hover:brightness-110"
-                      style={{
-                        background: colors.gradient,
-                        height: `${barHeight}%`,
-                        boxShadow: barHeight > 10 ? `0 -2px 12px ${colors.glow}` : "none"
-                      }}
-                    />
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* X-axis labels */}
-          <div className="mt-2 flex gap-2">
-            {points.map((point) => (
-              <div key={`${point.date}-label`} className="flex min-w-0 flex-1 flex-col items-center">
-                <span className="truncate text-center text-[11px] font-medium text-quiet">
-                  {point.label || formatDateLabel(point.date)}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* X-Axis labels simplified */}
+      <div className="mt-4 flex justify-between px-2">
+        <span className="text-[10px] font-bold text-quiet/50 uppercase tracking-widest">{chartData[0]?.displayLabel}</span>
+        <span className="text-[10px] font-bold text-quiet/50 uppercase tracking-widest">{chartData[chartData.length - 1]?.displayLabel}</span>
       </div>
     </section>
   )

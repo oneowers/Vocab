@@ -91,7 +91,11 @@ export interface GrammarTopicRecord {
   category: string
   cefrLevel: CefrLevel
   description: string
-  examples: string[]
+  formulas?: any
+  usage?: any
+  examples: any
+  commonMistakes?: any
+  exercises?: any
   isActive: boolean
   createdAt: string
   updatedAt: string
@@ -108,6 +112,9 @@ export interface GrammarFindingRecord {
   explanationRu: string
   scoreDelta: number
   createdAt: string
+  topicTitleEn?: string
+  sourceType?: string
+  sourceId?: string | null
 }
 
 export interface GrammarSkillRecord {
@@ -124,6 +131,7 @@ export interface GrammarSkillRecord {
 export interface GrammarSkillsPayload {
   items: GrammarSkillRecord[]
   weakCount: number
+  trend: Array<{ date: string; value: number }>
 }
 
 export interface AppSettingsRecord {

@@ -1,4 +1,5 @@
-import type { GrammarTopic, Prisma, PrismaClient } from "@prisma/client"
+import { Prisma } from "@prisma/client"
+import type { GrammarTopic, PrismaClient } from "@prisma/client"
 
 import { getPrisma } from "@/lib/prisma"
 import { serializeGrammarTopic } from "@/lib/serializers"
@@ -483,6 +484,21 @@ async function buildUserGrammarSkills(
     }
   })
 
+  // Calculate 14 days trend
+  const todayDate = new Date()
+  const last14Start = new Date(todayDate.getTime() - 13 * 24 * 60 * 60 * 1000)
+  
+  const rawTrend = await prisma.$queryRaw<Array<{ date: string; value: bigint }>>(Prisma.sql`
+    SELECT
+      TO_CHAR(DATE("createdAt" AT TIME ZONE 'UTC'), 'YYYY-MM-DD') AS date,
+      SUM("scoreDelta")::bigint AS value
+    FROM "GrammarFinding"
+    WHERE "userId" = ${userId}
+      AND "createdAt" >= ${last14Start}
+    GROUP BY 1
+    ORDER BY 1 ASC
+  `)
+
   const allItems = topics
     .map((topic) => {
       const skill = topic.userSkills[0]
@@ -514,9 +530,33 @@ async function buildUserGrammarSkills(
     (item) => item.score < WEAK_GRAMMAR_SCORE_THRESHOLD && item.evidenceCount > 0
   )
 
+  const currentTotalScore = allItems.reduce((sum, item) => sum + item.score, 0)
+  
+  // Build a map of daily deltas
+  const deltasMap = new Map(rawTrend.map(r => [r.date, Number(r.value)]))
+  const trendDays: string[] = []
+  
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(todayDate.getTime() - i * 24 * 60 * 60 * 1000)
+    trendDays.push(d.toISOString().slice(0, 10))
+  }
+
+  // Calculate the score 14 days ago by subtracting all deltas in the 14-day window from current total
+  const sumInWindow = Array.from(deltasMap.values()).reduce((a, b) => a + b, 0)
+  let cumulative = currentTotalScore - sumInWindow
+
+  const trend = trendDays.map(dateStr => {
+    cumulative += (deltasMap.get(dateStr) || 0)
+    return {
+      date: dateStr,
+      value: cumulative
+    }
+  })
+
   return {
     items: scope === "weak" ? weakItems : allItems,
-    weakCount: weakItems.length
+    weakCount: weakItems.length,
+    trend
   }
 }
 

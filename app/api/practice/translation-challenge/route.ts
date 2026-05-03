@@ -62,11 +62,21 @@ async function handleGenerate(user: any) {
       select: { original: true, translation: true }
     })
 
+    const situations = [
+      "at a restaurant", "planning a trip", "discussing a hobby", 
+      "at the office", "talking about family", "online shopping",
+      "at the gym", "weather and nature", "health and doctors",
+      "technology and gadgets", "books and movies", "daily routine"
+    ]
+    const randomSituation = situations[Math.floor(Math.random() * situations.length)]
+
     const prompt = [
       "You are an English teacher for Russian speakers.",
       `The user has CEFR level: ${user.cefrLevel || "A1"}.`,
+      `Context/Situation: ${randomSituation}.`,
       recentCards.length > 0 ? `Try to incorporate themes related to these words if possible: ${recentCards.map(c => c.translation).join(", ")}.` : "",
       "Generate a short Russian text (1-3 sentences) for the user to translate into English.",
+      "CRITICAL: Be creative! Avoid cliches like 'meeting a friend in a park'. Ensure each task is unique.",
       "The text should be natural and appropriate for their level.",
       "Return ONLY JSON in this format:",
       '{ "russianText": "...", "suggestedWords": ["word1", "word2"] }'

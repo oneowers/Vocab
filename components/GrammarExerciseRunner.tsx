@@ -14,19 +14,22 @@ import { GrammarWritingExerciseView } from "./GrammarWritingExerciseView"
 
 interface GrammarExerciseRunnerProps {
   topic: GrammarTopicContent
-  onComplete: () => void
+  onComplete: (scoreGained: number) => void
   onBack: () => void
 }
 
 export function GrammarExerciseRunner({ topic, onComplete, onBack }: GrammarExerciseRunnerProps) {
   const [currentIdx, setCurrentIdx] = useState(0)
   const [canGoNext, setCanGoNext] = useState(false)
-  const exercises = topic.exercises
+  const [sessionScore, setSessionScore] = useState(0)
+  const [sessionId] = useState(() => `session_${Math.random().toString(36).slice(2, 11)}_${Date.now()}`)
+  const exercises = topic.exercises || []
   const currentEx = exercises[currentIdx]
   
   const progress = ((currentIdx + 1) / exercises.length) * 100
 
   const handleAnswer = async (isCorrect: boolean, scoreDelta: number) => {
+    setSessionScore(prev => prev + scoreDelta)
     setCanGoNext(true)
     
     // Call API to update progress in real-time
@@ -38,7 +41,8 @@ export function GrammarExerciseRunner({ topic, onComplete, onBack }: GrammarExer
           topicKey: topic.key,
           scoreDelta,
           exerciseId: currentEx.id,
-          isCorrect
+          isCorrect,
+          sessionId
         })
       })
     } catch (e) {
@@ -51,7 +55,7 @@ export function GrammarExerciseRunner({ topic, onComplete, onBack }: GrammarExer
       setCurrentIdx(prev => prev + 1)
       setCanGoNext(false)
     } else {
-      onComplete()
+      onComplete(sessionScore)
     }
   }
 
@@ -104,7 +108,7 @@ export function GrammarExerciseRunner({ topic, onComplete, onBack }: GrammarExer
                   exercise={currentEx} 
                   onComplete={(delta) => {
                     handleAnswer(true, delta)
-                    onComplete()
+                    onComplete(sessionScore + delta)
                   }} 
                 />
               )}

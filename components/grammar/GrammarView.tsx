@@ -21,6 +21,7 @@ import { RecommendedTopicCard } from "./RecommendedTopicCard"
 import { GrammarTopicList } from "./GrammarTopicList"
 import { GrammarFilters } from "./GrammarFilters"
 import { GrammarLessonView } from "../GrammarLessonView"
+import { GrammarTrendChart } from "./GrammarTrendChart"
 
 interface GrammarViewProps {
   payload: GrammarSkillsPayload
@@ -36,7 +37,7 @@ export function GrammarView({ payload }: GrammarViewProps) {
   const [sort, setSort] = useState<GrammarSortType>("weakest")
   
   const [showIntro, setShowIntro] = useState<boolean | null>(null)
-  const [selectedTopicKey, setSelectedTopicKey] = useState<string | null>(null)
+  const [selectedTopic, setSelectedTopic] = useState<any>(null)
   const [showNoInfo, setShowNoInfo] = useState(false)
 
   useEffect(() => {
@@ -80,13 +81,17 @@ export function GrammarView({ payload }: GrammarViewProps) {
         
         const matchesCefr = cefrFilter === "all" || item.topic.cefrLevel === cefrFilter
 
-        let matchesFilter = true
-        if (filter === "weak") matchesFilter = item.score < -30
-        if (filter === "learning") matchesFilter = item.score >= -30 && item.score < 30
-        if (filter === "strong") matchesFilter = item.score >= 30
-        if (filter === "no_data") matchesFilter = item.evidenceCount === 0
+        const matchesFilter = (() => {
+          if (filter === "weak") return item.score < -30
+          if (filter === "learning") return item.score >= -30 && item.score < 30
+          if (filter === "strong") return item.score >= 30
+          if (filter === "no_data") return item.evidenceCount === 0
+          return true
+        })()
 
-        return matchesSearch && matchesCefr && matchesFilter
+        const hasContent = !!item.topic.formulas
+        
+        return matchesSearch && matchesCefr && matchesFilter && hasContent
       })
       .sort((a, b) => {
         if (sort === "priority") return getPriority(b) - getPriority(a)
@@ -116,11 +121,11 @@ export function GrammarView({ payload }: GrammarViewProps) {
     return items.length > 0 ? items[0] : null
   }, [payload.items])
 
-  if (selectedTopicKey) {
+  if (selectedTopic) {
     return (
       <GrammarLessonView 
-        topicKey={selectedTopicKey} 
-        onBack={() => setSelectedTopicKey(null)} 
+        topic={selectedTopic} 
+        onBack={() => setSelectedTopic(null)} 
       />
     )
   }
@@ -193,6 +198,13 @@ export function GrammarView({ payload }: GrammarViewProps) {
       </AnimatePresence>
 
       <div className="mt-4 space-y-8 md:mt-12 md:space-y-16">
+        {/* Trend Chart */}
+        {payload.trend && payload.trend.length > 0 && (
+          <section className="px-4 md:px-0">
+            <GrammarTrendChart data={payload.trend} />
+          </section>
+        )}
+
         {/* Recommended Section */}
         {mainRecommended && (
           <section className="space-y-3 px-4 md:px-0">
@@ -204,7 +216,7 @@ export function GrammarView({ payload }: GrammarViewProps) {
             </div>
             <RecommendedTopicCard 
               item={mainRecommended} 
-              onClick={() => setSelectedTopicKey(mainRecommended.topic.key)}
+              onClick={() => setSelectedTopic(mainRecommended.topic)}
             />
           </section>
         )}
@@ -231,7 +243,7 @@ export function GrammarView({ payload }: GrammarViewProps) {
 
           <GrammarTopicList 
             items={activeItems} 
-            onSelect={(item) => setSelectedTopicKey(item.topic.key)}
+            onSelect={(item) => setSelectedTopic(item.topic)}
           />
 
           {/* Collapsible No Info Section */}
@@ -261,7 +273,7 @@ export function GrammarView({ payload }: GrammarViewProps) {
                     <div className="pt-4">
                       <GrammarTopicList 
                         items={noInfoItems} 
-                        onSelect={(item) => setSelectedTopicKey(item.topic.key)}
+                        onSelect={(item) => setSelectedTopic(item.topic)}
                       />
                     </div>
                   </motion.div>

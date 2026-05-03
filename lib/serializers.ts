@@ -112,14 +112,6 @@ export function serializeWordCatalog(word: WordCatalog): WordCatalogRecord {
   }
 }
 
-function serializeGrammarExamples(value: unknown): string[] {
-  if (!Array.isArray(value)) {
-    return []
-  }
-
-  return value.filter((item): item is string => typeof item === "string")
-}
-
 export function serializeGrammarTopic(topic: GrammarTopic): GrammarTopicRecord {
   return {
     id: topic.id,
@@ -129,7 +121,11 @@ export function serializeGrammarTopic(topic: GrammarTopic): GrammarTopicRecord {
     category: topic.category,
     cefrLevel: topic.cefrLevel,
     description: topic.description,
-    examples: serializeGrammarExamples(topic.examples),
+    formulas: topic.formulas,
+    usage: topic.usage,
+    examples: topic.examples,
+    commonMistakes: topic.commonMistakes,
+    exercises: topic.exercises,
     isActive: topic.isActive,
     createdAt: topic.createdAt.toISOString(),
     updatedAt: topic.updatedAt.toISOString()

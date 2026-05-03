@@ -29,16 +29,7 @@ async function requireAdminUser() {
   }
 }
 
-function parseExamples(value: unknown) {
-  if (!Array.isArray(value)) {
-    return []
-  }
 
-  return value
-    .filter((item): item is string => typeof item === "string")
-    .map((item) => item.trim())
-    .filter(Boolean)
-}
 
 export async function PATCH(
   request: NextRequest,
@@ -73,7 +64,11 @@ export async function PATCH(
         category?: string
         cefrLevel?: string
         description?: string
-        examples?: unknown
+        formulas?: any
+        usage?: any
+        examples?: any
+        commonMistakes?: any
+        exercises?: any
         isActive?: boolean
       }
     | null
@@ -90,7 +85,11 @@ export async function PATCH(
     typeof body.cefrLevel === "string" ? body.cefrLevel.trim().toUpperCase() : existing.cefrLevel
   const description =
     typeof body.description === "string" ? body.description.trim() : existing.description
-  const examples = body.examples === undefined ? existing.examples : parseExamples(body.examples)
+  const examples = body.examples === undefined ? existing.examples : body.examples
+  const formulas = body.formulas === undefined ? existing.formulas : body.formulas
+  const usage = body.usage === undefined ? existing.usage : body.usage
+  const commonMistakes = body.commonMistakes === undefined ? existing.commonMistakes : body.commonMistakes
+  const exercises = body.exercises === undefined ? existing.exercises : body.exercises
   const isActive = typeof body.isActive === "boolean" ? body.isActive : existing.isActive
 
   if (
@@ -132,7 +131,11 @@ export async function PATCH(
       category,
       cefrLevel,
       description,
+      formulas: formulas as Prisma.InputJsonValue,
+      usage: usage as Prisma.InputJsonValue,
       examples: examples as Prisma.InputJsonValue,
+      commonMistakes: commonMistakes as Prisma.InputJsonValue,
+      exercises: exercises as Prisma.InputJsonValue,
       isActive
     }
   })

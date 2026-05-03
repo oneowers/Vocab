@@ -11,15 +11,22 @@ interface PracticeViewProps {
   initialData: {
     reviewData: CardsResponse
     grammarData: GrammarSkillsPayload
+    historyData: any[]
   }
-  initialMode?: "SELECT" | "WORDS" | "GRAMMAR"
+  initialMode?: "SELECT" | "WORDS" | "GRAMMAR" | "TRANSLATION" | "HISTORY"
 }
 
+import { GrammarHistoryView } from "@/components/GrammarHistoryView"
+
 export function PracticeView({ initialData, initialMode }: PracticeViewProps) {
-  const [mode, setMode] = useState<"SELECT" | "WORDS" | "GRAMMAR" | "TRANSLATION">(
+  const [mode, setMode] = useState<"SELECT" | "WORDS" | "GRAMMAR" | "TRANSLATION" | "HISTORY">(
     (initialMode?.toUpperCase() as any) || "SELECT"
   )
   const [grammarSubMode, setGrammarSubMode] = useState<any>(null)
+
+  if (mode === "HISTORY") {
+    return <GrammarHistoryView historyData={initialData.historyData} onBack={() => setMode("SELECT")} />
+  }
 
   if (mode === "TRANSLATION") {
     return (
@@ -71,6 +78,7 @@ export function PracticeView({ initialData, initialMode }: PracticeViewProps) {
         setMode("GRAMMAR")
       }}
       onSelectTranslation={() => setMode("TRANSLATION")}
+      onSelectHistory={() => setMode("HISTORY")}
       dueCount={initialData.reviewData.summary.dueToday}
       weakGrammarCount={initialData.grammarData.weakCount}
     />

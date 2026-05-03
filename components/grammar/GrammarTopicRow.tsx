@@ -48,14 +48,15 @@ export function GrammarTopicRow({ item, index, onClick }: { item: GrammarSkillRe
 
         <div className="flex items-center gap-3">
           {hasEvidence && (
-            <div className="text-right">
+            <div className="text-right flex items-baseline gap-1">
               <span className={`text-[18px] font-black ${
                 item.score < -30 ? "text-rose-500" :
                 item.score < 30 ? "text-amber-500" :
                 "text-emerald-500"
               }`}>
-                {item.score}
+                {item.score > 0 ? `+${item.score}` : item.score}
               </span>
+              <span className="text-[10px] font-black uppercase text-muted tracking-wider">pts</span>
             </div>
           )}
           <ChevronRight size={14} className="text-quiet" />

@@ -252,14 +252,38 @@ export function getUserReviewData(userId: string): Promise<CardsResponse> {
 }
 
 export async function getPracticePageData(userId: string) {
-  const [reviewData, grammarData] = await Promise.all([
+  const prisma = getPrisma()
+  const [reviewData, grammarData, historyRaw] = await Promise.all([
     getUserReviewData(userId),
-    import("@/lib/grammar").then((m) => m.getUserGrammarSkillsData(userId, "weak"))
+    import("@/lib/grammar").then((m) => m.getUserGrammarSkillsData(userId, "weak")),
+    prisma.grammarFinding.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      include: { topic: { select: { key: true, titleEn: true } } }
+    })
   ])
+
+  const historyData = historyRaw.map(h => ({
+    id: h.id,
+    topicKey: h.topic.key,
+    severity: h.severity,
+    confidence: h.confidence,
+    isCorrect: h.isCorrect,
+    original: h.originalText,
+    corrected: h.correctedText,
+    explanationRu: h.explanationRu,
+    scoreDelta: h.scoreDelta,
+    createdAt: h.createdAt.toISOString(),
+    topicTitleEn: h.topic.titleEn,
+    sourceType: h.sourceType,
+    sourceId: h.sourceId
+  }))
 
   return {
     reviewData,
-    grammarData
+    grammarData,
+    historyData
   }
 }
 

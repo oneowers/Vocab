@@ -18,7 +18,11 @@ interface GrammarTopicFormState {
   category: string
   cefrLevel: CefrLevel
   description: string
+  formulas: string
+  usage: string
   examples: string
+  commonMistakes: string
+  exercises: string
   isActive: boolean
 }
 
@@ -29,20 +33,15 @@ const emptyForm: GrammarTopicFormState = {
   category: "",
   cefrLevel: "A1",
   description: "",
-  examples: "",
+  formulas: "{}",
+  usage: "[]",
+  examples: "[]",
+  commonMistakes: "[]",
+  exercises: "[]",
   isActive: true
 }
 
-function parseExamples(value: string) {
-  return value
-    .split("\n")
-    .map((item) => item.trim())
-    .filter(Boolean)
-}
 
-function examplesToText(value: string[]) {
-  return value.join("\n")
-}
 
 export function AdminGrammarTopicsView() {
   const { showToast } = useToast()
@@ -106,7 +105,11 @@ export function AdminGrammarTopicsView() {
       category: item.category,
       cefrLevel: item.cefrLevel,
       description: item.description,
-      examples: examplesToText(item.examples),
+      formulas: JSON.stringify(item.formulas || {}, null, 2),
+      usage: JSON.stringify(item.usage || [], null, 2),
+      examples: JSON.stringify(item.examples || [], null, 2),
+      commonMistakes: JSON.stringify(item.commonMistakes || [], null, 2),
+      exercises: JSON.stringify(item.exercises || [], null, 2),
       isActive: item.isActive
     })
     setIsFormOpen(true)
@@ -116,6 +119,17 @@ export function AdminGrammarTopicsView() {
     setSubmitting(true)
 
     try {
+      let parsedFormulas, parsedUsage, parsedExamples, parsedMistakes, parsedExercises;
+      try {
+        parsedFormulas = JSON.parse(form.formulas || "{}");
+        parsedUsage = JSON.parse(form.usage || "[]");
+        parsedExamples = JSON.parse(form.examples || "[]");
+        parsedMistakes = JSON.parse(form.commonMistakes || "[]");
+        parsedExercises = JSON.parse(form.exercises || "[]");
+      } catch (e) {
+        throw new Error("Invalid JSON format in one of the complex fields. Please check your syntax.");
+      }
+
       const response = await fetch(
         editingItemId ? `/api/admin/grammar-topics/${editingItemId}` : "/api/admin/grammar-topics",
         {
@@ -130,7 +144,11 @@ export function AdminGrammarTopicsView() {
             category: form.category,
             cefrLevel: form.cefrLevel,
             description: form.description,
-            examples: parseExamples(form.examples),
+            formulas: parsedFormulas,
+            usage: parsedUsage,
+            examples: parsedExamples,
+            commonMistakes: parsedMistakes,
+            exercises: parsedExercises,
             isActive: form.isActive
           })
         }
@@ -299,13 +317,57 @@ export function AdminGrammarTopicsView() {
             </label>
 
             <label className="space-y-1.5">
-              <span className="px-1 text-xs font-semibold uppercase tracking-wider text-muted">Examples</span>
+              <span className="px-1 text-xs font-semibold uppercase tracking-wider text-muted">Formulas (JSON Object)</span>
+              <textarea
+                value={form.formulas}
+                onChange={(event) => updateForm("formulas", event.target.value)}
+                rows={3}
+                placeholder='{"positive": "...", "negative": "...", "question": "..."}'
+                className="input-field min-h-[96px] resize-y font-mono text-sm"
+              />
+            </label>
+
+            <label className="space-y-1.5">
+              <span className="px-1 text-xs font-semibold uppercase tracking-wider text-muted">Usage Contexts (JSON Array)</span>
+              <textarea
+                value={form.usage}
+                onChange={(event) => updateForm("usage", event.target.value)}
+                rows={3}
+                placeholder='["Situation 1", "Situation 2"]'
+                className="input-field min-h-[96px] resize-y font-mono text-sm"
+              />
+            </label>
+
+            <label className="space-y-1.5">
+              <span className="px-1 text-xs font-semibold uppercase tracking-wider text-muted">Examples (JSON Array)</span>
               <textarea
                 value={form.examples}
                 onChange={(event) => updateForm("examples", event.target.value)}
                 rows={4}
-                placeholder="One example per line"
-                className="input-field min-h-[120px] resize-y"
+                placeholder='[{"en": "Example", "ru": "Пример"}]'
+                className="input-field min-h-[120px] resize-y font-mono text-sm"
+              />
+            </label>
+
+            <label className="space-y-1.5">
+              <span className="px-1 text-xs font-semibold uppercase tracking-wider text-muted">Common Mistakes (JSON Array)</span>
+              <textarea
+                value={form.commonMistakes}
+                onChange={(event) => updateForm("commonMistakes", event.target.value)}
+                rows={4}
+                placeholder='[{"wrong": "...", "correct": "...", "explanationRu": "..."}]'
+                className="input-field min-h-[120px] resize-y font-mono text-sm"
+              />
+            </label>
+
+            <label className="space-y-1.5">
+              <span className="px-1 text-xs font-semibold uppercase tracking-wider text-muted">Exercises (JSON Array)</span>
+              <textarea
+                value={form.exercises}
+                onChange={(event) => updateForm("exercises", event.target.value)}
+                rows={6}
+                placeholder='[{"id": "...", "type": "...", ...}]'
+                className="input-field min-h-[160px] resize-y font-mono text-sm"
               />
             </label>
 

@@ -3,18 +3,18 @@
 import { ArrowLeft, Check, ChevronRight, HelpCircle, Loader2, Sparkles, X, Info, AlertCircle, BookOpen } from "lucide-react"
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { GRAMMAR_TOPICS, type GrammarExercise } from "@/lib/grammar-content"
+import type { GrammarExercise } from "@/lib/grammar-content"
 import { useToast } from "./Toast"
 import { GrammarExerciseRunner } from "./GrammarExerciseRunner"
  
 interface GrammarLessonViewProps {
-  topicKey: string
+  topic: any
   onBack: () => void
 }
  
-export function GrammarLessonView({ topicKey, onBack }: GrammarLessonViewProps) {
-  const topic = GRAMMAR_TOPICS[topicKey]
+export function GrammarLessonView({ topic, onBack }: GrammarLessonViewProps) {
   const [step, setStep] = useState<"THEORY" | "EXERCISES" | "COMPLETE">("THEORY")
+  const [sessionScore, setSessionScore] = useState(0)
  
   if (!topic) return null
  
@@ -22,7 +22,10 @@ export function GrammarLessonView({ topicKey, onBack }: GrammarLessonViewProps) 
     return (
       <GrammarExerciseRunner 
         topic={topic}
-        onComplete={() => setStep("COMPLETE")}
+        onComplete={(scoreGained) => {
+          setSessionScore(scoreGained)
+          setStep("COMPLETE")
+        }}
         onBack={() => setStep("THEORY")}
       />
     )
@@ -30,21 +33,49 @@ export function GrammarLessonView({ topicKey, onBack }: GrammarLessonViewProps) 
  
   if (step === "COMPLETE") {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-[#0a0c10] px-4 py-8 text-center">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[#0a0c10] px-4 py-8 text-center relative overflow-hidden">
+        {/* Animated Background Confetti/Glow */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+           <motion.div 
+             initial={{ scale: 0, opacity: 0 }}
+             animate={{ scale: 2, opacity: 0.1 }}
+             transition={{ duration: 1 }}
+             className="w-96 h-96 bg-emerald-500 rounded-full blur-[100px]"
+           />
+        </div>
+
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="mb-8 flex h-24 w-24 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 shadow-[0_0_40px_rgba(16,185,129,0.1)]"
+          className="mb-8 flex h-24 w-24 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 shadow-[0_0_40px_rgba(16,185,129,0.1)] relative z-10"
         >
           <Check size={48} strokeWidth={3} />
         </motion.div>
-        <h1 className="text-[32px] font-black text-white tracking-tight">Lesson Mastered!</h1>
-        <p className="mt-4 text-[16px] text-white/50 leading-relaxed max-w-xs font-medium">
+        
+        <h1 className="text-[32px] font-black text-white tracking-tight relative z-10">Lesson Mastered!</h1>
+        
+        <motion.div 
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="mt-6 flex flex-col items-center space-y-2 relative z-10"
+        >
+          <span className="text-[14px] font-bold text-white/40 uppercase tracking-widest">Score Earned</span>
+          <div className="flex items-center gap-2">
+            <Sparkles className="text-amber-400" size={24} />
+            <span className={`text-[40px] font-black tracking-tighter ${sessionScore > 0 ? 'text-emerald-400' : 'text-white/60'}`}>
+              {sessionScore > 0 ? `+${sessionScore}` : sessionScore}
+            </span>
+          </div>
+        </motion.div>
+
+        <p className="mt-8 text-[16px] text-white/50 leading-relaxed max-w-xs font-medium relative z-10">
           You've completed the <span className="text-white">{topic.titleEn}</span> lesson and exercises.
         </p>
+
         <button
           onClick={onBack}
-          className="mt-12 w-full max-w-xs h-14 rounded-2xl bg-white text-black text-[16px] font-black hover:bg-white/90 transition-all active:scale-[0.98] shadow-xl"
+          className="mt-12 w-full max-w-xs h-14 rounded-2xl bg-white text-black text-[16px] font-black hover:bg-white/90 transition-all active:scale-[0.98] shadow-xl relative z-10"
         >
           Finish Lesson
         </button>
@@ -109,7 +140,7 @@ export function GrammarLessonView({ topicKey, onBack }: GrammarLessonViewProps) 
                    <div className="text-[40px] font-black text-emerald-400">+</div>
                 </div>
                 <span className="mb-2 block text-[11px] font-black uppercase tracking-wider text-emerald-400/80">Positive Statement</span>
-                <p className="text-[18px] md:text-[20px] font-mono font-bold text-white tracking-tight">{topic.formulas.positive}</p>
+                <p className="text-[18px] md:text-[20px] font-mono font-bold text-white tracking-tight">{topic.formulas?.positive || "N/A"}</p>
               </motion.div>
  
               <motion.div 
@@ -120,7 +151,7 @@ export function GrammarLessonView({ topicKey, onBack }: GrammarLessonViewProps) 
                    <div className="text-[40px] font-black text-rose-400">−</div>
                 </div>
                 <span className="mb-2 block text-[11px] font-black uppercase tracking-wider text-rose-400/80">Negative Statement</span>
-                <p className="text-[18px] md:text-[20px] font-mono font-bold text-white tracking-tight">{topic.formulas.negative}</p>
+                <p className="text-[18px] md:text-[20px] font-mono font-bold text-white tracking-tight">{topic.formulas?.negative || "N/A"}</p>
               </motion.div>
  
               <motion.div 
@@ -131,7 +162,7 @@ export function GrammarLessonView({ topicKey, onBack }: GrammarLessonViewProps) 
                    <div className="text-[40px] font-black text-amber-400">?</div>
                 </div>
                 <span className="mb-2 block text-[11px] font-black uppercase tracking-wider text-amber-400/80">Question Form</span>
-                <p className="text-[18px] md:text-[20px] font-mono font-bold text-white tracking-tight">{topic.formulas.question}</p>
+                <p className="text-[18px] md:text-[20px] font-mono font-bold text-white tracking-tight">{topic.formulas?.question || "N/A"}</p>
               </motion.div>
             </div>
           </section>
@@ -143,7 +174,7 @@ export function GrammarLessonView({ topicKey, onBack }: GrammarLessonViewProps) 
                <span>When to use</span>
             </h3>
             <div className="grid gap-3">
-              {topic.usage.map((use, i) => (
+              {(topic.usage || []).map((use: string, i: number) => (
                 <div key={i} className="flex items-center gap-4 px-5 py-4 rounded-2xl bg-white/[0.03] border border-white/[0.05] text-[15px] font-medium text-white/80">
                   <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
                   <span>{use}</span>
@@ -159,7 +190,7 @@ export function GrammarLessonView({ topicKey, onBack }: GrammarLessonViewProps) 
                <span>Examples</span>
             </h3>
             <div className="grid gap-3">
-              {topic.examples.map((ex, i) => (
+              {(topic.examples || []).map((ex: any, i: number) => (
                 <motion.div 
                   key={i} 
                   initial={{ opacity: 0, x: -10 }}
@@ -182,7 +213,7 @@ export function GrammarLessonView({ topicKey, onBack }: GrammarLessonViewProps) 
                <span>Watch out!</span>
             </h3>
             <div className="grid gap-6">
-              {topic.commonMistakes.map((mistake, i) => (
+              {(topic.commonMistakes || []).map((mistake: any, i: number) => (
                 <div key={i} className="rounded-[2.5rem] border border-rose-500/10 bg-rose-500/[0.02] p-8 relative overflow-hidden">
                   <div className="absolute top-0 right-0 p-6 text-rose-500/5 rotate-12">
                      <AlertCircle size={80} />

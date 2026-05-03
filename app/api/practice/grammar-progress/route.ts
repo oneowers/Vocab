@@ -42,6 +42,23 @@ export async function POST(request: NextRequest) {
     }
   })
 
+  // Create a log in GrammarFinding for the history
+  await prisma.grammarFinding.create({
+    data: {
+      userId: user.id,
+      topicId: topic.id,
+      sourceType: "grammar_exercise",
+      sourceId: sessionId || exerciseId || "unknown",
+      originalText: "Grammar Exercise",
+      correctedText: isCorrect ? "Correct answer" : "Incorrect answer",
+      explanationRu: isCorrect ? "Пройдено упражнение (успешно)" : "Пройдено упражнение (с ошибкой)",
+      severity: "low",
+      confidence: 1.0,
+      isCorrect: isCorrect,
+      scoreDelta: scoreDelta
+    }
+  })
+
   // Clamp score
   await prisma.userGrammarSkill.updateMany({
     where: { userId: user.id, topicId: topic.id, score: { lt: -100 } },

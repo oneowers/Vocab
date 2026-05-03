@@ -99,6 +99,7 @@ enum GrammarSeverity {
 enum GrammarFindingSourceType {
   writing_challenge
   translation_challenge
+  grammar_exercise
 }
 
 model Card {
@@ -211,9 +212,13 @@ model GrammarTopic {
   titleRu     String
   category    String
   cefrLevel   CefrLevel
-  description String
-  examples    Json               @default("[]")
-  isActive    Boolean            @default(true)
+  description    String
+  formulas       Json?
+  usage          Json?
+  examples       Json               @default("[]")
+  commonMistakes Json?
+  exercises      Json?
+  isActive       Boolean            @default(true)
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
   userSkills  UserGrammarSkill[]

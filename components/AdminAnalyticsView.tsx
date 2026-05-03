@@ -7,6 +7,8 @@ import { useToast } from "@/components/Toast"
 import { useClientResource } from "@/hooks/useClientResource"
 import type { AdminAnalyticsPayload } from "@/lib/types"
 
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip as RechartsTooltip } from "recharts"
+
 function HorizontalBars({
   title,
   items
@@ -17,21 +19,46 @@ function HorizontalBars({
   const maxValue = Math.max(1, ...items.map((item) => item.value))
 
   return (
-    <section className="panel-admin rounded-[2rem] p-5">
-      <h2 className="text-lg font-semibold text-ink">{title}</h2>
-      <div className="mt-5 space-y-3">
-        {items.map((item) => (
-          <div key={item.label} className="grid grid-cols-[36px_1fr_auto] items-center gap-3">
-            <span className="text-sm font-semibold text-muted">{item.label}</span>
-            <div className="h-3 overflow-hidden rounded-full bg-white/[0.06]">
-              <div
-                className="h-full rounded-full bg-[var(--accent)]"
-                style={{ width: `${(item.value / maxValue) * 100}%` }}
-              />
-            </div>
-            <span className="min-w-7 text-right text-sm font-semibold text-ink">{item.value}</span>
-          </div>
-        ))}
+    <section className="panel-admin rounded-[2rem] p-5 bg-bg-secondary/40 border border-line backdrop-blur-sm">
+      <h2 className="text-lg font-black text-ink mb-6 px-1">{title}</h2>
+      <div className="h-[200px] w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            layout="vertical"
+            data={items}
+            margin={{ top: 0, right: 30, left: 0, bottom: 0 }}
+          >
+            <XAxis type="number" hide domain={[0, maxValue]} />
+            <YAxis 
+              dataKey="label" 
+              type="category" 
+              width={40} 
+              axisLine={false} 
+              tickLine={false} 
+              tick={{ fill: 'var(--muted)', fontSize: 12, fontWeight: 700 }}
+            />
+            <RechartsTooltip 
+              cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+              content={({ active, payload }: any) => {
+                if (active && payload && payload.length) {
+                  return (
+                    <div className="rounded-xl border border-white/10 bg-black/80 px-3 py-2 shadow-xl backdrop-blur-md">
+                      <p className="text-[14px] font-black text-white">{payload[0].value} mistakes</p>
+                    </div>
+                  )
+                }
+                return null
+              }}
+            />
+            <Bar 
+              dataKey="value" 
+              fill="var(--accent)" 
+              radius={[0, 4, 4, 0]} 
+              barSize={12}
+              animationDuration={1500}
+            />
+          </BarChart>
+        </ResponsiveContainer>
       </div>
     </section>
   )

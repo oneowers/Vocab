@@ -143,7 +143,11 @@ export async function POST(request: NextRequest) {
         category?: string
         cefrLevel?: string
         description?: string
-        examples?: unknown
+        formulas?: any
+        usage?: any
+        examples?: any
+        commonMistakes?: any
+        exercises?: any
         isActive?: boolean
       }
     | null
@@ -154,7 +158,11 @@ export async function POST(request: NextRequest) {
   const category = typeof body?.category === "string" ? body.category.trim() : ""
   const cefrLevel = typeof body?.cefrLevel === "string" ? body.cefrLevel.trim().toUpperCase() : ""
   const description = typeof body?.description === "string" ? body.description.trim() : ""
-  const examples = parseExamples(body?.examples)
+  const examples = body?.examples ?? []
+  const formulas = body?.formulas ?? null
+  const usage = body?.usage ?? null
+  const commonMistakes = body?.commonMistakes ?? null
+  const exercises = body?.exercises ?? null
 
   if (
     !key ||
@@ -190,7 +198,11 @@ export async function POST(request: NextRequest) {
       category,
       cefrLevel,
       description,
-      examples,
+      formulas: formulas as any,
+      usage: usage as any,
+      examples: examples as any,
+      commonMistakes: commonMistakes as any,
+      exercises: exercises as any,
       isActive: body?.isActive !== false
     }
   })
