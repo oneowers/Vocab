@@ -47,6 +47,8 @@ export interface AppUserRecord {
   lastActiveAt: string | null
   lastReviewDate: string | null
   proUntil: string | null
+  /** true if the user has a passwordHash set (email/password login possible) */
+  hasPassword?: boolean
 }
 
 // ─── Helper guards / predicates (type-level) ─────────────────────────────────

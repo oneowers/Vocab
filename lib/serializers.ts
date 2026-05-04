@@ -46,7 +46,8 @@ export function serializeUser(user: User): AppUserRecord {
     createdAt: user.createdAt.toISOString(),
     lastActiveAt: user.lastActiveAt?.toISOString() ?? null,
     lastReviewDate: user.lastReviewDate,
-    proUntil: user.proUntil?.toISOString() ?? null
+    proUntil: user.proUntil?.toISOString() ?? null,
+    hasPassword: Boolean((user as any).passwordHash)
   }
 }
 

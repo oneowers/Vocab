@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowRight, ChevronDown, LogOut, Moon, Shield, Sun, User as UserIcon } from "lucide-react"
+import { ArrowRight, ChevronDown, Eye, EyeOff, KeyRound, LogOut, Moon, Shield, Sun, User as UserIcon } from "lucide-react"
 import { useTheme } from "@/lib/theme-context"
 
 import { CEFR_LEVELS } from "@/lib/catalog"
@@ -51,6 +51,13 @@ export function ProfileView({ user, initialActivity = null }: ProfileViewProps) 
   const [profileUser, setProfileUser] = useState(user)
   const [cefrLevel, setCefrLevel] = useState<CefrLevel>(user?.cefrLevel ?? "A1")
   const [savingLevel, setSavingLevel] = useState(false)
+  const [showPasswordSection, setShowPasswordSection] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmNewPassword, setConfirmNewPassword] = useState("")
+  const [showNewPw, setShowNewPw] = useState(false)
+  const [savingPassword, setSavingPassword] = useState(false)
+  const [passwordError, setPasswordError] = useState<string | null>(null)
   const fallbackActivity = useMemo(() => buildEmptyProfileActivity(), [])
   const {
     data: activity,
@@ -403,6 +410,127 @@ export function ProfileView({ user, initialActivity = null }: ProfileViewProps) 
             <span className="text-[13px] font-semibold text-ink">Email</span>
             <span className="text-[12px] text-muted">{profileUser?.email || "Guest"}</span>
           </div>
+
+          {/* Password section — visible for real (non-guest) users */}
+          {profileUser && !guestActive && (
+            <div className="mt-1">
+              <button
+                type="button"
+                onClick={() => { setShowPasswordSection((v) => !v); setPasswordError(null) }}
+                className="flex min-h-[40px] w-full items-center justify-between rounded-[12px] px-3 transition hover:bg-bg-tertiary"
+              >
+                <span className="inline-flex items-center gap-3 text-[13px] font-semibold text-ink">
+                  <KeyRound size={14} className="text-muted" />
+                  {profileUser.hasPassword ? "Change password" : "Set password"}
+                </span>
+                <span className={`text-[11px] font-bold transition ${showPasswordSection ? "text-ink" : "text-muted"}`}>
+                  {showPasswordSection ? "Cancel" : profileUser.hasPassword ? "Change" : "Add"}
+                </span>
+              </button>
+
+              {showPasswordSection && (
+                <form
+                  className="mt-2 space-y-3 rounded-[14px] border border-line bg-bg-secondary p-4"
+                  onSubmit={async (e) => {
+                    e.preventDefault()
+                    setPasswordError(null)
+                    if (newPassword.length < 8) {
+                      setPasswordError("Password must be at least 8 characters")
+                      return
+                    }
+                    if (newPassword !== confirmNewPassword) {
+                      setPasswordError("Passwords do not match")
+                      return
+                    }
+                    setSavingPassword(true)
+                    try {
+                      const res = await fetch("/api/profile/password", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ password: newPassword, currentPassword: currentPassword || undefined })
+                      })
+                      const data = await res.json()
+                      if (!res.ok) {
+                        setPasswordError(data.message || "Something went wrong")
+                        return
+                      }
+                      showToast(data.message || "Password saved!", "success")
+                      setShowPasswordSection(false)
+                      setCurrentPassword("")
+                      setNewPassword("")
+                      setConfirmNewPassword("")
+                      router.refresh()
+                    } catch {
+                      setPasswordError("Network error. Please try again.")
+                    } finally {
+                      setSavingPassword(false)
+                    }
+                  }}
+                >
+                  {!profileUser.hasPassword && (
+                    <p className="text-[12px] text-quiet">
+                      You signed in with Google. Add a password to also log in with email.
+                    </p>
+                  )}
+
+                  {profileUser.hasPassword && (
+                    <div>
+                      <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-muted">Current password</label>
+                      <input
+                        type="password"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full rounded-[12px] border border-line bg-bg-primary px-3 py-2.5 text-[14px] font-medium text-ink outline-none focus:border-accent/60"
+                      />
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-muted">
+                      {profileUser.hasPassword ? "New password" : "Password"}
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showNewPw ? "text" : "password"}
+                        value={newPassword}
+                        onChange={(e) => { setNewPassword(e.target.value); setPasswordError(null) }}
+                        placeholder="At least 8 characters"
+                        className="w-full rounded-[12px] border border-line bg-bg-primary px-3 py-2.5 pr-10 text-[14px] font-medium text-ink outline-none focus:border-accent/60"
+                      />
+                      <button type="button" tabIndex={-1} onClick={() => setShowNewPw((v) => !v)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted/50 hover:text-muted">
+                        {showNewPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-muted">Confirm password</label>
+                    <input
+                      type="password"
+                      value={confirmNewPassword}
+                      onChange={(e) => { setConfirmNewPassword(e.target.value); setPasswordError(null) }}
+                      placeholder="••••••••"
+                      className="w-full rounded-[12px] border border-line bg-bg-primary px-3 py-2.5 text-[14px] font-medium text-ink outline-none focus:border-accent/60"
+                    />
+                  </div>
+
+                  {passwordError && (
+                    <p className="text-[12px] font-medium text-rose-400">{passwordError}</p>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={savingPassword}
+                    className="flex h-10 w-full items-center justify-center rounded-[12px] bg-ink text-[13px] font-black text-bg-primary transition hover:opacity-90 disabled:opacity-45"
+                  >
+                    {savingPassword ? "Saving…" : profileUser.hasPassword ? "Change password" : "Set password"}
+                  </button>
+                </form>
+              )}
+            </div>
+          )}
 
           {profileUser && (profileUser.role === "ADMIN" || profileUser.email === "admin@localhost") && (
             <div className="mt-4 rounded-[16px] border border-amber-500/20 bg-amber-500/5 p-3">
