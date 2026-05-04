@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic"
+
 import { AdminShell } from "@/components/AdminShell"
 import { redirectToOnboardingIfNeeded, requireAdminAppUser } from "@/lib/auth"
 import { serializeUser } from "@/lib/serializers"

@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic"
+
 import { AppShell } from "@/components/AppShell"
 import { redirectToOnboardingIfNeeded, requireSignedInAppUser } from "@/lib/auth"
 import { getOrCreateAppSettings } from "@/lib/catalog"

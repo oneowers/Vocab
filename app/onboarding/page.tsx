@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic"
+
 import { OnboardingFlow } from "@/components/OnboardingFlow"
 import {
   redirectAwayFromOnboardingIfCompleted,
