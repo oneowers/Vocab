@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion"
 import { useEffect, useState } from "react"
 import { Sparkles } from "lucide-react"
-import { speakText, canSpeak } from "@/lib/tts"
+import { speakText, useCanSpeak } from "@/lib/tts"
 import type { CardRecord, ReviewResult } from "@/lib/types"
 import styles from "@/components/review-session.module.css"
 
@@ -24,6 +24,7 @@ const CEFR_STYLES: Record<string, { dot: string; text: string }> = {
 export function FlipCard({ card, onAnswer }: FlipCardProps) {
   const [revealed, setRevealed] = useState(false)
   const [shaking, setShaking] = useState(false)
+  const speakable = useCanSpeak()
 
   useEffect(() => {
     setRevealed(false)
@@ -95,7 +96,7 @@ export function FlipCard({ card, onAnswer }: FlipCardProps) {
                 <h3 className="text-[32px] font-black tracking-tight text-white leading-tight">
                   {card.translation}
                 </h3>
-                {canSpeak() && (
+                {speakable && (
                   <button
                     type="button"
                     onClick={() => speakText(card.translation, answerLanguage)}

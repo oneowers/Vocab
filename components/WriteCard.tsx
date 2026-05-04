@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { useEffect, useState } from "react"
 import { Sparkles } from "lucide-react"
 import { levenshtein } from "@/lib/levenshtein"
-import { speakText, canSpeak } from "@/lib/tts"
+import { speakText, useCanSpeak } from "@/lib/tts"
 import type { CardRecord, ReviewResult } from "@/lib/types"
 import styles from "@/components/review-session.module.css"
 
@@ -16,6 +16,7 @@ interface WriteCardProps {
 export function WriteCard({ card, onResolved }: WriteCardProps) {
   const [answer, setAnswer] = useState("")
   const [result, setResult] = useState<ReviewResult | null>(null)
+  const speakable = useCanSpeak()
 
   useEffect(() => {
     setAnswer("")
@@ -60,7 +61,7 @@ export function WriteCard({ card, onResolved }: WriteCardProps) {
             {promptText}
           </motion.h2>
         </div>
-        {canSpeak() && (
+        {speakable && (
           <button
             type="button"
             onClick={() => speakText(promptText, promptLanguage)}

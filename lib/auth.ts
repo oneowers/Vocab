@@ -1,5 +1,5 @@
 import type { User as SupabaseUser } from "@supabase/supabase-js"
-import { cookies } from "next/headers"
+import { cookies, headers } from "next/headers"
 import { redirect } from "next/navigation"
 
 import { hasDatabaseEnv, isLocalDevelopment } from "@/lib/config"
@@ -22,6 +22,35 @@ export async function getOptionalSessionUser() {
 }
 
 export async function getOptionalAuthUser() {
+  const headersList = headers()
+  const authHeader = headersList.get("authorization")
+
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    const token = authHeader.split(" ")[1]
+    
+    if (token === process.env.MCP_API_KEY || (isLocalDevelopment() && token === "lexiflow-mcp-key")) {
+      const email = "admin@localhost"
+      const prisma = getPrisma()
+      let user = await prisma.user.findUnique({
+        where: { email }
+      })
+
+      if (!user) {
+        user = await prisma.user.create({
+          data: {
+            email,
+            name: "MCP Admin",
+            role: "ADMIN"
+          }
+        })
+      }
+
+      return {
+        ...user,
+        role: "ADMIN" as any
+      }
+    }
+  }
   if (isLocalDevelopment()) {
     const cookieStore = cookies()
     const devRole = cookieStore.get("dev-role")?.value || "ADMIN"

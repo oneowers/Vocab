@@ -121,6 +121,13 @@ export function ProfileView({ user, initialActivity = null }: ProfileViewProps) 
       return
     }
 
+    if (profileUser.email === "admin@localhost") {
+      await fetch("/api/auth/dev-logout")
+      router.push("/login")
+      router.refresh()
+      return
+    }
+
     const supabase = createSupabaseBrowserClient()
 
     if (!supabase) {

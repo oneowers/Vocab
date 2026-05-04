@@ -9,7 +9,7 @@ import { useToast } from "@/components/Toast"
 import { StreakCard } from "@/components/StreakCard"
 import { updateClientResourceData } from "@/hooks/useClientResource"
 import { getTooltipMessage } from "@/lib/config"
-import { speakText, canSpeak } from "@/lib/tts"
+import { speakText, useCanSpeak } from "@/lib/tts"
 import type {
   AppUserRecord,
   CardRecord,
@@ -117,6 +117,7 @@ export function TranslatorPanel({
   const [loadingDetails, setLoadingDetails] = useState(false)
   const [saving, setSaving] = useState(false)
   const { showToast } = useToast()
+  const speakable = useCanSpeak()
 
   async function handleTranslate() {
     if (!query.trim()) {
@@ -492,7 +493,7 @@ export function TranslatorPanel({
             ) : null}
             <div className="mt-4 flex items-center justify-between gap-3">
               <div>
-                {canSpeak() && (
+                {speakable && (
                   <button
                     type="button"
                     onClick={() => speakText(query, ttsLanguage)}
@@ -597,7 +598,7 @@ export function TranslatorPanel({
 
               <div className="mt-6 flex items-center justify-between">
                 <div>
-                  {canSpeak() && (
+                  {speakable && (
                     <button
                       type="button"
                       onClick={() => speakText(translation, translatedLanguage)}
