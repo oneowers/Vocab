@@ -337,25 +337,17 @@ export function TranslatorPanel({
   }, [query, translation])
 
   return (
-    <section className="translate-phone-surface space-y-5">
-      <div
-        className="pointer-events-none fixed inset-x-0 top-0 z-20 h-[14rem] bg-gradient-to-b from-bg-primary via-bg-primary/80 to-transparent"
-        aria-hidden="true"
-      />
+    <section className="space-y-4">
+      <div className="sticky top-0 z-40 -mx-4 bg-black/60 pt-2 pb-3 backdrop-blur-2xl md:static md:mx-0 md:bg-transparent md:pt-0 md:backdrop-blur-none">
+        <div className="flex items-center justify-between px-6">
+          {/* Spacer to help center the switcher on mobile */}
+          <div className="w-10 md:hidden" />
 
-      <div className="fixed inset-x-0 top-3 z-30 flex justify-center px-4 md:top-6">
-        <div className="relative flex w-full max-w-[38rem] items-center">
-          {/* Left Side: Streak */}
-          <div className="flex flex-1 justify-start">
-            <StreakCard user={user} variant="compact" />
-          </div>
-
-          {/* Center: Language Switcher */}
-          <div className="relative flex rounded-full border border-line bg-bg-secondary/40 p-1 shadow-modal backdrop-blur-xl">
+          <div className="relative flex rounded-full border border-white/[0.08] bg-white/[0.04] p-1 shadow-2xl backdrop-blur-xl">
             <div className="relative grid grid-cols-2 items-center">
               <motion.div
                 aria-hidden="true"
-                className="pointer-events-none absolute bottom-1 top-1 z-0 w-[calc(50%-0.25rem)] rounded-full border border-line/20 bg-bg-tertiary shadow-sm"
+                className="pointer-events-none absolute bottom-1 top-1 z-0 w-[calc(50%-0.25rem)] rounded-full bg-[#0A84FF] shadow-[0_4px_12px_rgba(10,132,255,0.3)]"
                 initial={false}
                 animate={{
                   x: direction === "en-ru" ? "0%" : "100%"
@@ -366,9 +358,9 @@ export function TranslatorPanel({
               <button
                 type="button"
                 onClick={() => handleDirectionChange("en-ru")}
-                className={`relative z-10 flex min-w-[100px] items-center justify-center rounded-full px-4 py-3 text-[13px] font-bold transition-all duration-300 md:min-w-[140px] md:text-[14px] ${direction === "en-ru"
-                  ? "text-ink"
-                  : "text-muted hover:text-ink"
+                className={`relative z-10 flex min-w-[90px] items-center justify-center rounded-full px-4 py-2 text-[13px] font-bold transition-all duration-300 md:min-w-[140px] md:text-[14px] ${direction === "en-ru"
+                  ? "text-white"
+                  : "text-white/30 hover:text-white/60"
                   }`}
               >
                 English
@@ -376,9 +368,9 @@ export function TranslatorPanel({
               <button
                 type="button"
                 onClick={() => handleDirectionChange("ru-en")}
-                className={`relative z-10 flex min-w-[100px] items-center justify-center rounded-full px-4 py-3 text-[13px] font-bold transition-all duration-300 md:min-w-[140px] md:text-[14px] ${direction === "ru-en"
-                  ? "text-ink"
-                  : "text-muted hover:text-ink"
+                className={`relative z-10 flex min-w-[90px] items-center justify-center rounded-full px-4 py-2 text-[13px] font-bold transition-all duration-300 md:min-w-[140px] md:text-[14px] ${direction === "ru-en"
+                  ? "text-white"
+                  : "text-white/30 hover:text-white/60"
                   }`}
               >
                 Russian
@@ -386,12 +378,24 @@ export function TranslatorPanel({
             </div>
           </div>
 
-          {/* Right Side: Spacer to keep centering */}
-          <div className="flex flex-1 justify-end" />
+          <Link
+            href="/profile"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/[0.08] text-white active:scale-90 transition-transform overflow-hidden border border-white/[0.1] md:hidden"
+          >
+            {user.avatarUrl ? (
+              <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <span className="text-[13px] font-black">
+                {(user.name || user.email || 'G').slice(0, 1).toUpperCase()}
+              </span>
+            )}
+          </Link>
+          
+          {/* Hidden spacer for desktop to maintain center alignment if needed, 
+              though md:static layout might not need it */}
+          <div className="hidden md:block w-10 invisible" />
         </div>
       </div>
-
-      <div className="h-[5.5rem] md:h-[6.75rem]" />
 
       <div className="translate-card-grid grid gap-3 lg:grid-cols-2">
         <motion.div
@@ -402,7 +406,7 @@ export function TranslatorPanel({
               ease: [0.22, 1, 0.36, 1]
             }
           }}
-          className={`translate-card flex flex-col p-4 md:p-6 ${loading ? "translate-card--loading" : ""}`}
+          className={`liquid-glass rounded-[32px] flex flex-col p-4 md:p-7 apple-spring ${loading ? "translate-card--loading" : ""}`}
         >
           <div className="flex flex-1 flex-col">
             <div className="mb-3 flex items-center justify-between gap-3">
@@ -426,8 +430,8 @@ export function TranslatorPanel({
                   placeholder={direction === "en-ru" ? "Enter text" : "Введите текст"}
                   rows={translation ? 1 : 3}
                   className={`w-full overflow-hidden resize-none border-0 bg-transparent p-0 font-black tracking-tight text-ink outline-none placeholder:text-muted/30 ${translation
-                      ? "min-h-[42px] text-[26px] md:text-[32px]"
-                      : "min-h-[110px] flex-1 text-[26px] md:text-[32px]"
+                    ? "min-h-[42px] text-[26px] md:text-[32px]"
+                    : "min-h-[110px] flex-1 text-[26px] md:text-[32px]"
                     }`}
                 />
                 {shouldShowColoredSourceText && cefrProfile && (
@@ -524,7 +528,7 @@ export function TranslatorPanel({
               ease: [0.22, 1, 0.36, 1]
             }
           }}
-          className={`translate-card flex min-h-[260px] flex-col p-5 md:min-h-[320px] md:p-6 ${(loading && !translation) ? "translate-card--loading" : ""}`}
+          className={`liquid-glass rounded-[32px] flex min-h-[260px] flex-col p-5 md:min-h-[320px] md:p-7 apple-spring ${(loading && !translation) ? "translate-card--loading" : ""}`}
         >
           {loading && !translation ? (
             <div className="translate-result-loading flex flex-1 flex-col">

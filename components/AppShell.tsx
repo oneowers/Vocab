@@ -108,8 +108,8 @@ export function AppShell({ user, settings, children }: AppShellProps) {
                     href={item.href}
                     prefetch
                     className={`flex items-center gap-3.5 rounded-[12px] px-4 py-3 text-[15px] font-semibold transition-all apple-spring ${active
-                        ? "bg-[#0A84FF] text-white shadow-[0_8px_20px_rgba(10,132,255,0.2)]"
-                        : "text-white/30 hover:text-white/60 hover:bg-white/[0.04]"
+                      ? "bg-[#0A84FF] text-white shadow-[0_8px_20px_rgba(10,132,255,0.2)]"
+                      : "text-white/30 hover:text-white/60 hover:bg-white/[0.04]"
                       }`}
                   >
                     <Icon size={20} strokeWidth={active ? 2.5 : 2} />
@@ -121,8 +121,8 @@ export function AppShell({ user, settings, children }: AppShellProps) {
                 <Link
                   href="/admin"
                   className={`flex items-center gap-4 rounded-2xl px-5 py-4 text-[16px] font-bold transition-all ${pathname.startsWith("/admin")
-                      ? "bg-white/[0.05] text-white shadow-sm border border-white/[0.05]"
-                      : "text-white/20 hover:text-white/40 hover:bg-white/[0.02]"
+                    ? "bg-white/[0.05] text-white shadow-sm border border-white/[0.05]"
+                    : "text-white/20 hover:text-white/40 hover:bg-white/[0.02]"
                     }`}
                 >
                   <ArrowRight size={20} />
@@ -207,8 +207,8 @@ export function AppShell({ user, settings, children }: AppShellProps) {
                           href={item.href}
                           onClick={() => setIsSidebarOpen(false)}
                           className={`flex items-center gap-4 rounded-2xl px-4 py-3.5 text-[15px] font-bold transition-all ${active
-                              ? "bg-white/[0.05] text-white border border-white/[0.05]"
-                              : "text-white/20 hover:text-white"
+                            ? "bg-white/[0.05] text-white border border-white/[0.05]"
+                            : "text-white/20 hover:text-white"
                             }`}
                         >
                           <Icon size={18} strokeWidth={active ? 2.5 : 2} />
@@ -250,7 +250,7 @@ export function AppShell({ user, settings, children }: AppShellProps) {
 
         <div className="relative z-0 flex min-h-screen min-w-0 flex-1 flex-col">
           {/* Mobile Header */}
-          {mounted && (
+          {mounted && pathname !== "/translate" && pathname !== "/dashboard" && (
             <div className={`fixed inset-x-0 top-0 z-50 md:hidden ${pathname === "/" ? "bg-gradient-to-b from-black via-black/90 to-transparent h-28" : "bg-black/80 backdrop-blur-xl border-b border-white/[0.05] h-20"}`}>
               <div className={`flex items-center justify-between px-6 pt-[env(safe-area-inset-top,20px)]`}>
                 {pathname === "/" && user ? (
@@ -263,19 +263,25 @@ export function AppShell({ user, settings, children }: AppShellProps) {
                   </Link>
                 ) : (
                   <>
-                    <h1 className="text-[28px] font-extrabold tracking-tight text-white mt-2">
-                      {pathname.split("/").pop()?.charAt(0).toUpperCase() + pathname.split("/").pop()?.slice(1) || ""}
-                    </h1>
-                    <div className="flex items-center gap-2 mt-2">
-                      <button 
-                        onClick={() => setIsSidebarOpen(true)}
-                        className="flex h-10 w-10 items-center justify-center rounded-full bg-white/[0.08] text-white active:scale-90 transition-transform"
-                      >
-                        <Menu size={20} />
-                      </button>
-                      <button className="flex h-10 items-center justify-center rounded-full bg-white/[0.08] px-5 text-[15px] font-semibold text-white active:scale-90 transition-transform">
-                        Select
-                      </button>
+                    {pathname !== "/translate" && (
+                      <h1 className="text-[28px] font-extrabold tracking-tight text-white mt-2">
+                        {pathname.split("/").pop()?.charAt(0).toUpperCase() + pathname.split("/").pop()?.slice(1) || ""}
+                      </h1>
+                    )}
+                    <div className="flex items-center gap-2 mt-2 ml-auto">
+                      {pathname !== "/translate" && (
+                        <>
+                          <button
+                            onClick={() => setIsSidebarOpen(true)}
+                            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/[0.08] text-white active:scale-90 transition-transform"
+                          >
+                            <Menu size={20} />
+                          </button>
+                          <button className="flex h-10 items-center justify-center rounded-full bg-white/[0.08] px-5 text-[15px] font-semibold text-white active:scale-90 transition-transform">
+                            Select
+                          </button>
+                        </>
+                      )}
                     </div>
                   </>
                 )}
@@ -283,7 +289,7 @@ export function AppShell({ user, settings, children }: AppShellProps) {
             </div>
           )}
 
-          <div className="flex-1 pt-6 md:pt-0">
+          <div className={`flex-1 ${pathname === "/translate" ? "pt-0" : "pt-6"} md:pt-0 pb-32`}>
             <div className="mx-auto flex w-full max-w-6xl flex-col">
               <main className="min-w-0 flex-1">
                 <PageTransition>{children}</PageTransition>

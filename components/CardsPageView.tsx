@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useRef, useState, type ChangeEvent } from "react"
-import { Flame } from "lucide-react"
+import { Flame, User, SlidersHorizontal } from "lucide-react"
+import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 
 import { CardList } from "@/components/CardList"
@@ -216,51 +217,69 @@ export function CardsPageView({ initialData = null, user = null }: CardsPageView
         onChange={(event) => void handleImportFile(event)}
       />
 
-      <div className="pt-2 pb-24 space-y-10">
-        <header className="flex flex-col gap-8">
-          <div className="flex items-start justify-between px-2">
-            <div>
-              <h1 className="text-[34px] font-bold tracking-[-1.2px] text-white leading-tight">
-                Your cards
-              </h1>
-              <div className="mt-3 flex items-center gap-2.5 text-[13px] font-medium text-white/30">
-                <span className="flex items-center gap-1.5">
-                  <span className="text-white/60">{totalCount}</span> <span className="uppercase tracking-wider text-[10px] font-bold opacity-40">total</span>
-                </span>
-                <span className="h-1 w-1 rounded-full bg-white/10" />
-                <span className="flex items-center gap-1.5">
-                  <span className="text-[#0A84FF]">{waitingCount}</span> <span className="uppercase tracking-wider text-[10px] font-bold opacity-40">waiting</span>
-                </span>
-                <span className="h-1 w-1 rounded-full bg-white/10" />
-                <span className="flex items-center gap-1.5">
-                  <span className="text-[#30D158]">{learnedCount}</span> <span className="uppercase tracking-wider text-[10px] font-bold opacity-40">learned</span>
-                </span>
-              </div>
+      <div className="px-4 md:px-0 pt-1">
+        {/* Top Switcher styled like Translate page */}
+        <div className="relative flex items-center justify-between mb-6">
+          {/* Spacer for centering */}
+          <div className="w-10 md:hidden" />
+          
+          <div className="relative flex rounded-full border border-white/[0.08] bg-white/[0.04] p-1 shadow-2xl backdrop-blur-xl">
+            <div className="relative grid grid-cols-2 items-center">
+              <motion.div
+                aria-hidden="true"
+                className="pointer-events-none absolute bottom-1 top-1 z-0 w-[calc(50%-0.25rem)] rounded-full bg-[#0A84FF] shadow-[0_4px_12px_rgba(10,132,255,0.3)]"
+                initial={false}
+                animate={{
+                  x: selectedStatus === "Waiting" ? "0%" : "100%"
+                }}
+                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                style={{ left: "0.25rem" }}
+              />
+              <button
+                type="button"
+                onClick={() => setSelectedStatus("Waiting")}
+                className={`relative z-10 flex min-w-[90px] items-center justify-center rounded-full px-4 py-2 text-[13px] font-bold transition-all duration-300 md:min-w-[140px] md:text-[14px] ${selectedStatus === "Waiting"
+                  ? "text-white"
+                  : "text-white/30 hover:text-white/60"
+                  }`}
+              >
+                Due
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedStatus("Learned")}
+                className={`relative z-10 flex min-w-[90px] items-center justify-center rounded-full px-4 py-2 text-[13px] font-bold transition-all duration-300 md:min-w-[140px] md:text-[14px] ${selectedStatus === "Learned"
+                  ? "text-white"
+                  : "text-white/30 hover:text-white/60"
+                  }`}
+              >
+                Learned
+              </button>
             </div>
           </div>
 
-          <div className="px-1">
-            {waitingCount > 0 ? (
-              <button
-                onClick={() => window.location.href = "/review"}
-                className="group relative flex h-[64px] w-full items-center justify-center overflow-hidden rounded-[14px] bg-[#0A84FF] text-white apple-spring shadow-[0_8px_32px_rgba(10,132,255,0.25)]"
-              >
-                <span className="relative flex items-center gap-2.5 text-[17px] font-bold tracking-[-0.2px]">
-                  Review {waitingCount} cards
-                  <svg className="transition-transform group-hover:translate-x-1" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
-                </span>
-              </button>
+          <Link
+            href="/profile"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/[0.08] text-white active:scale-90 transition-transform overflow-hidden border border-white/[0.1] md:hidden"
+          >
+            {user?.avatarUrl ? (
+              <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
             ) : (
-              <div className="flex h-[64px] w-full items-center justify-center rounded-[14px] border border-white/[0.08] bg-white/[0.04] text-[15px] font-bold text-white/20 tracking-tight">
-                <svg className="mr-2 opacity-50" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
-                All caught up
-              </div>
+              <span className="text-[13px] font-black">
+                {(user?.name || user?.email || 'G').slice(0, 1).toUpperCase()}
+              </span>
             )}
-          </div>
+          </Link>
+        </div>
+
+        <header className="flex flex-col gap-3 mb-6">
+          <h1 className="text-[34px] font-bold tracking-tight text-white leading-tight">
+            Cards
+          </h1>
         </header>
 
         {mounted && user && (user.lastReviewDate !== getTodayDateKey() && user.lastReviewDate !== getYesterdayDateKey()) && user.lastStreakRecoveryDate !== getTodayDateKey() && (
-          <div className="liquid-glass p-7 apple-spring relative overflow-hidden">
+          <div className="liquid-glass p-7 apple-spring relative overflow-hidden rounded-[32px]">
             <div className="absolute -right-6 -top-6 opacity-10 blur-3xl">
               <Flame size={140} className="text-[#FF9F0A]" />
             </div>

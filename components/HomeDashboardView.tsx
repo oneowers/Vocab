@@ -75,9 +75,9 @@ export function HomeDashboardView({ user, initialCardsData }: HomeDashboardViewP
   // Animation variants for Apple-style spring
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: { 
+    visible: {
       opacity: 1,
-      transition: { 
+      transition: {
         staggerChildren: 0.1,
         delayChildren: 0.2
       }
@@ -86,21 +86,21 @@ export function HomeDashboardView({ user, initialCardsData }: HomeDashboardViewP
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20, scale: 0.98 },
-    visible: { 
-      opacity: 1, 
-      y: 0, 
+    visible: {
+      opacity: 1,
+      y: 0,
       scale: 1,
-      transition: { 
-        type: "spring", 
-        stiffness: 260, 
-        damping: 20 
+      transition: {
+        type: "spring",
+        stiffness: 260,
+        damping: 20
       }
     }
   }
 
   return (
     <div className="mx-auto max-w-xl min-h-screen px-4 pb-32 pt-20 overflow-x-hidden bg-black">
-      <motion.div 
+      <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -117,7 +117,7 @@ export function HomeDashboardView({ user, initialCardsData }: HomeDashboardViewP
               </div>
             </div>
             <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
-              <motion.div 
+              <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${totalProgress}%` }}
                 transition={{ duration: 1, ease: "easeOut" }}
@@ -131,21 +131,21 @@ export function HomeDashboardView({ user, initialCardsData }: HomeDashboardViewP
         {user.role !== "PRO" && user.role !== "ADMIN" && (
           <motion.section variants={itemVariants} className="px-1">
             <div className="bg-[#1C1C1E] rounded-[20px] p-4 relative overflow-hidden group border border-white/[0.03]">
-               <button className="absolute top-4 right-4 text-white/20 hover:text-white/40 transition-colors">
-                 <X size={18} />
-               </button>
-               <div className="flex gap-3">
-                  <div className="h-10 w-10 shrink-0 rounded-lg bg-[#FF9F0A] flex items-center justify-center text-white shadow-inner shadow-white/20">
-                     <Zap size={20} fill="currentColor" />
-                  </div>
-                  <div className="flex-1 space-y-0.5">
-                     <h3 className="text-[15px] font-bold tracking-tight text-white">Boost Your Learning</h3>
-                     <p className="text-[12px] font-medium text-white/50 leading-snug">Unlock personalized AI coaching and unlimited practice.</p>
-                     <button className="text-[14px] font-bold text-[#0A84FF] pt-1.5 flex items-center gap-1 group-active:opacity-60 transition-opacity">
-                       Upgrade to Pro
-                     </button>
-                  </div>
-               </div>
+              <button className="absolute top-4 right-4 text-white/20 hover:text-white/40 transition-colors">
+                <X size={18} />
+              </button>
+              <div className="flex gap-3">
+                <div className="h-10 w-10 shrink-0 rounded-lg bg-[#FF9F0A] flex items-center justify-center text-white shadow-inner shadow-white/20">
+                  <Zap size={20} fill="currentColor" />
+                </div>
+                <div className="flex-1 space-y-0.5">
+                  <h3 className="text-[15px] font-bold tracking-tight text-white">Boost Your Learning</h3>
+                  <p className="text-[12px] font-medium text-white/50 leading-snug">Unlock personalized AI coaching and unlimited practice.</p>
+                  <button className="text-[14px] font-bold text-[#0A84FF] pt-1.5 flex items-center gap-1 group-active:opacity-60 transition-opacity">
+                    Upgrade to Pro
+                  </button>
+                </div>
+              </div>
             </div>
           </motion.section>
         )}
@@ -154,16 +154,16 @@ export function HomeDashboardView({ user, initialCardsData }: HomeDashboardViewP
         <section className="space-y-2.5">
           <div className="flex items-center justify-between px-3">
             <div className="flex items-center gap-1.5">
-               <div className="w-1 h-1 rounded-full bg-[#34C759]" />
-               <h3 className="text-[11px] font-semibold text-white/40 uppercase tracking-[0.05em]">
-                 YOUR MISSION
-               </h3>
+              <div className="w-1 h-1 rounded-full bg-[#34C759]" />
+              <h3 className="text-[11px] font-semibold text-white/40 uppercase tracking-[0.05em]">
+                YOUR MISSION
+              </h3>
             </div>
             <button className="text-[13px] font-semibold text-[#0A84FF] flex items-center active:opacity-60 transition-opacity">
               See All <ChevronRight size={14} />
             </button>
           </div>
-          
+
           <div className="grid grid-cols-2 gap-2.5 px-1">
             {tasks.map((task) => (
               <Link
@@ -200,26 +200,26 @@ export function HomeDashboardView({ user, initialCardsData }: HomeDashboardViewP
           <div className="bg-[#1C1C1E] rounded-[20px] overflow-hidden divide-y divide-white/[0.05] border border-white/[0.03]">
             <Link href="/stats" className="flex items-center justify-between p-3.5 px-4 active:bg-white/5 transition-colors">
               <div className="flex items-center gap-3">
-                 <div className="h-7 w-7 rounded-md bg-[#0A84FF] flex items-center justify-center text-white">
-                   <Target size={14} />
-                 </div>
-                 <span className="text-[15px] font-semibold text-white">Learning Goal</span>
+                <div className="h-7 w-7 rounded-md bg-[#0A84FF] flex items-center justify-center text-white">
+                  <Target size={14} />
+                </div>
+                <span className="text-[15px] font-semibold text-white">Learning Goal</span>
               </div>
               <div className="flex items-center gap-2">
-                 <span className="text-[13px] text-white/20 font-medium">Daily</span>
-                 <ChevronRight size={16} className="text-white/10" />
+                <span className="text-[13px] text-white/20 font-medium">Daily</span>
+                <ChevronRight size={16} className="text-white/10" />
               </div>
             </Link>
             <Link href="/stats" className="flex items-center justify-between p-3.5 px-4 active:bg-white/5 transition-colors">
               <div className="flex items-center gap-3">
-                 <div className="h-7 w-7 rounded-md bg-[#34C759] flex items-center justify-center text-white">
-                   <Flame size={14} />
-                 </div>
-                 <span className="text-[15px] font-semibold text-white">Keep Streak</span>
+                <div className="h-7 w-7 rounded-md bg-[#34C759] flex items-center justify-center text-white">
+                  <Flame size={14} />
+                </div>
+                <span className="text-[15px] font-semibold text-white">Keep Streak</span>
               </div>
               <div className="flex items-center gap-2">
-                 <span className="text-[13px] text-white/20 font-medium">1d</span>
-                 <ChevronRight size={16} className="text-white/10" />
+                <span className="text-[13px] text-white/20 font-medium">1d</span>
+                <ChevronRight size={16} className="text-white/10" />
               </div>
             </Link>
           </div>

@@ -50,22 +50,15 @@ export function DashboardView({ user, initialDailyCatalog = null }: DashboardVie
     showToast("No words were selected.", "error")
   }
 
-  const today = getTodayDateKey()
-  const yesterday = getYesterdayDateKey(today)
-  const isBroken = user.lastReviewDate !== today && user.lastReviewDate !== yesterday
-  const hasRecoveredToday = user.lastStreakRecoveryDate === today
-
   return (
-    <div className="translate-page-shell -mx-4 -my-4 px-4 py-2 md:-mx-8 md:-my-8 md:px-8 md:py-8">
-      <div className="mx-auto w-full max-w-5xl space-y-4 md:space-y-6">
-        <TranslatorPanel
-          user={user}
-          guestMode={false}
-          onAddCard={() => { }}
-          dailyCatalog={dailyCatalog}
-          onOpenDailyWords={() => setDailyModalOpen(true)}
-        />
-      </div>
+    <div className="pb-24 px-4 md:px-0">
+      <TranslatorPanel
+        user={user}
+        guestMode={false}
+        onAddCard={() => { }}
+        dailyCatalog={dailyCatalog}
+        onOpenDailyWords={() => setDailyModalOpen(true)}
+      />
 
       <DailyWordsModal
         open={dailyModalOpen}
