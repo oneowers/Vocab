@@ -9,8 +9,9 @@ import { CardDetailsModal } from "./CardDetailsModal"
 
 interface CardListProps {
   cards: CardRecord[]
+  refreshing: boolean
   selectedStatus: CardStatusFilter
-  setSelectedStatus: (status: CardStatusFilter) => void
+  onSelectStatus: (status: CardStatusFilter) => void
   selectedLevel: CefrLevel | "All"
   onSelectLevel: (level: CefrLevel | "All") => void
   search: string
@@ -27,11 +28,21 @@ interface CardListProps {
 
 export function CardList({
   cards,
+  refreshing,
+  selectedStatus,
+  onSelectStatus,
   selectedLevel,
   onSelectLevel,
   search,
   onSearchChange,
-  onDeleteRequest
+  onExport,
+  onImport,
+  onDeleteRequest,
+  onDeleteManyRequest,
+  guestMode,
+  waitingCount,
+  learnedCount,
+  totalCount
 }: CardListProps) {
   const [activeCardMenu, setActiveCardMenu] = useState<string | null>(null)
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false)
