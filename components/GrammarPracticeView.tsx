@@ -14,6 +14,7 @@ import { GrammarStatsRow } from "./grammar/GrammarStatsRow"
 import { RecommendedTopicCard } from "./grammar/RecommendedTopicCard"
 import { GrammarTopicList } from "./grammar/GrammarTopicList"
 import { GrammarFilters } from "./grammar/GrammarFilters"
+import { GrammarQuizView } from "./GrammarQuizView"
 
 interface GrammarPracticeViewProps {
   grammarData: GrammarSkillsPayload
@@ -153,6 +154,14 @@ export function GrammarPracticeView({ grammarData, onBack, initialSubMode, appSe
         onBack={() => setMode("DASHBOARD")} 
         appSettings={appSettings}
       />
+    )
+  }
+  
+  if (mode === "QUIZ") {
+    return (
+      <div className="mx-auto max-w-xl px-4 py-8">
+        <GrammarQuizView onBack={() => setMode("DASHBOARD")} />
+      </div>
     )
   }
 

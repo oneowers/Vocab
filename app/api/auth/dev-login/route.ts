@@ -16,5 +16,6 @@ export async function GET(request: NextRequest) {
     maxAge: 60 * 60 * 24 * 7 // 1 week
   })
 
+  console.log("[dev-login] Cookie set, redirecting to /")
   return NextResponse.redirect(new URL("/", request.url))
 }

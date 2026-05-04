@@ -1,0 +1,7 @@
+[
+  {
+    "id": "TC001",
+    "title": "post api cards create new vocabulary card",
+    "description": "Test creating a new vocabulary card by sending a POST request to /api/cards with valid authentication and a valid body containing word and translation fields. Verify the response status is 200 and the returned object matches the created card."
+  }
+]

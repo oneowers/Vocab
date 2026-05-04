@@ -1,3 +1,4 @@
+import { cookies } from "next/headers"
 import { NextRequest, NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 
@@ -65,6 +66,19 @@ export async function POST(request: NextRequest) {
 
     // Create Supabase session if Supabase is configured
     await createSupabaseUser(email, password)
+
+    // Automatically sign in the user by setting a session cookie
+    const cookieStore = cookies()
+    const sessionPayload = JSON.stringify({ userId: user.id, email: user.email })
+    const encoded = Buffer.from(sessionPayload).toString("base64")
+
+    cookieStore.set("email-session", encoded, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 30 // 30 days
+    })
 
     const onboardingRoute = getOnboardingRouteForUser(user)
 

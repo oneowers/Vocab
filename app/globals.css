@@ -513,7 +513,7 @@ textarea {
     min-height: 44px;
     border: 1px solid transparent;
     border-radius: var(--radius-input);
-    background: rgba(255, 255, 255, 0.06);
+    background: #000000;
     padding: 0 12px;
     color: var(--text-primary);
     transition:
@@ -529,6 +529,19 @@ textarea {
 .input-field:focus {
   border-color: var(--accent);
   outline: none;
+}
+
+/* Apple Liquid Glass Autofill Styling */
+.input-field:-webkit-autofill,
+.input-field:-webkit-autofill:hover,
+.input-field:-webkit-autofill:focus,
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #30d158; /* Green text for success/valid state */
+  -webkit-box-shadow: 0 0 0px 1000px #000000 inset;
+  transition: background-color 5000s ease-in-out 0s;
+  caret-color: white;
 }
 
 .chip-button {

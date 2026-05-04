@@ -269,7 +269,7 @@ export async function getPracticePageData(userId: string) {
 
   const historyData = historyRaw.map(h => ({
     id: h.id,
-    topicKey: h.topic.key,
+    topicKey: h.topic?.key ?? "unknown",
     severity: h.severity,
     confidence: h.confidence,
     isCorrect: h.isCorrect,
@@ -278,7 +278,7 @@ export async function getPracticePageData(userId: string) {
     explanationRu: h.explanationRu,
     scoreDelta: h.scoreDelta,
     createdAt: h.createdAt.toISOString(),
-    topicTitleEn: h.topic.titleEn,
+    topicTitleEn: h.topic?.titleEn ?? "Unknown Topic",
     sourceType: h.sourceType,
     sourceId: h.sourceId
   }))
@@ -383,11 +383,11 @@ export function getUserStatsData(userId: string): Promise<StatsPayload> {
   )
 }
 
-export async function buildDetailedUserStats(userId: string): Promise<DetailedStatsPayload> {
+export async function buildDetailedUserStats(userId: string, daysCount = 7): Promise<DetailedStatsPayload> {
   const prisma = getPrisma()
   const today = getTodayDateKey()
-  const last7 = listRecentDateKeys(7, today)
-  const last7Start = parseDateKey(last7[0])
+  const recentDays = listRecentDateKeys(daysCount, today)
+  const rangeStart = parseDateKey(recentDays[0])
 
   const [user, totalCardsLearned, reviewDateCounts, cardsByLevel, recentMistakes] =
     await Promise.all([
@@ -409,7 +409,7 @@ export async function buildDetailedUserStats(userId: string): Promise<DetailedSt
           COUNT(*)::bigint AS value
         FROM "ReviewLog"
         WHERE "userId" = ${userId}
-          AND "createdAt" >= ${last7Start}
+          AND "createdAt" >= ${rangeStart}
         GROUP BY 1
       `),
       prisma.card.findMany({
@@ -446,7 +446,7 @@ export async function buildDetailedUserStats(userId: string): Promise<DetailedSt
 
   const countsByDate = toCountMap(reviewDateCounts)
   const activeDays = Object.values(countsByDate).filter((count) => count > 0).length
-  const weeklyProgress = toChartPoints(last7, countsByDate)
+  const weeklyProgress = toChartPoints(recentDays, countsByDate)
   const cardsByCefrLevel = {
     A1: 0,
     A2: 0,
@@ -499,11 +499,11 @@ export async function buildDetailedUserStats(userId: string): Promise<DetailedSt
   }
 }
 
-export function getDetailedUserStatsData(userId: string): Promise<DetailedStatsPayload> {
+export function getDetailedUserStatsData(userId: string, daysCount = 7): Promise<DetailedStatsPayload> {
   return cacheUserResource(
-    [`detailed-user-stats:${userId}`],
+    [`detailed-user-stats:${userId}:${daysCount}`],
     [userCacheTag.stats(userId), userCacheTag.review(userId), userCacheTag.cards(userId)],
-    () => buildDetailedUserStats(userId)
+    () => buildDetailedUserStats(userId, daysCount)
   )
 }
 

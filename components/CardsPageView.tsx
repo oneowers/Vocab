@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ChangeEvent } from "react"
 import { Flame } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
 
 import { CardList } from "@/components/CardList"
 import { ConfirmModal } from "@/components/ConfirmModal"
@@ -27,7 +28,9 @@ export function CardsPageView({ initialData = null, user = null }: CardsPageView
   const [cardsToDelete, setCardsToDelete] = useState<CardRecord[]>([])
   const [deleting, setDeleting] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
   const importRef = useRef<HTMLInputElement | null>(null)
+  const menuRef = useRef<HTMLDivElement | null>(null)
   const { showToast } = useToast()
   const {
     data: cardsPayload,
@@ -61,6 +64,15 @@ export function CardsPageView({ initialData = null, user = null }: CardsPageView
     if (guestActive) {
       setCards(sortDueCards(getGuestCards()))
     }
+
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
   useEffect(() => {
@@ -225,12 +237,41 @@ export function CardsPageView({ initialData = null, user = null }: CardsPageView
                 </span>
               </div>
             </div>
-            <button
-              onClick={() => showToast("Menu coming soon", "info")}
-              className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.03] text-white/40 border border-white/10 active:scale-90 transition-all hover:bg-white/[0.06] hover:text-white"
-            >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.03] text-white/40 border border-white/10 active:scale-90 transition-all hover:bg-white/[0.06] hover:text-white"
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+              </button>
+
+              <AnimatePresence>
+                {isMenuOpen && (
+                  <motion.div
+                    ref={menuRef}
+                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                    className="absolute right-0 top-14 z-50 min-w-[180px] rounded-2xl bg-bg-tertiary p-1.5 shadow-2xl border border-line backdrop-blur-xl"
+                  >
+                    <button
+                      onClick={() => { handleExport(); setIsMenuOpen(false) }}
+                      className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-[14px] font-bold text-white hover:bg-white/5 transition-all"
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                      Export JSON
+                    </button>
+                    <button
+                      onClick={() => { importRef.current?.click(); setIsMenuOpen(false) }}
+                      className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-[14px] font-bold text-white hover:bg-white/5 transition-all"
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                      Import JSON
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
 
           <div className="px-1">

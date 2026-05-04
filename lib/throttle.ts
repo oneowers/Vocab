@@ -83,7 +83,11 @@ export async function checkRateLimit(
       resetAt: Date.now() + safeTtlMs
     }
   } catch (error) {
-    console.error("Rate limit storage unavailable, allowing request.", error)
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(`[rate-limit] Storage not configured (KV_REST_API_URL missing). Skipping limit check for ${key}.`)
+    } else {
+      console.error("Rate limit storage unavailable, allowing request.", error)
+    }
 
     return {
       allowed: true,

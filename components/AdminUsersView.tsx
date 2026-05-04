@@ -9,11 +9,130 @@ import { useClientResource } from "@/hooks/useClientResource"
 import { formatTimestamp } from "@/lib/date"
 import type { AdminUserRow, AdminUsersPayload, Role } from "@/lib/types"
 
+interface CreateUserModalProps {
+  open: boolean
+  onClose: () => void
+  onCreated: (user: any) => void
+}
+
+function CreateUserModal({ open, onClose, onCreated }: CreateUserModalProps) {
+  const [email, setEmail] = useState("")
+  const [name, setName] = useState("")
+  const [password, setPassword] = useState("")
+  const [role, setRole] = useState<Role>("USER")
+  const [submitting, setSubmitting] = useState(false)
+  const { showToast } = useToast()
+
+  if (!open) return null
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setSubmitting(true)
+
+    try {
+      const response = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, name, password, role })
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || "Failed to create user")
+      }
+
+      const data = await response.json()
+      onCreated(data.user)
+      showToast("User created successfully", "success")
+      onClose()
+    } catch (err: any) {
+      showToast(err.message, "error")
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="w-full max-w-md rounded-[2rem] border border-line bg-bg-secondary p-8 shadow-2xl"
+      >
+        <h2 className="text-2xl font-black text-ink mb-6">Create New User</h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-[11px] font-black uppercase tracking-widest text-quiet mb-1.5 px-1">Email</label>
+            <input 
+              required
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              className="input-field"
+              placeholder="user@example.com"
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] font-black uppercase tracking-widest text-quiet mb-1.5 px-1">Name</label>
+            <input 
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              className="input-field"
+              placeholder="John Doe"
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] font-black uppercase tracking-widest text-quiet mb-1.5 px-1">Password</label>
+            <input 
+              required
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              className="input-field"
+              placeholder="••••••••"
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] font-black uppercase tracking-widest text-quiet mb-1.5 px-1">Role</label>
+            <select 
+              value={role}
+              onChange={e => setRole(e.target.value as Role)}
+              className="input-field"
+            >
+              <option value="USER">USER</option>
+              <option value="PRO">PRO</option>
+              <option value="ADMIN">ADMIN</option>
+            </select>
+          </div>
+          <div className="flex gap-3 pt-4">
+            <button 
+              type="button" 
+              onClick={onClose}
+              className="button-secondary flex-1"
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              disabled={submitting}
+              className="button-primary flex-1"
+            >
+              {submitting ? "Creating..." : "Create User"}
+            </button>
+          </div>
+        </form>
+      </motion.div>
+    </div>
+  )
+}
+
 export function AdminUsersView() {
   const [payload, setPayload] = useState<AdminUsersPayload | null>(null)
   const [search, setSearch] = useState("")
   const [page, setPage] = useState(1)
   const [selectedUser, setSelectedUser] = useState<AdminUserRow | null>(null)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const { showToast } = useToast()
   const { data, loading, refreshing } = useClientResource<AdminUsersPayload>({
@@ -175,6 +294,13 @@ export function AdminUsersView() {
               placeholder="Search name or email"
               className="input-field"
             />
+            <button
+              type="button"
+              onClick={() => setIsCreateModalOpen(true)}
+              className="button-primary"
+            >
+              + Create User
+            </button>
             <button
               type="button"
               onClick={() => void handleExportCsv()}
@@ -343,6 +469,16 @@ export function AdminUsersView() {
         onCancel={() => setSelectedUser(null)}
         onConfirm={() => void confirmDelete()}
         loading={submitting}
+      />
+
+      <CreateUserModal 
+        open={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onCreated={() => {
+          // Re-fetch current page
+          setPage(1)
+          setSearch("")
+        }}
       />
     </>
   )

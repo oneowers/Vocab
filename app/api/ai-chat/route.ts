@@ -141,6 +141,7 @@ function buildAiChatPrompt(
         `Active chat mode: ${mode}.`,
         "Run this as an in-chat activity. Do not redirect the learner to another page.",
         "For interactive modes: ask one task/question at a time and use the conversation history to continue.",
+        "Pay close attention to the entire conversation history. If the learner sent multiple prompts recently, try to address the most relevant ones or acknowledge them.",
         "Keep tasks short enough for a mobile chat bubble."
       ].join("\n")
     : "Active chat mode: general coach."
@@ -451,8 +452,8 @@ export async function POST(request: NextRequest) {
 
   const rateLimit = await checkRateLimit(
     `ai-chat:${getThrottleKey(request, user.id)}`,
-    1,
-    1
+    5,
+    2
   )
 
   if (!rateLimit.allowed) {

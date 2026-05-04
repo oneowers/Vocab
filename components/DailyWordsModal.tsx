@@ -36,7 +36,6 @@ export function DailyWordsModal({
 
   useEffect(() => {
     setMounted(true)
-    return () => setMounted(false)
   }, [])
 
   useEffect(() => {

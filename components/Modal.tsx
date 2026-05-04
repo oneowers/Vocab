@@ -17,7 +17,6 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
 
   useEffect(() => {
     setMounted(true)
-    return () => setMounted(false)
   }, [])
 
   useEffect(() => {

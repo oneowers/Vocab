@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { revalidateTag } from "next/cache"
+import { z } from "zod"
 
 import { getOptionalAuthUser } from "@/lib/auth"
 import {
@@ -14,6 +15,15 @@ import { getPrisma } from "@/lib/prisma"
 import { userCacheTag, adminCacheTag } from "@/lib/server-cache"
 import { serializeCard } from "@/lib/serializers"
 import { getUserCardsPageData } from "@/lib/server-data"
+
+const createCardSchema = z.object({
+  original: z.string().min(1, "Original word is required"),
+  translation: z.string().min(1, "Translation is required"),
+  direction: z.enum(["en-ru", "ru-en"]),
+  translationAlternatives: z.array(z.string()).optional(),
+  example: z.string().nullable().optional(),
+  phonetic: z.string().nullable().optional()
+})
 
 export async function GET(request: NextRequest) {
   const user = await getOptionalAuthUser()
@@ -122,6 +132,8 @@ export async function GET(request: NextRequest) {
   })
 }
 
+
+
 export async function POST(request: NextRequest) {
   const user = await getOptionalAuthUser()
 
@@ -129,17 +141,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const body = (await request.json()) as {
-    original?: string
-    translation?: string
-    direction?: "en-ru" | "ru-en"
-    translationAlternatives?: string[]
-    example?: string | null
-    phonetic?: string | null
+  let body;
+  try {
+    body = createCardSchema.parse(await request.json())
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "Validation error", issues: error.errors },
+        { status: 400 }
+      )
+    }
+    return NextResponse.json({ error: "Invalid request" }, { status: 400 })
   }
 
-  const original = body.original?.trim()
-  const translation = body.translation?.trim()
+  const original = body.original.trim()
+  const translation = body.translation.trim()
   const translationAlternatives = Array.from(
     new Set(
       (body.translationAlternatives ?? [])
@@ -148,10 +164,6 @@ export async function POST(request: NextRequest) {
     )
   )
   const direction = body.direction
-
-  if (!original || !translation || !direction) {
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
-  }
 
   const prisma = getPrisma()
   const matchingCatalogWord =

@@ -9,16 +9,18 @@ export default async function ProtectedLayout({
 }: {
   children: React.ReactNode
 }) {
-  const user = await requireSignedInAppUser()
-  redirectToOnboardingIfNeeded(user)
-  
   const prisma = getPrisma()
-  const settingsRaw = await getOrCreateAppSettings(prisma)
+  const [user, settingsRaw] = await Promise.all([
+    requireSignedInAppUser(),
+    getOrCreateAppSettings(prisma)
+  ])
+  
+  redirectToOnboardingIfNeeded(user)
   const settings = serializeAppSettings(settingsRaw)
 
   return (
     <AppShell 
-      user={user ? serializeUser(user) : null} 
+      user={serializeUser(user)} 
       settings={settings}
     >
       {children}

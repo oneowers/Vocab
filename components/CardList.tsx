@@ -9,6 +9,7 @@ import { speakText } from "@/lib/tts"
 import type { CardRecord, CardStatusFilter, CefrLevel } from "@/lib/types"
 import { getTodayDateKey } from "@/lib/date"
 import { Check, Clock, Download, Ellipsis, Layers, Trash2, Upload, X } from "lucide-react"
+import { CardDetailsModal } from "./CardDetailsModal"
 
 const CEFR_STYLES: Record<CefrLevel, { badge: string; dot: string }> = {
   A1: {
@@ -75,6 +76,7 @@ export function CardList({
   totalCount
 }: CardListProps) {
   const [activeCardMenu, setActiveCardMenu] = useState<string | null>(null)
+  const [inspectedCard, setInspectedCard] = useState<CardRecord | null>(null)
   const menuRef = useRef<HTMLDivElement | null>(null)
   const prefersReducedMotion = useReducedMotion()
 
@@ -209,7 +211,7 @@ export function CardList({
                   key={card.id}
                   className="group relative flex h-[72px] items-center justify-between px-2 transition-all hover:bg-white/[0.02] border-b border-white/[0.03] last:border-0"
                 >
-                  <div className="flex flex-1 items-center gap-4 min-w-0" onClick={() => speakText(card.original, card.direction === "en-ru" ? "en-US" : "ru-RU")}>
+                  <div className="flex flex-1 items-center gap-4 min-w-0 cursor-pointer" onClick={() => setInspectedCard(card)}>
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.04] text-white/20 group-hover:bg-white/10 group-hover:text-white transition-all">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m11 5-7 7 7 7"></path><path d="M4 12h16"></path></svg>
                     </div>
@@ -261,8 +263,8 @@ export function CardList({
             return (
               <article
                 key={card.id}
-                onClick={() => speakText(card.original, card.direction === "en-ru" ? "en-US" : "ru-RU")}
-                className="group relative overflow-hidden rounded-[28px] border border-white/[0.06] bg-gradient-to-br from-white/[0.04] to-transparent p-5 transition-all hover:scale-[1.02] hover:border-white/10 active:scale-[0.98] active:bg-white/[0.06] shadow-xl"
+                onClick={() => setInspectedCard(card)}
+                className="group relative overflow-hidden rounded-[28px] border border-white/[0.06] bg-gradient-to-br from-white/[0.04] to-transparent p-5 transition-all hover:scale-[1.02] hover:border-white/10 active:scale-[0.98] active:bg-white/[0.06] shadow-xl cursor-pointer"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 
@@ -322,6 +324,15 @@ export function CardList({
 
       {/* Bottom Padding for Nav */}
       <div className="h-12 md:hidden" />
+
+      <AnimatePresence>
+        {inspectedCard && (
+          <CardDetailsModal 
+            card={inspectedCard} 
+            onClose={() => setInspectedCard(null)} 
+          />
+        )}
+      </AnimatePresence>
     </section>
   )
 }

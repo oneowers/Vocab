@@ -26,12 +26,12 @@ function GoogleIcon() {
   )
 }
 
-export function LoginCard() {
+export function LoginCard({ initialMode = "login" }: { initialMode?: Mode }) {
   const router = useRouter()
   const { showToast } = useToast()
   const supabaseEnabled = hasSupabaseEnv()
 
-  const [mode, setMode] = useState<Mode>("login")
+  const [mode, setMode] = useState<Mode>(initialMode)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -83,8 +83,7 @@ export function LoginCard() {
 
       if (data.useSupabase) {
         // Supabase session created server-side, just navigate
-        router.push(data.redirectTo ?? "/")
-        router.refresh()
+        window.location.href = data.redirectTo ?? "/"
         return
       }
 
@@ -96,18 +95,17 @@ export function LoginCard() {
           password
         })
         if (!error) {
-          router.push(data.redirectTo ?? "/")
-          router.refresh()
+          window.location.href = data.redirectTo ?? "/"
           return
         }
       }
 
       // Supabase not available or failed — cookie session was set server-side
-      router.push(data.redirectTo ?? "/")
-      router.refresh()
+      window.location.href = data.redirectTo ?? "/"
 
-    } catch {
-      setErrors({ form: "Network error. Please try again." })
+    } catch (err) {
+      console.error("[LoginCard]", err)
+      setErrors({ form: "Network error or server unavailable. Please try again." })
     } finally {
       setLoading(null)
     }
@@ -157,7 +155,17 @@ export function LoginCard() {
       </div>
 
       {/* Form */}
-      <div className="panel p-6">
+      <div className="panel relative overflow-hidden p-6">
+        {loading && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-bg-primary/40 backdrop-blur-[2px] transition-opacity">
+            <div className="flex flex-col items-center gap-3">
+              <div className="h-10 w-10 animate-spin rounded-full border-4 border-accent/20 border-t-accent" />
+              <p className="text-[12px] font-bold uppercase tracking-widest text-ink/60">
+                {loading === "google" ? "Connecting Google..." : mode === "login" ? "Signing in..." : "Creating account..."}
+              </p>
+            </div>
+          </div>
+        )}
         <form onSubmit={handleEmailSubmit} noValidate className="space-y-4">
           {/* Email */}
           <div>
@@ -303,7 +311,9 @@ export function LoginCard() {
         {isLocalDevelopment() && (
           <button
             type="button"
-            onClick={() => router.push("/api/auth/dev-login")}
+            onClick={() => {
+              window.location.href = "/api/auth/dev-login"
+            }}
             className="mt-3 flex h-11 w-full items-center justify-center rounded-[14px] border border-line/50 bg-bg-secondary/50 text-[13px] font-bold text-muted transition hover:bg-bg-tertiary"
           >
             Login as Admin (Local)

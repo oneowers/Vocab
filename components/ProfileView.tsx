@@ -137,12 +137,13 @@ export function ProfileView({ user, initialActivity = null }: ProfileViewProps) 
 
     const supabase = createSupabaseBrowserClient()
 
-    if (!supabase) {
-      showToast("Supabase is not configured yet.", "error")
-      return
+    if (supabase) {
+      await supabase.auth.signOut()
     }
 
-    await supabase.auth.signOut()
+    // Always call our logout API to clear server-side cookies (email-session)
+    await fetch("/api/auth/logout", { method: "POST" })
+
     router.push("/login")
     router.refresh()
   }

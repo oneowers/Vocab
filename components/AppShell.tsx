@@ -3,7 +3,8 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { ArrowRight, LogOut } from "lucide-react"
+import { ArrowRight, LogOut, Menu, X } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
 
 import { BottomTabBar } from "@/components/BottomTabBar"
 import { BrandLogo } from "@/components/BrandLogo"
@@ -27,6 +28,7 @@ export function AppShell({ user, settings, children }: AppShellProps) {
   const { showToast } = useToast()
   const [guestActive, setGuestActive] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -61,11 +63,13 @@ export function AppShell({ user, settings, children }: AppShellProps) {
       return
     }
     const supabase = createSupabaseBrowserClient()
-    if (!supabase) {
-      showToast("Supabase is not configured yet.", "error")
-      return
+    if (supabase) {
+      await supabase.auth.signOut()
     }
-    await supabase.auth.signOut()
+    
+    // Always call our logout API to clear server-side cookies (email-session)
+    await fetch("/api/auth/logout", { method: "POST" })
+    
     router.push("/login")
     router.refresh()
   }
@@ -160,22 +164,118 @@ export function AppShell({ user, settings, children }: AppShellProps) {
           </div>
         </aside>
 
+        {/* Mobile Sidebar/Drawer */}
+        <AnimatePresence>
+          {isSidebarOpen && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsSidebarOpen(false)}
+                className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm md:hidden"
+              />
+              <motion.aside
+                initial={{ x: "-100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "-100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                className="fixed inset-y-0 left-0 z-[70] flex w-[280px] flex-col justify-between bg-[#050505] p-8 shadow-2xl md:hidden"
+              >
+                <div className="space-y-10">
+                  <div className="flex items-center justify-between">
+                    <Link href="/" onClick={() => setIsSidebarOpen(false)} className="flex items-center gap-3">
+                      <div className="h-8 w-8 flex items-center justify-center bg-white text-black rounded-lg">
+                        <BrandLogo />
+                      </div>
+                      <span className="text-[14px] font-black uppercase tracking-widest text-white">LexiFlow</span>
+                    </Link>
+                    <button 
+                      onClick={() => setIsSidebarOpen(false)}
+                      className="text-white/40 hover:text-white"
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+
+                  <nav className="flex flex-col gap-1">
+                    {sidebarNavItems.map((item) => {
+                      const active = isActive(pathname, item)
+                      const Icon = item.icon
+
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setIsSidebarOpen(false)}
+                          className={`flex items-center gap-4 rounded-2xl px-4 py-3.5 text-[15px] font-bold transition-all ${
+                            active
+                              ? "bg-white/[0.05] text-white border border-white/[0.05]"
+                              : "text-white/20 hover:text-white"
+                          }`}
+                        >
+                          <Icon size={18} strokeWidth={active ? 2.5 : 2} />
+                          <span>{item.label}</span>
+                        </Link>
+                      )
+                    })}
+                  </nav>
+                </div>
+
+                <div className="space-y-4">
+                  <Link 
+                    href="/profile"
+                    onClick={() => setIsSidebarOpen(false)}
+                    className="flex items-center gap-4 rounded-3xl bg-white/[0.02] p-4 border border-white/[0.05]"
+                  >
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white">
+                      <span className="text-[14px] font-black text-black">{initials}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[14px] font-black text-white truncate max-w-[120px]">
+                        {user?.name || user?.email?.split('@')[0]}
+                      </span>
+                      <span className="text-[11px] font-bold text-white/20 uppercase tracking-wider">{accountRole}</span>
+                    </div>
+                  </Link>
+                  <button
+                    onClick={() => { handleExit(); setIsSidebarOpen(false) }}
+                    className="flex w-full items-center gap-4 px-4 py-3 text-[15px] font-bold text-rose-500/80"
+                  >
+                    <LogOut size={18} />
+                    <span>Sign out</span>
+                  </button>
+                </div>
+              </motion.aside>
+            </>
+          )}
+        </AnimatePresence>
+
         <div className="relative z-0 flex min-h-screen min-w-0 flex-1 flex-col">
-          {/* Mobile Floating Profile Button */}
+          {/* Mobile Header */}
           {mounted && (
-            <Link 
-              href="/profile" 
-              className="fixed right-6 top-8 z-50 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.05] border border-white/[0.1] shadow-2xl backdrop-blur-xl transition-transform active:scale-90 md:hidden"
-            >
-              {user?.avatarUrl ? (
-                <img src={user.avatarUrl} alt="Avatar" className="h-full w-full rounded-2xl object-cover" />
-              ) : (
-                <span className="text-[16px] font-black text-white">{initials}</span>
-              )}
-            </Link>
+            <div className="fixed inset-x-0 top-0 z-50 flex h-20 items-center justify-between px-6 md:hidden">
+              <button 
+                onClick={() => setIsSidebarOpen(true)}
+                className="flex h-12 w-12 items-center justify-center rounded-2xl bg-black/40 border border-white/[0.08] backdrop-blur-xl text-white/60 active:scale-90 transition-all"
+              >
+                <Menu size={20} strokeWidth={2.5} />
+              </button>
+
+              <Link 
+                href="/profile" 
+                className="flex h-12 w-12 items-center justify-center rounded-2xl bg-black/40 border border-white/[0.08] backdrop-blur-xl shadow-2xl transition-transform active:scale-90"
+              >
+                {user?.avatarUrl ? (
+                  <img src={user.avatarUrl} alt="Avatar" className="h-full w-full rounded-2xl object-cover" />
+                ) : (
+                  <span className="text-[16px] font-black text-white">{initials}</span>
+                )}
+              </Link>
+            </div>
           )}
 
-          <div className="flex-1">
+          <div className="flex-1 pt-20 md:pt-0">
             <div className="mx-auto flex w-full max-w-6xl flex-col">
               <main className="min-w-0 flex-1">
                 <PageTransition>{children}</PageTransition>

@@ -178,10 +178,16 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
   const [lastActionStatus, setLastActionStatus] = useState<"idle" | "correct" | "incorrect" | "active">("idle")
   const [savedPracticeSession, setSavedPracticeSession] = useState<SavedPracticeSession | null>(null)
   const [challengeDismissed, setChallengeDismissed] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const searchParams = useSearchParams()
   const isRecoveryMode = searchParams.get("mode") === "recovery"
   const { showToast } = useToast()
   const todayKey = getTodayDateKey()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   const {
     data: cardsPayload,
     loading,
@@ -776,6 +782,14 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
     sessionCards.length,
     writeIndex
   ])
+
+  if (!mounted) {
+    return (
+      <div className={styles.sessionContainer}>
+        <PracticeBackground status="idle" />
+      </div>
+    )
+  }
 
   if (sessionStatus === "idle") {
     return (

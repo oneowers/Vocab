@@ -2,17 +2,23 @@
   "status": "commited",
   "type": "frontend",
   "scope": "codebase",
-  "localEndpoint": "http://localhost:3001",
+  "localEndpoint": "http://localhost:3000",
+  "loginUser": "kamolov1575@gmail.com",
+  "loginPassword": "muxa1575",
   "executionArgs": {
     "projectName": "lexiflow_-vocabulary-learning-app",
     "projectPath": "/Users/tokiancunin/Downloads/lexiflow_-vocabulary-learning-app",
-    "testIds": [],
-    "additionalInstruction": "Act as a UX QA-auditor. Ensure to verify: 1. First impression (clarity of value proposition). 2. Onboarding (logical path, no extra steps). 3. Navigation (no dead ends). 4. Main user flow (open site, register/login, start practice, complete task, get result). 5. Mobile UX (use mobile viewport emulation if possible to check readability, button sizes, spacing, contrast). 6. UI clarity (visual hierarchy, empty/loading/error states). 7. Retention UX (progress feeling, motivation). 8. Accessibility (keyboard navigation, focus states). In your final AI markdown report, format findings with Severity (Critical/High/Medium/Low), Page, User flow step, Problem, Why it hurts UX, How to fix, Suggested UI/UX improvement. Include top 5 UX problems, top 5 quick wins, what to fix first, retention improvements, and manual checks.",
+    "testIds": [
+      "TC001",
+      "TC002",
+      "TC003"
+    ],
+    "additionalInstruction": "Focus on UI verification: \n1. Mobile navigation panel (sidebar drawer) should close on outside click.\n2. Input fields should have black background and white/green text (handle autofill).\n3. Ensure these styles are applied correctly in the 'Cards' and 'Profile' pages.",
     "serverMode": "development",
     "envs": {
       "API_KEY": "sk-user-n8SECk1TNnSSzpZ9uUXXmcbG0J30HzbG-5QTvLzO-4LcxA_LzzRO8eNocgS-wfbsAAqdsYecv7SOxRj2fHnqpxkwttzhwZ-tsS6Jr11LXGGmghmqIVAhJHRrB-vDdPIHgiY"
     }
   },
-  "serverPort": 59850,
-  "proxy": "http://bc205d86-1f37-4f45-9053-d69431e14ee1:k5iZPH68BLh6l0tNLoDE4s95MTY8x3xU@tun.testsprite.com:8080"
+  "serverPort": 59724,
+  "proxy": "http://9e566a55-b9a6-494f-a2e8-75dbc517ede6:dqvFUJbTsYhMxEUkO0BMKUVXDlJq8zt6@tun.testsprite.com:8080"
 }

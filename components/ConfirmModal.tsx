@@ -30,7 +30,6 @@ export function ConfirmModal({
 
   useEffect(() => {
     setMounted(true)
-    return () => setMounted(false)
   }, [])
 
   useEffect(() => {

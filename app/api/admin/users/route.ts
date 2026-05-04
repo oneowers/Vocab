@@ -74,3 +74,46 @@ export async function GET(request: NextRequest) {
     totalItems
   })
 }
+
+export async function POST(request: NextRequest) {
+  const admin = await getOptionalAuthUser()
+
+  if (!admin || admin.role !== "ADMIN") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
+
+  try {
+    const { email, name, password, role } = await request.json()
+
+    if (!email || !password) {
+      return NextResponse.json({ error: "Email and password are required" }, { status: 400 })
+    }
+
+    const prisma = getPrisma()
+    
+    // Check if user already exists
+    const existing = await prisma.user.findUnique({ where: { email } })
+    if (existing) {
+      return NextResponse.json({ error: "User already exists" }, { status: 400 })
+    }
+
+    const bcrypt = await import("bcryptjs")
+    const hashedPassword = await bcrypt.hash(password, 10)
+
+    const user = await prisma.user.create({
+      data: {
+        email,
+        name,
+        password: hashedPassword,
+        role: role || "USER",
+        onboardingStep: "COMPLETED", // Skip onboarding for admin-created users
+        streak: 0
+      }
+    })
+
+    return NextResponse.json({ user: serializeUser(user) })
+  } catch (error) {
+    console.error("[admin-create-user] error:", error)
+    return NextResponse.json({ error: "Could not create user" }, { status: 500 })
+  }
+}

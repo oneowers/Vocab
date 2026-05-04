@@ -1,3 +1,4 @@
+import { StatsFilter } from "@/components/StatsFilter"
 import { requireSignedInAppUser } from "@/lib/auth"
 import { getDetailedUserStatsData } from "@/lib/server-data"
 
@@ -15,9 +16,15 @@ function formatDisplayDate(date: string) {
   })
 }
 
-export default async function StatsPage() {
+export default async function StatsPage({
+  searchParams
+}: {
+  searchParams: { range?: string }
+}) {
   const user = await requireSignedInAppUser()
-  const stats = user ? await getDetailedUserStatsData(user.id) : null
+  const range = searchParams.range || "7d"
+  const daysCount = range === "all" ? 365 : parseInt(range) || 7
+  const stats = user ? await getDetailedUserStatsData(user.id, daysCount) : null
 
   if (!stats) {
     return null
@@ -28,6 +35,8 @@ export default async function StatsPage() {
 
   return (
     <div className="space-y-5">
+      <StatsFilter />
+      
       <section className="grid grid-cols-3 gap-3">
         <article className="panel rounded-[1.5rem] p-3 md:rounded-[2rem] md:p-5">
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-quiet md:text-xs md:tracking-[0.24em]">

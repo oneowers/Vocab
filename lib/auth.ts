@@ -56,6 +56,7 @@ export async function getOptionalAuthUser() {
     const devRole = cookieStore.get("dev-role")?.value || "ADMIN"
 
     if (cookieStore.get("dev-admin")?.value === "true") {
+      console.log("[auth] Found dev-admin cookie, logging in as admin@localhost")
       const email = "admin@localhost"
       const prisma = getPrisma()
       let user = await prisma.user.findUnique({
@@ -89,10 +90,11 @@ export async function getOptionalAuthUser() {
       try {
         const parsed = JSON.parse(Buffer.from(emailSession, "base64").toString("utf-8")) as { userId?: string; email?: string }
         if (parsed.userId) {
+          console.log("[auth] Found email-session cookie for userId:", parsed.userId)
           return getPrisma().user.findUnique({ where: { id: parsed.userId } })
         }
-      } catch {
-        // invalid cookie — ignore
+      } catch (err) {
+        console.error("[auth] Failed to parse email-session cookie:", err instanceof Error ? err.message : err)
       }
     }
     return null

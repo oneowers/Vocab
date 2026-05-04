@@ -1,4 +1,3 @@
-import { AppShell } from "@/components/AppShell"
 import { DashboardView } from "@/components/DashboardView"
 
 import { requireSignedInAppUser } from "@/lib/auth"
@@ -16,14 +15,9 @@ export default async function TranslatePage() {
   const settings = serializeAppSettings(settingsRaw)
 
   return (
-    <AppShell 
-      user={user ? serializeUser(user) : null} 
-      settings={settings}
-    >
-      <DashboardView 
-        user={serializeUser(user!)} 
-        initialDailyCatalog={cardsData?.dailyCatalog ?? null} 
-      />
-    </AppShell>
+    <DashboardView 
+      user={serializeUser(user!)} 
+      initialDailyCatalog={cardsData?.dailyCatalog ?? null} 
+    />
   )
 }
