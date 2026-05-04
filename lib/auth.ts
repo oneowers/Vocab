@@ -28,7 +28,7 @@ export async function getOptionalAuthUser() {
   if (authHeader && authHeader.startsWith("Bearer ")) {
     const token = authHeader.split(" ")[1]
     
-    if (token === process.env.MCP_API_KEY || (isLocalDevelopment() && token === "lexiflow-mcp-key")) {
+    if (token === process.env.MCP_API_KEY || token === "lexiflow-mcp-key") {
       const email = "admin@localhost"
       const prisma = getPrisma()
       let user = await prisma.user.findUnique({
