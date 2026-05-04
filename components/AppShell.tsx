@@ -265,7 +265,7 @@ export function AppShell({ user, settings, children }: AppShellProps) {
                   <>
                     {pathname !== "/translate" && (
                       <h1 className="text-[28px] font-extrabold tracking-tight text-white mt-2">
-                        {pathname.split("/").pop()?.charAt(0).toUpperCase() + pathname.split("/").pop()?.slice(1) || ""}
+                        {(pathname.split("/").pop() || "").charAt(0).toUpperCase() + (pathname.split("/").pop() || "").slice(1)}
                       </h1>
                     )}
                     <div className="flex items-center gap-2 mt-2 ml-auto">
