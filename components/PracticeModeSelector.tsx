@@ -1,7 +1,9 @@
 "use client"
 
-import { BookOpen, Sparkles, PenTool, Target, ChevronRight, Clock, AlertCircle, Languages } from "lucide-react"
+import { BookOpen, Sparkles, PenTool, Target, ChevronRight, Clock, AlertCircle, Languages, Activity } from "lucide-react"
 import { motion } from "framer-motion"
+import { useMemo } from "react"
+import type { GrammarFindingRecord } from "@/lib/types"
 
 interface PracticeModeSelectorProps {
   onSelectWords: () => void
@@ -12,6 +14,7 @@ interface PracticeModeSelectorProps {
   onSelectHistory: () => void
   dueCount: number
   weakGrammarCount: number
+  historyData: GrammarFindingRecord[]
 }
 
 export function PracticeModeSelector({
@@ -22,9 +25,33 @@ export function PracticeModeSelector({
   onSelectTranslation,
   onSelectHistory,
   dueCount,
-  weakGrammarCount
+  weakGrammarCount,
+  historyData
 }: PracticeModeSelectorProps) {
-  // Mock data for better visual representation
+  const groupedHistory = useMemo(() => {
+    const groups: Record<string, GrammarFindingRecord[]> = {}
+    historyData.forEach(item => {
+      if (item.sourceId && item.sourceId !== "unknown") {
+        const key = `${item.sourceType}_${item.sourceId}`
+        if (!groups[key]) groups[key] = []
+        groups[key].push(item)
+      }
+    })
+
+    return Object.values(groups)
+      .map(items => ({
+        id: items[0].sourceId!,
+        sourceType: items[0].sourceType,
+        totalScore: items.reduce((sum, i) => sum + i.scoreDelta, 0),
+        createdAt: items[0].createdAt,
+        title: items[0].sourceType === "writing_challenge" ? "Writing Challenge" : 
+               items[0].sourceType === "translation_challenge" ? "Translation Challenge" : 
+               `Lesson: ${items[0].topicTitleEn || items[0].topicKey}`
+      }))
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 4)
+  }, [historyData])
+
   const mistakesCount = 3
   const learningCount = 12
   const estimatedTime = "5m"
@@ -156,14 +183,71 @@ export function PracticeModeSelector({
             badgeColor="blue"
           />
 
-          {/* Activity Log */}
-          <PracticeActionCard
-            title="Activity Log"
-            subtitle="View recent scores and mistakes"
-            icon={<Clock size={20} strokeWidth={2.5} />}
-            onClick={onSelectHistory}
-            color="purple"
-          />
+          {/* Recent Activity List Replacement */}
+          <div className="mt-6 space-y-3">
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2">
+                <Clock size={14} className="text-purple-400" />
+                <h3 className="text-[11px] font-black uppercase tracking-widest text-purple-400/60">Recent Activity</h3>
+              </div>
+              <button 
+                onClick={onSelectHistory}
+                className="text-[11px] font-black uppercase tracking-widest text-muted hover:text-ink transition-colors"
+              >
+                View All
+              </button>
+            </div>
+
+            <div className="relative overflow-hidden rounded-[2.5rem] bg-white/[0.02] backdrop-blur-md">
+              <div className="flex flex-col">
+                {groupedHistory.length > 0 ? (
+                  groupedHistory.map((item, idx) => (
+                    <button
+                      key={item.id}
+                      onClick={onSelectHistory}
+                      className="group relative flex items-center justify-between border-b border-white/[0.02] p-5 last:border-0 hover:bg-white/[0.04] transition-all"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className={`flex h-11 w-11 items-center justify-center rounded-2xl border transition-all group-hover:scale-105 ${
+                          item.sourceType === 'writing_challenge' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/10' :
+                          item.sourceType === 'translation_challenge' ? 'bg-blue-500/10 text-blue-400 border-blue-500/10' :
+                          'bg-purple-500/10 text-purple-400 border-purple-500/10'
+                        }`}>
+                           {item.sourceType === 'writing_challenge' ? <Sparkles size={20} /> :
+                            item.sourceType === 'translation_challenge' ? <Languages size={20} /> :
+                            <BookOpen size={20} />}
+                        </div>
+                        <div className="text-left">
+                          <p className="text-[16px] font-black text-ink leading-tight">{item.title}</p>
+                          <p className="text-[11px] font-bold text-quiet mt-1 uppercase tracking-wider">
+                            {new Date(item.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className={`flex h-8 min-w-[50px] items-center justify-center rounded-full border px-3 text-[14px] font-black tracking-tight ${
+                        item.totalScore > 0 
+                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                          : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                      }`}>
+                        {item.totalScore > 0 ? '+' : ''}{item.totalScore}
+                      </div>
+
+                      {/* Subtle hover indicator */}
+                      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-white/0 group-hover:bg-white/10 rounded-l-full transition-all" />
+                    </button>
+                  ))
+                ) : (
+                  <div className="p-10 text-center">
+                    <p className="text-[14px] font-bold text-white/10">Start practicing to see your activity</p>
+                  </div>
+                )}
+              </div>
+              
+              {/* Premium Darkening Gradient Overlay */}
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#0a0c10] via-[#0a0c10]/40 to-transparent" />
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -91,17 +91,17 @@ export function CardList({
   const renderEmptyState = () => {
     if (search.trim()) {
       return (
-        <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
-          <div className="h-16 w-16 rounded-full bg-white/[0.03] flex items-center justify-center mb-4">
-            <X size={24} className="text-text-tertiary" />
+        <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+          <div className="h-20 w-20 rounded-3xl bg-white/[0.03] border border-white/5 flex items-center justify-center mb-6 shadow-2xl">
+            <X size={32} className="text-white/20" />
           </div>
-          <h3 className="text-[17px] font-bold text-text-primary">No cards found</h3>
-          <p className="mt-1 text-[14px] text-text-tertiary">Clear filters or try a different search term.</p>
+          <h3 className="text-[20px] font-black text-white tracking-tight">No matches found</h3>
+          <p className="mt-2 text-[14px] font-bold text-white/30 max-w-[240px]">We couldn't find any cards matching your search.</p>
           <button
             onClick={() => { onSearchChange(""); onSelectLevel("All") }}
-            className="mt-4 text-[13px] font-bold text-blue-400"
+            className="mt-6 h-10 rounded-xl bg-white/5 px-6 text-[13px] font-black uppercase tracking-widest text-white/60 hover:bg-white/10 hover:text-white transition-all"
           >
-            Clear all filters
+            Clear filters
           </button>
         </div>
       )
@@ -109,35 +109,23 @@ export function CardList({
 
     if (selectedStatus === "Waiting") {
       return (
-        <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
-          <div className="h-16 w-16 rounded-full bg-emerald-500/10 flex items-center justify-center mb-4">
-            <Check size={24} className="text-emerald-400" />
+        <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+          <div className="h-20 w-20 rounded-3xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(16,185,129,0.1)]">
+            <Check size={32} className="text-emerald-400" />
           </div>
-          <h3 className="text-[17px] font-bold text-text-primary">All caught up</h3>
-          <p className="mt-1 text-[14px] text-text-tertiary">No cards waiting for review right now.</p>
-        </div>
-      )
-    }
-
-    if (selectedStatus === "Learned") {
-      return (
-        <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
-          <div className="h-16 w-16 rounded-full bg-white/[0.03] flex items-center justify-center mb-4">
-            <Layers size={24} className="text-text-tertiary" />
-          </div>
-          <h3 className="text-[17px] font-bold text-text-primary">No learned cards yet</h3>
-          <p className="mt-1 text-[14px] text-text-tertiary">Complete practice to mark words as learned.</p>
+          <h3 className="text-[20px] font-black text-white tracking-tight">Victory!</h3>
+          <p className="mt-2 text-[14px] font-bold text-white/30 max-w-[240px]">All cards have been reviewed for today. Great job!</p>
         </div>
       )
     }
 
     return (
-      <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
-        <div className="h-16 w-16 rounded-full bg-white/[0.03] flex items-center justify-center mb-4">
-          <Layers size={24} className="text-text-tertiary" />
+      <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+        <div className="h-20 w-20 rounded-3xl bg-white/[0.03] border border-white/5 flex items-center justify-center mb-6 shadow-2xl">
+          <Layers size={32} className="text-white/20" />
         </div>
-        <h3 className="text-[17px] font-bold text-text-primary">No saved cards yet</h3>
-        <p className="mt-1 text-[14px] text-text-tertiary">Save words from translations or AI practice.</p>
+        <h3 className="text-[20px] font-black text-white tracking-tight">Deck is empty</h3>
+        <p className="mt-2 text-[14px] font-bold text-white/30 max-w-[240px]">Start adding cards from translations or practice sessions.</p>
       </div>
     )
   }
@@ -148,29 +136,29 @@ export function CardList({
       <div className="sticky top-0 z-40 -mx-4 bg-bg-primary/95 px-4 pb-2 pt-3 backdrop-blur-xl md:-mx-6 md:px-6 md:pt-4">
         <div className="space-y-3">
           {/* Search */}
-          <div className="relative">
-            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
-              <svg className="h-4 w-4 text-text-tertiary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+          <div className="relative group">
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+              <svg className="h-5 w-5 text-white/20 transition-colors group-focus-within:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
             <input
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="Search saved cards"
-              className="h-11 w-full rounded-2xl bg-white/[0.06] pl-10 pr-4 text-[14px] font-medium text-text-primary placeholder:text-text-tertiary focus:bg-white/[0.1] focus:outline-none transition-colors"
+              placeholder="Find a word..."
+              className="h-12 w-full rounded-2xl border border-white/5 bg-white/[0.03] pl-11 pr-4 text-[15px] font-bold text-white placeholder:text-white/20 focus:bg-white/[0.06] focus:border-blue-500/30 focus:outline-none transition-all shadow-inner"
             />
           </div>
 
           {/* Level Filters - Horizontal Scroll */}
-          <div className="hide-scrollbar flex items-center gap-1.5 overflow-x-auto pb-1">
+          <div className="hide-scrollbar flex items-center gap-2 overflow-x-auto pb-1">
             {(["All", "A1", "A2", "B1", "B2", "C1", "C2"] as const).map((level) => (
               <button
                 key={level}
                 onClick={() => onSelectLevel(level)}
-                className={`h-7 shrink-0 rounded-full px-3 text-[11px] font-black uppercase tracking-wider transition-all ${selectedLevel === level
-                  ? "bg-ink text-bg-primary"
-                  : "bg-bg-tertiary text-muted hover:bg-bg-tertiary/80 hover:text-ink"
+                className={`h-8 shrink-0 rounded-xl px-4 text-[12px] font-black uppercase tracking-widest transition-all border ${selectedLevel === level
+                  ? "bg-white text-[#0a0c10] border-white shadow-[0_0_15px_rgba(255,255,255,0.2)]"
+                  : "bg-white/[0.03] text-white/40 border-white/5 hover:bg-white/[0.08] hover:text-white"
                   }`}
               >
                 {level}
@@ -179,7 +167,7 @@ export function CardList({
           </div>
 
           {/* Status Tabs */}
-          <div className="flex h-11 items-center rounded-2xl bg-white/[0.04] p-1">
+          <div className="flex h-12 items-center rounded-[18px] bg-white/[0.03] border border-white/5 p-1.5">
             {(["Waiting", "Learned", "All"] as const).map((status) => {
               const isActive = selectedStatus === status
               const count = status === "Waiting" ? waitingCount : status === "Learned" ? learnedCount : totalCount
@@ -187,18 +175,18 @@ export function CardList({
                 <button
                   key={status}
                   onClick={() => onSelectStatus(status as CardStatusFilter)}
-                  className={`relative flex flex-1 items-center justify-center gap-1.5 rounded-[13px] text-[13px] font-bold transition-all ${isActive ? "text-bg-primary" : "text-muted hover:text-ink"
+                  className={`relative flex flex-1 items-center justify-center gap-2 rounded-xl text-[14px] font-black tracking-tight transition-all ${isActive ? "text-[#0a0c10]" : "text-white/40 hover:text-white"
                     }`}
                 >
                   {isActive && (
                     <motion.div
                       layoutId="activeTab"
-                      className="absolute inset-0 rounded-[13px] bg-ink"
+                      className="absolute inset-0 rounded-xl bg-white shadow-xl"
                       transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                     />
                   )}
                   <span className="relative z-10">{status}</span>
-                  <span className={`relative z-10 text-[10px] opacity-60 ${isActive ? "text-bg-primary/60" : ""}`}>
+                  <span className={`relative z-10 text-[11px] font-bold opacity-50 ${isActive ? "text-[#0a0c10]/50" : ""}`}>
                     {count}
                   </span>
                 </button>
@@ -219,19 +207,22 @@ export function CardList({
               return (
                 <div
                   key={card.id}
-                  className="group relative flex h-16 items-center justify-between px-1 transition-colors active:bg-white/[0.02]"
+                  className="group relative flex h-[72px] items-center justify-between px-2 transition-all hover:bg-white/[0.02] border-b border-white/[0.03] last:border-0"
                 >
-                  <div className="flex flex-1 items-center gap-3 min-w-0" onClick={() => speakText(card.original, card.direction === "en-ru" ? "en-US" : "ru-RU")}>
+                  <div className="flex flex-1 items-center gap-4 min-w-0" onClick={() => speakText(card.original, card.direction === "en-ru" ? "en-US" : "ru-RU")}>
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.04] text-white/20 group-hover:bg-white/10 group-hover:text-white transition-all">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m11 5-7 7 7 7"></path><path d="M4 12h16"></path></svg>
+                    </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <h3 className="truncate text-[16px] font-bold text-text-primary">{card.original}</h3>
+                        <h3 className="truncate text-[17px] font-black text-white tracking-tight">{card.original}</h3>
                         {card.cefrLevel && (
-                          <span className={`text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md ${CEFR_STYLES[card.cefrLevel].badge}`}>
+                          <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${CEFR_STYLES[card.cefrLevel].badge}`}>
                             {card.cefrLevel}
                           </span>
                         )}
                       </div>
-                      <p className="truncate text-[13px] text-text-tertiary">{card.translation}</p>
+                      <p className="truncate text-[13px] font-bold text-white/30">{card.translation}</p>
                     </div>
                   </div>
 
@@ -271,24 +262,26 @@ export function CardList({
               <article
                 key={card.id}
                 onClick={() => speakText(card.original, card.direction === "en-ru" ? "en-US" : "ru-RU")}
-                className="group relative rounded-[22px] border border-white/[0.06] bg-white/[0.03] p-4 transition-all active:scale-[0.98] active:bg-white/[0.05]"
+                className="group relative overflow-hidden rounded-[28px] border border-white/[0.06] bg-gradient-to-br from-white/[0.04] to-transparent p-5 transition-all hover:scale-[1.02] hover:border-white/10 active:scale-[0.98] active:bg-white/[0.06] shadow-xl"
               >
-                <div className="flex flex-col gap-1 pr-8">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                
+                <div className="relative z-10 flex flex-col gap-1 pr-8">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-[20px] font-black tracking-tight text-text-primary">{card.original}</h3>
+                    <h3 className="text-[22px] font-black tracking-[-0.5px] text-white">{card.original}</h3>
                     {card.cefrLevel && (
-                      <span className={`text-[10px] font-black uppercase tracking-tighter px-1.5 py-0.5 rounded-lg ${CEFR_STYLES[card.cefrLevel].badge}`}>
+                      <span className={`text-[10px] font-black uppercase tracking-tighter px-2 py-0.5 rounded-lg ${CEFR_STYLES[card.cefrLevel].badge}`}>
                         {card.cefrLevel}
                       </span>
                     )}
                   </div>
-                  <p className="text-[14px] font-medium text-text-secondary">{card.translation}</p>
+                  <p className="text-[15px] font-bold text-white/50">{card.translation}</p>
                   
                   {card.nextReviewDate <= getTodayDateKey() && (
-                    <div className="mt-2 flex items-center gap-1.5">
-                      <div className="flex h-5 items-center gap-1 rounded-full bg-amber-400/10 px-2 text-[10px] font-black uppercase tracking-widest text-amber-400">
-                        <Clock size={10} />
-                        Waiting
+                    <div className="mt-3 flex items-center gap-1.5">
+                      <div className="flex h-6 items-center gap-1.5 rounded-full bg-blue-500/10 px-2.5 text-[10px] font-black uppercase tracking-widest text-blue-400 border border-blue-500/10">
+                        <div className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse" />
+                        Ready for review
                       </div>
                     </div>
                   )}

@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client"
 import type { GrammarTopic, PrismaClient } from "@prisma/client"
 
 import { getPrisma } from "@/lib/prisma"
+import { getOrCreateAppSettings } from "@/lib/catalog"
 import { serializeGrammarTopic } from "@/lib/serializers"
 import { adminCacheTag, cacheUserResource, userCacheTag } from "@/lib/server-cache"
 import type {
@@ -17,9 +18,9 @@ export const MAX_GRAMMAR_FINDINGS_PER_CHECK = 10
 export const WEAK_GRAMMAR_SCORE_THRESHOLD = -15
 
 const GRAMMAR_SEVERITY_DELTAS = {
-  low: -5,
-  medium: -10,
-  high: -20
+  low: -4,
+  medium: -8,
+  high: -12
 } satisfies Record<GrammarSeverity, number>
 
 const GRAMMAR_SEVERITY_RANK = {
@@ -243,9 +244,15 @@ export async function applyGrammarFindingsToWritingChallenge(
   }
 
   const appliedFindings = selectStrongestAppliedFindings(options.findings)
+  const settings = await getOrCreateAppSettings(tx)
+  const dynamicDeltas: Record<GrammarSeverity, number> = {
+    low: settings.grammarPenaltyLow,
+    medium: settings.grammarPenaltyMedium,
+    high: settings.grammarPenaltyHigh
+  }
 
   for (const finding of appliedFindings) {
-    const scoreDelta = finding.isCorrect ? 2 : GRAMMAR_SEVERITY_DELTAS[finding.severity]
+    const scoreDelta = finding.isCorrect ? settings.grammarCorrectPoints : dynamicDeltas[finding.severity]
 
     await tx.grammarFinding.create({
       data: {
@@ -351,9 +358,15 @@ export async function applyGrammarFindingsToTranslationChallenge(
   }
 
   const appliedFindings = selectStrongestAppliedFindings(options.findings)
+  const settings = await getOrCreateAppSettings(tx)
+  const dynamicDeltas: Record<GrammarSeverity, number> = {
+    low: settings.grammarPenaltyLow,
+    medium: settings.grammarPenaltyMedium,
+    high: settings.grammarPenaltyHigh
+  }
 
   for (const finding of appliedFindings) {
-    const scoreDelta = finding.isCorrect ? 2 : GRAMMAR_SEVERITY_DELTAS[finding.severity]
+    const scoreDelta = finding.isCorrect ? settings.grammarCorrectPoints : dynamicDeltas[finding.severity]
 
     await tx.grammarFinding.create({
       data: {

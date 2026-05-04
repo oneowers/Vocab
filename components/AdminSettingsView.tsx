@@ -16,10 +16,28 @@ const TRANSLATOR_LABELS: Record<TranslationEngine, string> = {
   langeek: "LanGeek"
 }
 
+const NAV_LABELS: Record<string, string> = {
+  home: "Home",
+  cards: "Cards",
+  translate: "Translate",
+  practice: "Practice",
+  grammar: "Grammar",
+  ai: "AI"
+}
+
+const ALL_NAV_ITEMS = Object.keys(NAV_LABELS)
 const ALL_TRANSLATORS = Object.keys(TRANSLATOR_LABELS) as TranslationEngine[]
 const SORTABLE_ITEM_HEIGHT = 60
 const SORTABLE_GAP = 8
 const SORTABLE_STEP = SORTABLE_ITEM_HEIGHT + SORTABLE_GAP
+
+const NAV_ITEM_WIDTH = 120
+const NAV_GAP = 12
+const NAV_STEP = NAV_ITEM_WIDTH + NAV_GAP
+
+function getNavLeft(index: number) {
+  return index * NAV_STEP
+}
 
 function getItemTop(index: number) {
   return index * SORTABLE_STEP
@@ -40,8 +58,20 @@ export function AdminSettingsView() {
   const [translationPriority, setTranslationPriority] = useState<TranslationEngine[]>(["catalog", "deepl", "langeek"])
   const [draggedEngine, setDraggedEngine] = useState<TranslationEngine | null>(null)
   const [floatingTop, setFloatingTop] = useState<number | null>(null)
+  const [grammarCorrectPoints, setGrammarCorrectPoints] = useState("5")
+  const [grammarPenaltyLow, setGrammarPenaltyLow] = useState("-4")
+  const [grammarPenaltyMedium, setGrammarPenaltyMedium] = useState("-8")
+  const [grammarPenaltyHigh, setGrammarPenaltyHigh] = useState("-12")
+  const [mobileNavOrder, setMobileNavOrder] = useState<string[]>(["home", "cards", "translate", "practice", "grammar", "ai"])
+  const [draggedNavItem, setDraggedNavItem] = useState<string | null>(null)
+  const [floatingLeft, setFloatingLeft] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const dragStateRef = useRef<DragState | null>(null)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
   const { data, loading } = useClientResource<AdminSettingsPayload>({
     key: "admin:settings",
     loader: async () => {
@@ -69,7 +99,16 @@ export function AdminSettingsView() {
     setReviewLives(String(data.settings.reviewLives))
     setCefrProfilerEnabled(data.settings.cefrProfilerEnabled ? "enabled" : "disabled")
     setTranslationPriority(data.settings.translationPriority)
+    setGrammarCorrectPoints(String(data.settings.grammarCorrectPoints ?? 5))
+    setGrammarPenaltyLow(String(data.settings.grammarPenaltyLow ?? -4))
+    setGrammarPenaltyMedium(String(data.settings.grammarPenaltyMedium ?? -8))
+    setGrammarPenaltyHigh(String(data.settings.grammarPenaltyHigh ?? -12))
+    setMobileNavOrder(data.settings.mobileNavOrder ?? ["home", "cards", "translate", "practice", "grammar", "ai"])
   }, [data])
+
+  if (!mounted || loading) {
+    return null
+  }
 
   const orderedTranslators = useMemo(() => {
     const disabled = ALL_TRANSLATORS.filter((engine) => !translationPriority.includes(engine))
@@ -176,6 +215,67 @@ export function AdminSettingsView() {
     window.addEventListener("pointerup", handlePointerUp)
   }
 
+  const orderedNavItems = useMemo(() => {
+    const disabled = ALL_NAV_ITEMS.filter((item) => !mobileNavOrder.includes(item))
+    return [...mobileNavOrder, ...disabled]
+  }, [mobileNavOrder])
+
+  function toggleNavItem(item: string, enabled: boolean) {
+    setMobileNavOrder((current) => {
+      if (enabled) {
+        if (current.includes(item)) {
+          return current
+        }
+        return [...current, item]
+      }
+      if (current.length === 1) {
+        return current
+      }
+      return current.filter((i) => i !== item)
+    })
+  }
+
+  function handleNavDragStart(item: string, clientX: number) {
+    const index = mobileNavOrder.indexOf(item)
+    if (index === -1) return
+
+    setDraggedNavItem(item)
+    const initialLeft = getNavLeft(index)
+    setFloatingLeft(initialLeft)
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const deltaX = e.clientX - clientX
+      const newLeft = initialLeft + deltaX
+      setFloatingLeft(newLeft)
+
+      const newIndex = Math.max(
+        0,
+        Math.min(mobileNavOrder.length - 1, Math.round(newLeft / NAV_STEP))
+      )
+
+      if (newIndex !== index) {
+        setMobileNavOrder((current) => {
+          const next = [...current]
+          const [removed] = next.splice(index, 1)
+          next.splice(newIndex, 0, removed)
+          return next
+        })
+        // Update initialX/initialLeft to follow the item
+        clientX = e.clientX - (newLeft - getNavLeft(newIndex))
+      }
+    }
+
+    const handleMouseUp = () => {
+      document.removeEventListener("mousemove", handleMouseMove)
+      document.removeEventListener("mouseup", handleMouseUp)
+      setDraggedNavItem(null)
+      setFloatingLeft(null)
+    }
+
+    document.addEventListener("mousemove", handleMouseMove)
+    document.addEventListener("mouseup", handleMouseUp)
+  }
+
   async function handleSave() {
     setSaving(true)
 
@@ -189,7 +289,12 @@ export function AdminSettingsView() {
           dailyNewCardsLimit: Number(settingsLimit),
           reviewLives: Number(reviewLives),
           cefrProfilerEnabled: cefrProfilerEnabled === "enabled",
-          translationPriority
+          translationPriority,
+          grammarCorrectPoints: Number(grammarCorrectPoints),
+          grammarPenaltyLow: Number(grammarPenaltyLow),
+          grammarPenaltyMedium: Number(grammarPenaltyMedium),
+          grammarPenaltyHigh: Number(grammarPenaltyHigh),
+          mobileNavOrder
         })
       })
 
@@ -203,6 +308,11 @@ export function AdminSettingsView() {
       setReviewLives(String(payload.settings.reviewLives))
       setCefrProfilerEnabled(payload.settings.cefrProfilerEnabled ? "enabled" : "disabled")
       setTranslationPriority(payload.settings.translationPriority)
+      setGrammarCorrectPoints(String(payload.settings.grammarCorrectPoints ?? 5))
+      setGrammarPenaltyLow(String(payload.settings.grammarPenaltyLow ?? -4))
+      setGrammarPenaltyMedium(String(payload.settings.grammarPenaltyMedium ?? -8))
+      setGrammarPenaltyHigh(String(payload.settings.grammarPenaltyHigh ?? -12))
+      setMobileNavOrder(payload.settings.mobileNavOrder ?? ["home", "cards", "translate", "practice", "grammar", "ai"])
       showToast("Settings updated.", "success")
     } catch (error) {
       showToast(
@@ -283,10 +393,11 @@ export function AdminSettingsView() {
             </select>
           </div>
 
-          <div className="px-5 py-4">
-            <div className="mb-3">
-              <p className="font-semibold text-ink">Translator priority</p>
-              <p className="text-sm text-muted">Drag to reorder priority. Uncheck to disable any source.</p>
+          <div className="px-6 py-6 border-t border-white/[0.05]">
+            <div className="mb-6">
+              <p className="text-[13px] font-bold uppercase tracking-wider text-white/20">Translator priority</p>
+              <h3 className="mt-2 text-[20px] font-black text-white">Reorder engines</h3>
+              <p className="mt-1 text-[15px] font-medium text-white/40">Drag to change priority. Uncheck to disable.</p>
             </div>
             <div
               className="relative"
@@ -305,12 +416,12 @@ export function AdminSettingsView() {
                 return (
                   <div
                     key={engine}
-                    className={`absolute left-0 right-0 flex items-center justify-between rounded-xl border px-4 py-3 ${
+                    className={`absolute left-0 right-0 flex items-center justify-between rounded-2xl border px-5 ${
                       draggedEngine === engine
-                        ? "z-10 border-white/25 bg-bg-primary shadow-[0_10px_24px_rgba(0,0,0,0.18)]"
+                        ? "z-10 border-white/20 bg-white/[0.06] shadow-2xl scale-[1.01]"
                         : enabled
-                          ? "border-separator bg-bg-primary"
-                          : "border-separator bg-bg-primary/45 opacity-70"
+                          ? "border-white/[0.03] bg-white/[0.01]"
+                          : "border-white/[0.02] bg-white/[0.005] opacity-50"
                     }`}
                     style={{
                       top,
@@ -321,25 +432,24 @@ export function AdminSettingsView() {
                           : "top 200ms ease, box-shadow 150ms ease, background 150ms ease, border-color 150ms ease"
                     }}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4">
                       <input
                         type="checkbox"
                         checked={enabled}
                         onChange={(event) => toggleTranslator(engine, event.target.checked)}
-                        className="h-4 w-4"
+                        className="h-5 w-5 rounded-md border-white/10 bg-white/5 accent-white"
                       />
-                      <p className="font-medium text-ink">{TRANSLATOR_LABELS[engine]}</p>
+                      <p className="text-[16px] font-bold text-white">{TRANSLATOR_LABELS[engine]}</p>
                     </div>
                     <button
                       type="button"
                       onPointerDown={(event) => handlePointerDown(event, engine)}
-                      className={`flex h-11 w-11 touch-none cursor-grab items-center justify-center rounded-xl active:cursor-grabbing ${
-                        enabled ? "bg-white/[0.05] text-white/55" : "bg-white/[0.03] text-white/20"
+                      className={`flex h-12 w-12 touch-none cursor-grab items-center justify-center rounded-xl active:cursor-grabbing transition-colors ${
+                        enabled ? "bg-white/5 text-white/60 hover:bg-white/10" : "bg-white/[0.02] text-white/10"
                       }`}
                       disabled={!enabled}
-                      aria-label={`Reorder ${TRANSLATOR_LABELS[engine]}`}
                     >
-                      <GripVertical size={22} />
+                      <GripVertical size={20} />
                     </button>
                   </div>
                 )
@@ -348,14 +458,146 @@ export function AdminSettingsView() {
           </div>
         </div>
 
-        <div className="mt-6 flex justify-end">
+        <div className="mt-6 flex justify-end opacity-20 pointer-events-none">
+          <p className="text-[12px] font-bold text-white uppercase tracking-widest">Scroll down to save all</p>
+        </div>
+      </section>
+
+      <section className="panel-admin rounded-[2rem] p-5">
+        <p className="section-label">Grammar Hub Scoring</p>
+        <h2 className="mt-2 text-[22px] font-bold tracking-[-0.5px] text-ink">
+          Balance learning difficulty
+        </h2>
+        <p className="mt-2 text-sm text-muted">
+          Adjust how many points are awarded or deducted for different outcomes.
+        </p>
+
+        <div className="mt-6 overflow-hidden rounded-[1.5rem] border border-separator bg-bg-secondary">
+          <div className="flex items-center justify-between gap-4 border-b border-separator px-5 py-4">
+            <div>
+              <p className="font-semibold text-white">Correct answer award</p>
+              <p className="text-sm text-muted">Points added for each correctly identified rule.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold text-emerald-400">+</span>
+              <input
+                type="number"
+                value={grammarCorrectPoints}
+                onChange={(e) => setGrammarCorrectPoints(e.target.value)}
+                className="h-10 w-24 rounded-xl border border-white/10 bg-white/5 px-3 text-center font-black text-emerald-400 outline-none focus:border-emerald-500/50 transition-all"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-4 border-b border-separator px-5 py-4">
+            <div>
+              <p className="font-semibold text-white">Minor mistake penalty</p>
+              <p className="text-sm text-muted">Low severity errors (typos, small slips).</p>
+            </div>
+            <input
+              type="number"
+              value={grammarPenaltyLow}
+              onChange={(e) => setGrammarPenaltyLow(e.target.value)}
+              className="h-10 w-24 rounded-xl border border-white/10 bg-white/5 px-3 text-center font-black text-rose-400 outline-none focus:border-rose-500/50 transition-all"
+            />
+          </div>
+
+          <div className="flex items-center justify-between gap-4 border-b border-separator px-5 py-4">
+            <div>
+              <p className="font-semibold text-white">Moderate mistake penalty</p>
+              <p className="text-sm text-muted">Medium severity grammar errors.</p>
+            </div>
+            <input
+              type="number"
+              value={grammarPenaltyMedium}
+              onChange={(e) => setGrammarPenaltyMedium(e.target.value)}
+              className="h-10 w-24 rounded-xl border border-white/10 bg-white/5 px-3 text-center font-black text-rose-400 outline-none focus:border-rose-500/50 transition-all"
+            />
+          </div>
+
+          <div className="flex items-center justify-between gap-4 px-5 py-4">
+            <div>
+              <p className="font-semibold text-white">Critical mistake penalty</p>
+              <p className="text-sm text-muted">High severity systematic errors.</p>
+            </div>
+            <input
+              type="number"
+              value={grammarPenaltyHigh}
+              onChange={(e) => setGrammarPenaltyHigh(e.target.value)}
+              className="h-10 w-24 rounded-xl border border-white/10 bg-white/5 px-3 text-center font-black text-rose-500 outline-none focus:border-rose-600/50 transition-all"
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-12">
+        <h2 className="text-xl font-black text-white">Bottom bar priority</h2>
+        <p className="mt-1 text-sm text-muted">
+          Drag to reorder horizontal navigation. Uncheck to disable.
+        </p>
+
+        <div className="mt-8 relative h-32 w-full overflow-x-auto hide-scrollbar">
+          <div 
+            className="relative h-24"
+            style={{ width: getNavLeft(orderedNavItems.length) }}
+          >
+            {orderedNavItems.map((item) => {
+              const isEnabled = mobileNavOrder.includes(item)
+              const index = mobileNavOrder.indexOf(item)
+              const left = draggedNavItem === item && floatingLeft !== null
+                ? floatingLeft
+                : getNavLeft(index !== -1 ? index : orderedNavItems.indexOf(item))
+
+              return (
+                <div
+                  key={item}
+                  style={{
+                    position: "absolute",
+                    left,
+                    top: 0,
+                    width: NAV_ITEM_WIDTH,
+                    zIndex: draggedNavItem === item ? 10 : 1,
+                    transition: draggedNavItem === item ? "none" : "left 0.25s cubic-bezier(0.2, 0, 0, 1)"
+                  }}
+                  className={`flex h-24 flex-col items-center justify-center gap-3 rounded-2xl border transition-all ${
+                    draggedNavItem === item 
+                      ? "border-white/40 bg-white/[0.12] shadow-2xl scale-[1.05]" 
+                      : isEnabled 
+                        ? "border-white/[0.05] bg-white/[0.02]" 
+                        : "border-white/[0.02] bg-white/[0.005] opacity-30"
+                  }`}
+                >
+                  <div className="flex w-full items-center justify-between px-3">
+                    <input
+                      type="checkbox"
+                      checked={isEnabled}
+                      onChange={(e) => toggleNavItem(item, e.target.checked)}
+                      className="h-5 w-5 rounded-md border-white/10 bg-white/5 accent-white"
+                    />
+                    <div
+                      onMouseDown={(e) => isEnabled && handleNavDragStart(item, e.clientX)}
+                      className={`cursor-grab active:cursor-grabbing p-2 text-white/20 transition-colors hover:text-white ${!isEnabled ? "invisible" : ""}`}
+                    >
+                      <GripVertical size={18} />
+                    </div>
+                  </div>
+                  <span className="text-[14px] font-bold text-white px-2 truncate w-full text-center">
+                    {NAV_LABELS[item]}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="mt-12 flex justify-end pb-20">
           <button
             type="button"
             onClick={() => void handleSave()}
             disabled={saving}
-            className="button-primary whitespace-nowrap"
+            className="h-16 px-12 bg-white text-black rounded-full font-black text-[17px] tracking-tight shadow-[0_20px_40px_rgba(255,255,255,0.1)] hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
           >
-            {saving ? "Saving..." : "Save settings"}
+            {saving ? "SAVING..." : "SAVE SETTINGS"}
           </button>
         </div>
       </section>

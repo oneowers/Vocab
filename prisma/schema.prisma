@@ -319,6 +319,11 @@ model AppSettings {
   cefrProfilerEnabled Boolean  @default(true)
   translationProvider String   @default("auto")
   translationPriority String[] @default(["catalog", "deepl", "langeek"])
+  grammarCorrectPoints Int      @default(5)
+  grammarPenaltyLow    Int      @default(-4)
+  grammarPenaltyMedium Int      @default(-8)
+  grammarPenaltyHigh   Int      @default(-12)
+  mobileNavOrder      String[] @default(["home", "cards", "translate", "practice", "grammar", "ai"])
   updatedAt           DateTime @updatedAt
 }
 

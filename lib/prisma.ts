@@ -10,7 +10,14 @@ export function getPrisma() {
   }
 
   if (!global.__lexiflowPrismaV2) {
-    global.__lexiflowPrismaV2 = new PrismaClient()
+    global.__lexiflowPrismaV2 = new PrismaClient({
+      datasources: {
+        db: {
+          url: process.env.DATABASE_URL
+        }
+      },
+      log: process.env.NODE_ENV === "development" ? ["error"] : []
+    })
   }
 
   return global.__lexiflowPrismaV2

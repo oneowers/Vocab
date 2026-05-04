@@ -16,9 +16,10 @@ interface GrammarExerciseRunnerProps {
   topic: GrammarTopicContent
   onComplete: (scoreGained: number) => void
   onBack: () => void
+  appSettings: any
 }
 
-export function GrammarExerciseRunner({ topic, onComplete, onBack }: GrammarExerciseRunnerProps) {
+export function GrammarExerciseRunner({ topic, onComplete, onBack, appSettings }: GrammarExerciseRunnerProps) {
   const [currentIdx, setCurrentIdx] = useState(0)
   const [canGoNext, setCanGoNext] = useState(false)
   const [sessionScore, setSessionScore] = useState(0)
@@ -92,16 +93,16 @@ export function GrammarExerciseRunner({ topic, onComplete, onBack }: GrammarExer
               transition={{ duration: 0.2 }}
             >
               {currentEx.type === "multiple_choice" && (
-                <MultipleChoiceView exercise={currentEx} onAnswer={handleAnswer} />
+                <MultipleChoiceView exercise={currentEx} onAnswer={handleAnswer} appSettings={appSettings} />
               )}
               {currentEx.type === "fill_blank" && (
-                <FillBlankView exercise={currentEx} onAnswer={handleAnswer} />
+                <FillBlankView exercise={currentEx} onAnswer={handleAnswer} appSettings={appSettings} />
               )}
               {currentEx.type === "fix_mistake" && (
-                <FixMistakeView exercise={currentEx} onAnswer={handleAnswer} />
+                <FixMistakeView exercise={currentEx} onAnswer={handleAnswer} appSettings={appSettings} />
               )}
               {currentEx.type === "sentence_builder" && (
-                <SentenceBuilderView exercise={currentEx} onAnswer={handleAnswer} />
+                <SentenceBuilderView exercise={currentEx} onAnswer={handleAnswer} appSettings={appSettings} />
               )}
               {currentEx.type === "writing" && (
                 <GrammarWritingExerciseView 

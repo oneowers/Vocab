@@ -18,13 +18,13 @@ interface ExerciseViewProps {
   onWritingComplete?: (feedback: any) => void
 }
 
-export function MultipleChoiceView({ exercise, onAnswer }: { exercise: MultipleChoiceExercise; onAnswer: (isCorrect: boolean, scoreDelta: number) => void }) {
+export function MultipleChoiceView({ exercise, onAnswer, appSettings }: { exercise: MultipleChoiceExercise; onAnswer: (isCorrect: boolean, scoreDelta: number) => void; appSettings: any }) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
   const handleSelect = (id: string, isCorrect: boolean) => {
     if (selectedId) return
     setSelectedId(id)
-    onAnswer(isCorrect, isCorrect ? 2 : -2)
+    onAnswer(isCorrect, isCorrect ? appSettings.grammarCorrectPoints : appSettings.grammarPenaltyLow)
   }
 
   return (
@@ -68,7 +68,7 @@ export function MultipleChoiceView({ exercise, onAnswer }: { exercise: MultipleC
   )
 }
 
-export function FillBlankView({ exercise, onAnswer }: { exercise: FillBlankExercise; onAnswer: (isCorrect: boolean, scoreDelta: number) => void }) {
+export function FillBlankView({ exercise, onAnswer, appSettings }: { exercise: FillBlankExercise; onAnswer: (isCorrect: boolean, scoreDelta: number) => void; appSettings: any }) {
   const [value, setValue] = useState("")
   const [answered, setAnswered] = useState(false)
   const [isCorrect, setIsCorrect] = useState(false)
@@ -78,7 +78,7 @@ export function FillBlankView({ exercise, onAnswer }: { exercise: FillBlankExerc
     const correct = exercise.correctAnswers.some(a => a.toLowerCase() === value.trim().toLowerCase())
     setIsCorrect(correct)
     setAnswered(true)
-    onAnswer(correct, correct ? 2 : -2)
+    onAnswer(correct, correct ? appSettings.grammarCorrectPoints : appSettings.grammarPenaltyLow)
   }
 
   return (
@@ -131,7 +131,7 @@ export function FillBlankView({ exercise, onAnswer }: { exercise: FillBlankExerc
   )
 }
 
-export function FixMistakeView({ exercise, onAnswer }: { exercise: FixMistakeExercise; onAnswer: (isCorrect: boolean, scoreDelta: number) => void }) {
+export function FixMistakeView({ exercise, onAnswer, appSettings }: { exercise: FixMistakeExercise; onAnswer: (isCorrect: boolean, scoreDelta: number) => void; appSettings: any }) {
   const [value, setValue] = useState("")
   const [answered, setAnswered] = useState(false)
   const [isCorrect, setIsCorrect] = useState(false)
@@ -141,7 +141,7 @@ export function FixMistakeView({ exercise, onAnswer }: { exercise: FixMistakeExe
     const correct = value.trim().toLowerCase() === exercise.correctSentence.toLowerCase()
     setIsCorrect(correct)
     setAnswered(true)
-    onAnswer(correct, correct ? 2 : -2)
+    onAnswer(correct, correct ? appSettings.grammarCorrectPoints : appSettings.grammarPenaltyLow)
   }
 
   return (
@@ -193,7 +193,7 @@ export function FixMistakeView({ exercise, onAnswer }: { exercise: FixMistakeExe
   )
 }
 
-export function SentenceBuilderView({ exercise, onAnswer }: { exercise: SentenceBuilderExercise; onAnswer: (isCorrect: boolean, scoreDelta: number) => void }) {
+export function SentenceBuilderView({ exercise, onAnswer, appSettings }: { exercise: SentenceBuilderExercise; onAnswer: (isCorrect: boolean, scoreDelta: number) => void; appSettings: any }) {
   const [selectedWords, setSelectedWords] = useState<string[]>([])
   const [answered, setAnswered] = useState(false)
   const [isCorrect, setIsCorrect] = useState(false)
@@ -215,7 +215,7 @@ export function SentenceBuilderView({ exercise, onAnswer }: { exercise: Sentence
     const correct = builded.toLowerCase().replace(/[.!?]/g, "") === exercise.correctSentence.toLowerCase().replace(/[.!?]/g, "")
     setIsCorrect(correct)
     setAnswered(true)
-    onAnswer(correct, correct ? 2 : -2)
+    onAnswer(correct, correct ? appSettings.grammarCorrectPoints : appSettings.grammarPenaltyLow)
   }
 
   return (

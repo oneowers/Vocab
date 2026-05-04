@@ -1,0 +1,733 @@
+[
+  {
+    "id": "TC001",
+    "title": "Sign in and reach the authenticated dashboard",
+    "description": "A returning learner can sign in with email and password and lands on the dashboard successfully.",
+    "category": "User Authentication (email/password)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit credentials"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user lands on the dashboard"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC002",
+    "title": "Launch today's practice session from the dashboard",
+    "description": "Verifies an authenticated learner can view the daily queue on the dashboard and successfully start a practice session.",
+    "category": "Dashboard / Daily Learning Queue",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to go to the dashboard"
+      },
+      {
+        "type": "action",
+        "description": "Click the control to start today's session"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the practice session interface is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify at least one practice item is shown"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC003",
+    "title": "Complete a multi-card practice session and view summary",
+    "description": "A learner can complete a practice session across cards with per-card feedback and sees a session summary at the end.",
+    "category": "Vocabulary Practice (flip / quiz / write)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit credentials"
+      },
+      {
+        "type": "action",
+        "description": "Click the action to start practice from the dashboard"
+      },
+      {
+        "type": "action",
+        "description": "Submit a valid response for the current card"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify immediate correctness feedback for the card is displayed"
+      },
+      {
+        "type": "action",
+        "description": "Continue to the next card"
+      },
+      {
+        "type": "action",
+        "description": "Complete the remaining cards in the session using valid responses"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a session summary is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC004",
+    "title": "Sign up and begin onboarding",
+    "description": "A new learner can create an account and is routed into onboarding to start first-run setup.",
+    "category": "User Authentication (email/password)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill a new email into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid password into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit sign up"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user lands on onboarding"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC005",
+    "title": "Dashboard deep-link opens practice and begins the session",
+    "description": "Verifies a user can use the dashboard entry point to reach practice and begin without extra blockers.",
+    "category": "Dashboard / Daily Learning Queue",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to go to the dashboard"
+      },
+      {
+        "type": "action",
+        "description": "Click a queued item or continue button to open the session"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user is in an active practice session"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the session shows progress through items"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC006",
+    "title": "Complete onboarding to seed starter words and reach dashboard",
+    "description": "A new learner can finish level selection, topic selection, and starter word confirmation and then reach the dashboard with learning content available.",
+    "category": "Onboarding and Level Selection",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill a new email into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid password into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit sign up"
+      },
+      {
+        "type": "action",
+        "description": "Answer the level test questions with valid selections"
+      },
+      {
+        "type": "action",
+        "description": "Select one or more topics of interest"
+      },
+      {
+        "type": "action",
+        "description": "Confirm starter words to add to the deck"
+      },
+      {
+        "type": "action",
+        "description": "Complete onboarding"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user lands on the dashboard"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a daily learning queue is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC007",
+    "title": "Dashboard renders daily target and queued items after login",
+    "description": "Verifies the dashboard shows the daily target and a list of upcoming queued items for an authenticated user.",
+    "category": "Dashboard / Daily Learning Queue",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to go to the dashboard"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a daily target indicator is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify next queued learning items are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC008",
+    "title": "Complete a quiz stage and view aggregated results",
+    "description": "A learner can submit quiz answers and then sees aggregated results and progress for that stage.",
+    "category": "Vocabulary Practice (flip / quiz / write)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit credentials"
+      },
+      {
+        "type": "action",
+        "description": "Click the action to open practice"
+      },
+      {
+        "type": "action",
+        "description": "Proceed until a quiz stage is shown"
+      },
+      {
+        "type": "action",
+        "description": "Submit answers for the quiz stage"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify aggregated quiz results are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify progress for the session is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC009",
+    "title": "Daily queue updates after completing a practice session",
+    "description": "Verifies finishing a practice session returns the learner to the dashboard with updated progress or queue state.",
+    "category": "Dashboard / Daily Learning Queue",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to go to the dashboard"
+      },
+      {
+        "type": "action",
+        "description": "Click the control to start today's session"
+      },
+      {
+        "type": "action",
+        "description": "Complete the practice session by advancing through all remaining items"
+      },
+      {
+        "type": "action",
+        "description": "Exit the session to return to the dashboard"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the dashboard shows updated daily progress for today"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the next queued items list reflects the post-session state"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC010",
+    "title": "Update CEFR level and save profile changes",
+    "description": "Ensures an authenticated user can edit their CEFR level and save, and the updated profile state is shown after saving.",
+    "category": "Profile & Settings",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation option to open the user profile"
+      },
+      {
+        "type": "action",
+        "description": "Select a different valid CEFR level"
+      },
+      {
+        "type": "action",
+        "description": "Save profile changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the profile shows the newly selected CEFR level"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC011",
+    "title": "Browse grammar topics and open a lesson",
+    "description": "Verifies an authenticated learner can reach the grammar hub, browse topics, and open a lesson page/view.",
+    "category": "Grammar Hub",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open the grammar hub"
+      },
+      {
+        "type": "action",
+        "description": "Click a grammar topic from the list"
+      },
+      {
+        "type": "action",
+        "description": "Open a lesson"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a grammar lesson view is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the lesson includes an interactive exercise area"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC012",
+    "title": "Complete a grammar interactive exercise and see completion status",
+    "description": "Verifies completing an exercise in a grammar lesson marks the lesson as completed in the UI.",
+    "category": "Grammar Hub",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open the grammar hub"
+      },
+      {
+        "type": "action",
+        "description": "Open a grammar lesson that contains an exercise"
+      },
+      {
+        "type": "action",
+        "description": "Complete the interactive exercise by providing valid answers and submitting"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the lesson shows a completed status indicator"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the exercise is no longer shown as incomplete"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC013",
+    "title": "Opt into the writing challenge after practice and view AI feedback",
+    "description": "Verifies a learner can finish a practice session, choose the optional writing challenge, submit writing, and view feedback without blocking completion.",
+    "category": "Optional AI Writing Challenge (integrated)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to start a practice session"
+      },
+      {
+        "type": "action",
+        "description": "Complete the practice session by advancing through all remaining items"
+      },
+      {
+        "type": "action",
+        "description": "Opt into the optional writing challenge"
+      },
+      {
+        "type": "action",
+        "description": "Fill a short paragraph into the writing response field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the writing response"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify AI feedback and suggestions are displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC014",
+    "title": "Skip the writing challenge and return to the dashboard",
+    "description": "Verifies a learner can decline the optional writing challenge after practice and still finish the flow back on the dashboard.",
+    "category": "Optional AI Writing Challenge (integrated)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_USER}} into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Fill {{LOGIN_PASSWORD}} into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to start a practice session"
+      },
+      {
+        "type": "action",
+        "description": "Complete the practice session by advancing through all remaining items"
+      },
+      {
+        "type": "action",
+        "description": "Decline or skip the optional writing challenge"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user returns to the dashboard"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the dashboard daily queue is visible"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC015",
+    "title": "Require level selection before onboarding submission",
+    "description": "A learner who skips level questions cannot complete onboarding and sees a prompt to complete level selection.",
+    "category": "Onboarding and Level Selection",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill a new email into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid password into the password field"
+      },
+      {
+        "type": "action",
+        "description": "Submit sign up"
+      },
+      {
+        "type": "action",
+        "description": "Scroll to the onboarding submission area"
+      },
+      {
+        "type": "action",
+        "description": "Submit onboarding without answering level questions"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a level selection validation prompt is visible"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC016",
+    "title": "Unauthenticated access to dashboard is blocked",
+    "description": "Verifies a logged-out visitor cannot access the dashboard and is routed to login.",
+    "category": "Dashboard / Daily Learning Queue",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user is prompted to log in"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC017",
+    "title": "Reject invalid CEFR input on profile",
+    "description": "Ensures the profile form blocks saving when an invalid CEFR value is entered and shows a validation error.",
+    "category": "Profile & Settings",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the navigation option to open the user profile"
+      },
+      {
+        "type": "action",
+        "description": "Fill an invalid value into the CEFR level field"
+      },
+      {
+        "type": "action",
+        "description": "Save profile changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a CEFR validation error is visible"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC018",
+    "title": "Block login submission when password is missing",
+    "description": "A learner attempting to submit login with no password is prevented and sees a validation error.",
+    "category": "User Authentication (email/password)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill user@example.com into the email field"
+      },
+      {
+        "type": "action",
+        "description": "Submit credentials"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a password validation error is visible"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC019",
+    "title": "Unauthenticated access to grammar hub is blocked",
+    "description": "Verifies a logged-out visitor cannot access the grammar hub and is routed to login.",
+    "category": "Grammar Hub",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /grammar"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user is prompted to log in"
+      }
+    ],
+    "priority": "Low"
+  }
+]

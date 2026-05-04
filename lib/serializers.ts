@@ -140,6 +140,11 @@ export function serializeAppSettings(settings: AppSettings): AppSettingsRecord {
     cefrProfilerEnabled: settings.cefrProfilerEnabled,
     translationProvider: settings.translationProvider as AppSettingsRecord["translationProvider"],
     translationPriority: (settings.translationPriority as AppSettingsRecord["translationPriority"]) ?? ["catalog", "deepl", "langeek"],
+    grammarCorrectPoints: settings.grammarCorrectPoints,
+    grammarPenaltyLow: settings.grammarPenaltyLow,
+    grammarPenaltyMedium: settings.grammarPenaltyMedium,
+    grammarPenaltyHigh: settings.grammarPenaltyHigh,
+    mobileNavOrder: settings.mobileNavOrder ?? ["home", "cards", "translate", "practice", "grammar", "ai"],
     updatedAt: settings.updatedAt.toISOString()
   }
 }

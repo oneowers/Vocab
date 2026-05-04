@@ -12,38 +12,37 @@ import { useToast } from "@/components/Toast"
 import { getAppMobileNavItems, getAppSidebarNavItems } from "@/lib/navigation"
 import { getRoleLabel } from "@/lib/roles"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
-import type { AppUserRecord } from "@/lib/types"
+import type { AppUserRecord, AppSettingsRecord } from "@/lib/types"
 import { clearGuestSession, isGuestSessionActive } from "@/lib/guest"
 
 interface AppShellProps {
   user: AppUserRecord | null
+  settings?: AppSettingsRecord | null
   children: React.ReactNode
 }
 
-export function AppShell({ user, children }: AppShellProps) {
+export function AppShell({ user, settings, children }: AppShellProps) {
   const pathname = usePathname()
   const router = useRouter()
   const { showToast } = useToast()
   const [guestActive, setGuestActive] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     setGuestActive(isGuestSessionActive())
   }, [pathname])
 
   useEffect(() => {
-    // Prefetch only the lightest, most likely next hops.
     const appRoutes = ["/", "/dashboard", "/profile", "/login"]
-
-    appRoutes.forEach((href) => {
-      router.prefetch(href)
-    })
-
+    appRoutes.forEach((href) => router.prefetch(href))
     if (user?.role === "ADMIN") {
-      ;["/admin", "/admin/users"].forEach((href) => {
-        router.prefetch(href)
-      })
+      ;["/admin", "/admin/users"].forEach((href) => router.prefetch(href))
     }
-  }, [router])
+  }, [router, user])
 
   async function handleExit() {
     if (guestActive) {
@@ -51,59 +50,52 @@ export function AppShell({ user, children }: AppShellProps) {
       router.push("/login")
       return
     }
-
     if (!user) {
       router.push("/login")
       return
     }
-
-    // NEW: Dev admin logout bypass
     if (user.email === "admin@localhost") {
       await fetch("/api/auth/dev-logout")
       router.push("/login")
       router.refresh()
       return
     }
-
     const supabase = createSupabaseBrowserClient()
-
     if (!supabase) {
       showToast("Supabase is not configured yet.", "error")
       return
     }
-
     await supabase.auth.signOut()
     router.push("/login")
     router.refresh()
   }
 
   const initials = (user?.name || user?.email || "G").slice(0, 1).toUpperCase()
-  const accountLabel = guestActive
-    ? "Guest explorer"
-    : user?.name || user?.email || "LexiFlow user"
   const accountRole = guestActive ? "Guest mode" : getRoleLabel(user?.role ?? null)
   const navRole = guestActive ? null : user?.role ?? null
-  const sidebarNavItems = getAppSidebarNavItems(navRole)
-  const mobileNavItems = getAppMobileNavItems(navRole)
+  const sidebarNavItems = getAppSidebarNavItems(navRole, settings)
+  const mobileNavItems = getAppMobileNavItems(navRole, settings)
+
+  const isActive = (path: string, item: any) => {
+    return item.match ? item.match(path) : path === item.href
+  }
 
   return (
-    <div className="min-h-screen bg-bg-primary">
+    <div className="min-h-screen bg-black">
       <div className="mx-auto flex min-h-screen w-full max-w-[1600px]">
-        <aside className="relative z-20 hidden min-h-screen w-[288px] flex-col justify-between border-r border-line bg-bg-secondary/80 px-6 py-8 backdrop-blur-xl md:flex">
-          <div className="space-y-8">
-            <Link href="/" prefetch className="flex items-center gap-3">
-              <div className="brand-mark h-12 w-12 text-lg font-semibold">
+        {/* Desktop Sidebar */}
+        <aside className="relative z-20 hidden min-h-screen w-[300px] flex-col justify-between border-r border-white/[0.05] bg-[#050505] px-8 py-12 md:flex">
+          <div className="space-y-12">
+            <Link href="/" prefetch className="flex items-center gap-4">
+              <div className="h-10 w-10 flex items-center justify-center bg-white text-black rounded-xl">
                 <BrandLogo />
               </div>
-              <div>
-                <p className="section-label">LexiFlow</p>
-                <p className="mt-1 text-[15px] text-muted">Vocabulary practice studio</p>
-              </div>
+              <span className="text-[16px] font-black uppercase tracking-widest text-white">LexiFlow</span>
             </Link>
-
-            <nav className="space-y-2">
+            
+            <nav className="flex flex-col gap-2">
               {sidebarNavItems.map((item) => {
-                const active = item.match ? item.match(pathname) : pathname === item.href
+                const active = isActive(pathname, item)
                 const Icon = item.icon
 
                 return (
@@ -111,61 +103,87 @@ export function AppShell({ user, children }: AppShellProps) {
                     key={item.href}
                     href={item.href}
                     prefetch
-                    aria-current={active ? "page" : undefined}
-                    className={`flex min-h-[52px] items-center gap-3 rounded-[22px] px-4 text-[16px] font-semibold transition ${active
-                      ? "bg-ink text-bg-primary"
-                      : "text-muted hover:bg-bg-tertiary hover:text-ink"
-                      }`}
+                    className={`flex items-center gap-4 rounded-2xl px-5 py-4 text-[16px] font-bold transition-all ${
+                      active
+                        ? "bg-white/[0.05] text-white shadow-sm border border-white/[0.05]"
+                        : "text-white/20 hover:text-white/40 hover:bg-white/[0.02]"
+                    }`}
                   >
-                    <Icon size={20} strokeWidth={active ? 2.4 : 2} />
+                    <Icon size={20} strokeWidth={active ? 2.5 : 2} />
                     <span>{item.label}</span>
                   </Link>
                 )
               })}
-              {user?.role === "ADMIN" ? (
+              {user?.role === "ADMIN" && (
                 <Link
                   href="/admin"
-                  prefetch
-                  aria-current={pathname.startsWith("/admin") ? "page" : undefined}
-                  className={`flex min-h-[52px] items-center gap-3 rounded-[22px] px-4 text-[16px] font-semibold transition ${pathname.startsWith("/admin")
-                    ? "bg-ink text-bg-primary"
-                    : "text-muted hover:bg-bg-tertiary hover:text-ink"
-                    }`}
+                  className={`flex items-center gap-4 rounded-2xl px-5 py-4 text-[16px] font-bold transition-all ${
+                    pathname.startsWith("/admin")
+                      ? "bg-white/[0.05] text-white shadow-sm border border-white/[0.05]"
+                      : "text-white/20 hover:text-white/40 hover:bg-white/[0.02]"
+                  }`}
                 >
-                  <ArrowRight size={20} strokeWidth={pathname.startsWith("/admin") ? 2.4 : 2} />
-                  <span>Admin</span>
+                  <ArrowRight size={20} />
+                  <span>Admin Panel</span>
                 </Link>
-              ) : null}
+              )}
             </nav>
           </div>
 
-          <div className="panel space-y-4 p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-bg-tertiary text-sm font-semibold text-ink">
-                {initials}
+          <div className="space-y-6">
+            <Link 
+              href="/profile"
+              className="group flex items-center gap-4 rounded-[32px] bg-white/[0.02] p-5 border border-white/[0.05] transition-all hover:bg-white/[0.04]"
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-sm">
+                {user?.avatarUrl ? (
+                  <img src={user.avatarUrl} alt="Avatar" className="h-full w-full rounded-2xl object-cover" />
+                ) : (
+                  <span className="text-[16px] font-black text-black">{initials}</span>
+                )}
               </div>
-              <div>
-                <p className="text-[15px] font-semibold text-ink">{accountLabel}</p>
-                <p className="text-[13px] text-quiet">{accountRole}</p>
+              <div className="flex flex-col">
+                <span className="text-[15px] font-black text-white truncate max-w-[120px]">
+                  {user?.name || user?.email?.split('@')[0]}
+                </span>
+                <span className="text-[12px] font-bold text-white/20 uppercase tracking-wider">{accountRole}</span>
               </div>
-            </div>
-            <button type="button" onClick={handleExit} className="button-secondary w-full bg-ink text-bg-primary hover:scale-[1.02] active:scale-[0.98] transition-all">
-              <LogOut size={18} />
-              {guestActive ? "Exit guest" : user ? "Sign out" : "Open login"}
+            </Link>
+            
+            <button
+              onClick={handleExit}
+              className="flex w-full items-center gap-4 rounded-2xl px-5 py-4 text-[16px] font-bold text-rose-500/80 transition-all hover:bg-rose-500/5"
+            >
+              <LogOut size={20} />
+              <span>Sign out</span>
             </button>
           </div>
         </aside>
 
         <div className="relative z-0 flex min-h-screen min-w-0 flex-1 flex-col">
+          {/* Mobile Floating Profile Button */}
+          {mounted && (
+            <Link 
+              href="/profile" 
+              className="fixed right-6 top-8 z-50 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.05] border border-white/[0.1] shadow-2xl backdrop-blur-xl transition-transform active:scale-90 md:hidden"
+            >
+              {user?.avatarUrl ? (
+                <img src={user.avatarUrl} alt="Avatar" className="h-full w-full rounded-2xl object-cover" />
+              ) : (
+                <span className="text-[16px] font-black text-white">{initials}</span>
+              )}
+            </Link>
+          )}
+
           <div className="flex-1">
-            <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 md:gap-6">
+            <div className="mx-auto flex w-full max-w-6xl flex-col">
               <main className="min-w-0 flex-1">
                 <PageTransition>{children}</PageTransition>
               </main>
             </div>
           </div>
 
-          <BottomTabBar items={mobileNavItems} variant="app" />
+          {mounted && <BottomTabBar items={mobileNavItems} variant="app" />}
         </div>
       </div>
     </div>

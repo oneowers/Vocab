@@ -12,6 +12,7 @@ interface PracticeViewProps {
     reviewData: CardsResponse
     grammarData: GrammarSkillsPayload
     historyData: any[]
+    appSettings: any
   }
   initialMode?: "SELECT" | "WORDS" | "GRAMMAR" | "TRANSLATION" | "HISTORY"
 }
@@ -61,6 +62,7 @@ export function PracticeView({ initialData, initialMode }: PracticeViewProps) {
           setGrammarSubMode(null)
         }}
         initialSubMode={grammarSubMode}
+        appSettings={initialData.appSettings}
       />
     )
   }
@@ -81,6 +83,7 @@ export function PracticeView({ initialData, initialMode }: PracticeViewProps) {
       onSelectHistory={() => setMode("HISTORY")}
       dueCount={initialData.reviewData.summary.dueToday}
       weakGrammarCount={initialData.grammarData.weakCount}
+      historyData={initialData.historyData}
     />
   )
 }

@@ -14,7 +14,7 @@ import {
   Users
 } from "lucide-react"
 
-import type { NavItem, Role } from "@/lib/types"
+import type { NavItem, Role, AppSettingsRecord } from "@/lib/types"
 
 const aiNavItem: NavItem = {
   href: "/ai",
@@ -23,76 +23,97 @@ const aiNavItem: NavItem = {
   match: (pathname) => pathname === "/ai" || pathname === "/stats"
 }
 
-export function getAppSidebarNavItems(role: Role | null): NavItem[] {
-  const items: NavItem[] = [
-    {
-      href: "/",
-      label: "Home",
-      icon: House
-    },
-    {
-      href: "/dashboard",
-      label: "Cards",
-      icon: Library
-    },
-    {
-      href: "/practice",
-      label: "Practice",
-      icon: Sparkles
-    },
-    {
-      href: "/grammar",
-      label: "Grammar",
-      icon: BookOpen
-    },
-    aiNavItem,
-    {
-      href: "/profile",
-      label: "Profile",
-      icon: UserRound
-    }
-  ]
-
-  if (role && role !== "PRO" && role !== "ADMIN") {
-    items.push({
-      href: "/pro",
-      label: "Get PRO",
-      icon: Crown,
-      match: (pathname) => pathname === "/pro"
-    })
-  }
-
-  return items
-}
-
-export function getAppMobileNavItems(role: Role | null): NavItem[] {
+export function getAppSidebarNavItems(role: Role | null, settings?: AppSettingsRecord | null): NavItem[] {
   const items: NavItem[] = [
     {
       href: "/",
       label: "Home",
       icon: House,
-      match: (pathname) => pathname === "/"
+      id: "home"
     },
     {
       href: "/dashboard",
       label: "Cards",
       icon: Library,
-      match: (pathname) => pathname === "/dashboard"
+      id: "cards"
+    },
+    {
+      href: "/translate",
+      label: "Translate",
+      icon: MessageCircle,
+      id: "translate"
     },
     {
       href: "/practice",
       label: "Practice",
       icon: Sparkles,
-      match: (pathname) => pathname === "/practice" || pathname === "/review"
+      id: "practice"
     },
     {
       href: "/grammar",
       label: "Grammar",
       icon: BookOpen,
+      id: "grammar"
+    },
+    { ...aiNavItem, id: "ai" },
+    {
+      href: "/profile",
+      label: "Profile",
+      icon: UserRound,
+      id: "profile"
+    }
+  ]
+
+  const order = settings?.mobileNavOrder || ["home", "cards", "translate", "practice", "grammar", "ai"]
+  const sortedItems = [...items].sort((a, b) => {
+    const idxA = order.indexOf(a.id || "")
+    const idxB = order.indexOf(b.id || "")
+    if (idxA === -1 && idxB === -1) return 0
+    if (idxA === -1) return 1
+    if (idxB === -1) return -1
+    return idxA - idxB
+  })
+
+  return sortedItems
+}
+
+export function getAppMobileNavItems(role: Role | null, settings?: AppSettingsRecord | null): NavItem[] {
+  const allItems: Record<string, NavItem> = {
+    home: {
+      href: "/",
+      label: "Home",
+      icon: House,
+      match: (pathname) => pathname === "/"
+    },
+    cards: {
+      href: "/dashboard",
+      label: "Cards",
+      icon: Library,
+      match: (pathname) => pathname === "/dashboard"
+    },
+    translate: {
+      href: "/translate",
+      label: "Translate",
+      icon: MessageCircle,
+      match: (pathname) => pathname === "/translate"
+    },
+    practice: {
+      href: "/practice",
+      label: "Practice",
+      icon: Sparkles,
+      match: (pathname) => pathname === "/practice" || pathname === "/review"
+    },
+    grammar: {
+      href: "/grammar",
+      label: "Grammar",
+      icon: BookOpen,
       match: (pathname) => pathname === "/grammar"
     },
-    aiNavItem
-  ]
+    ai: aiNavItem
+  }
+
+  const order = settings?.mobileNavOrder || ["home", "cards", "translate", "practice", "grammar", "ai"]
+  const items = order.map(id => allItems[id]).filter(Boolean)
 
   if (role && role !== "PRO" && role !== "ADMIN") {
     items.push({
@@ -100,13 +121,6 @@ export function getAppMobileNavItems(role: Role | null): NavItem[] {
       label: "Get PRO",
       icon: Crown,
       match: (pathname) => pathname === "/pro"
-    })
-  } else {
-    items.push({
-      href: "/profile",
-      label: "Profile",
-      icon: UserRound,
-      match: (pathname) => pathname === "/profile"
     })
   }
 

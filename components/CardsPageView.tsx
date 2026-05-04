@@ -204,37 +204,50 @@ export function CardsPageView({ initialData = null, user = null }: CardsPageView
         onChange={(event) => void handleImportFile(event)}
       />
 
-      <div className="pt-6 pb-24 space-y-6">
-        <header className="flex flex-col gap-4">
-          <div className="flex items-start justify-between">
+      <div className="pt-6 pb-24 space-y-8">
+        <header className="flex flex-col gap-6">
+          <div className="flex items-start justify-between px-1">
             <div>
-              <h1 className="text-[28px] font-black tracking-[-0.8px] text-text-primary">
-                Your saved cards
+              <h1 className="text-[32px] font-black tracking-[-1.2px] text-white leading-none">
+                Your cards
               </h1>
-              <p className="mt-1 text-[13px] font-medium text-text-tertiary">
-                {totalCount} total · {waitingCount} waiting · {learnedCount} learned
-              </p>
+              <div className="mt-2 flex items-center gap-2 text-[13px] font-bold text-white/30">
+                <span className="flex items-center gap-1">
+                  <span className="text-white/60">{totalCount}</span> total
+                </span>
+                <span className="h-1 w-1 rounded-full bg-white/10" />
+                <span className="flex items-center gap-1">
+                  <span className="text-blue-400">{waitingCount}</span> waiting
+                </span>
+                <span className="h-1 w-1 rounded-full bg-white/10" />
+                <span className="flex items-center gap-1">
+                  <span className="text-emerald-400">{learnedCount}</span> learned
+                </span>
+              </div>
             </div>
             <button
               onClick={() => showToast("Menu coming soon", "info")}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-bg-secondary text-muted border border-line active:scale-95 transition-transform"
+              className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.03] text-white/40 border border-white/10 active:scale-90 transition-all hover:bg-white/[0.06] hover:text-white"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
             </button>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="px-1">
             {waitingCount > 0 ? (
               <button
                 onClick={() => window.location.href = "/review"}
-                className="flex-1 pill-glass bg-ink text-bg-primary h-[52px] font-black text-[15px] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                className="group relative flex h-[60px] w-full items-center justify-center overflow-hidden rounded-[20px] bg-white text-[#0a0c10] transition-all hover:scale-[1.02] active:scale-[0.98] shadow-[0_20px_40px_rgba(255,255,255,0.1)]"
               >
-                Review {waitingCount} cards
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-white/20 to-blue-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                <span className="relative flex items-center gap-2 text-[16px] font-black uppercase tracking-wider">
+                  Review {waitingCount} cards
+                  <svg className="transition-transform group-hover:translate-x-1" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+                </span>
               </button>
             ) : (
-              <div className="flex-1 h-[52px] rounded-full border border-line bg-bg-secondary flex items-center justify-center gap-2 text-[14px] font-bold text-quiet">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+              <div className="flex h-[60px] w-full items-center justify-center rounded-[20px] border border-white/[0.05] bg-white/[0.02] text-[15px] font-black text-white/20 uppercase tracking-widest">
+                <svg className="mr-2 opacity-50" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
                 All caught up
               </div>
             )}
@@ -242,20 +255,27 @@ export function CardsPageView({ initialData = null, user = null }: CardsPageView
         </header>
 
         {mounted && user && (user.lastReviewDate !== getTodayDateKey() && user.lastReviewDate !== getYesterdayDateKey()) && user.lastStreakRecoveryDate !== getTodayDateKey() && (
-          <div className="panel rounded-[28px] p-6 bg-gradient-to-br from-orange-500/10 to-transparent border border-orange-500/20 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
-              <Flame size={80} className="text-orange-500" />
+          <div className="relative overflow-hidden rounded-[32px] border border-orange-500/20 bg-[#1a120b] p-6 shadow-2xl">
+            <div className="absolute -right-4 -top-4 opacity-10 blur-2xl">
+              <Flame size={120} className="text-orange-500" />
             </div>
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/[0.08] to-transparent" />
+            
             <div className="relative z-10">
-              <h3 className="text-xl font-bold text-ink">You’re back.</h3>
-              <p className="mt-1 text-muted max-w-md">
-                Let’s recover your progress in 3 minutes. Complete a quick review session to restore your streak.
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500/20 text-orange-400">
+                  <Flame size={18} />
+                </div>
+                <h3 className="text-[18px] font-black text-white">Streak at risk</h3>
+              </div>
+              <p className="mt-3 text-[14px] font-bold leading-relaxed text-white/50">
+                Restore your progress in just <span className="text-orange-400">3 minutes</span>. Complete this session to keep your streak alive.
               </p>
               <button
                 onClick={() => window.location.href = "/practice?mode=recovery"}
-                className="mt-5 pill-glass bg-orange-500 text-white px-6 py-2.5 font-bold hover:scale-105 active:scale-95 transition-all"
+                className="mt-6 flex h-11 items-center justify-center rounded-xl bg-orange-500 px-6 text-[14px] font-black uppercase tracking-wider text-white shadow-[0_10px_20px_rgba(249,115,22,0.2)] hover:scale-[1.05] active:scale-95 transition-all"
               >
-                Start Recovery Session
+                Start Recovery
               </button>
             </div>
           </div>

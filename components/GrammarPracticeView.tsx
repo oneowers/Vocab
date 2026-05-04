@@ -19,13 +19,14 @@ interface GrammarPracticeViewProps {
   grammarData: GrammarSkillsPayload
   onBack: () => void
   initialSubMode?: GrammarViewMode
+  appSettings: any
 }
 
 type GrammarViewMode = "DASHBOARD" | "LIBRARY" | "WRITING_CHALLENGE" | "LESSON" | "QUIZ"
 export type GrammarFilterType = "all" | "weak" | "learning" | "strong" | "no_data"
 export type GrammarSortType = "priority" | "weakest" | "recent" | "cefr"
 
-export function GrammarPracticeView({ grammarData, onBack, initialSubMode }: GrammarPracticeViewProps) {
+export function GrammarPracticeView({ grammarData, onBack, initialSubMode, appSettings }: GrammarPracticeViewProps) {
   const { showToast } = useToast()
   const [mode, setMode] = useState<GrammarViewMode>(initialSubMode || "DASHBOARD")
   
@@ -150,6 +151,7 @@ export function GrammarPracticeView({ grammarData, onBack, initialSubMode }: Gra
       <GrammarLessonView 
         topic={lessonTopic} 
         onBack={() => setMode("DASHBOARD")} 
+        appSettings={appSettings}
       />
     )
   }

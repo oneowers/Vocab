@@ -10,9 +10,10 @@ import { GrammarExerciseRunner } from "./GrammarExerciseRunner"
 interface GrammarLessonViewProps {
   topic: any
   onBack: () => void
+  appSettings?: any
 }
  
-export function GrammarLessonView({ topic, onBack }: GrammarLessonViewProps) {
+export function GrammarLessonView({ topic, onBack, appSettings }: GrammarLessonViewProps) {
   const [step, setStep] = useState<"THEORY" | "EXERCISES" | "COMPLETE">("THEORY")
   const [sessionScore, setSessionScore] = useState(0)
  
@@ -27,6 +28,7 @@ export function GrammarLessonView({ topic, onBack }: GrammarLessonViewProps) {
           setStep("COMPLETE")
         }}
         onBack={() => setStep("THEORY")}
+        appSettings={appSettings}
       />
     )
   }

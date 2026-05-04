@@ -1,0 +1,72 @@
+version: "2"
+type: frontend
+tech_stack:
+  - TypeScript
+  - Next.js
+  - TailwindCSS
+  - Prisma
+  - Supabase
+routes:
+  - path: /
+    file: app/page.tsx
+    auth_required: false
+    description: Landing page
+  - path: /login
+    file: app/(auth)/login/page.tsx
+    auth_required: false
+    description: User login and registration page
+  - path: /dashboard
+    file: app/(app)/dashboard/page.tsx
+    auth_required: true
+    description: Main user dashboard
+  - path: /practice
+    file: app/(app)/practice/page.tsx
+    auth_required: true
+    description: Vocabulary practice interface
+  - path: /grammar
+    file: app/(app)/grammar/page.tsx
+    auth_required: true
+    description: Grammar practice interface
+  - path: /onboarding
+    file: app/onboarding/page.tsx
+    auth_required: true
+    description: New user onboarding and level test
+  - path: /profile
+    file: app/(app)/profile/page.tsx
+    auth_required: true
+    description: User profile and settings
+features:
+  - name: User Authentication
+    description: Login and sign up using email or OAuth
+    files:
+      - app/(auth)/login/page.tsx
+    entry_route: /login
+    user_interactions:
+      - Fill email and password
+      - Click Login or Sign Up
+    api_calls:
+      - method: POST
+        endpoint: /api/auth/callback
+    auth_required: false
+  - name: Vocabulary Practice
+    description: Practice vocabulary words through interactive exercises
+    files:
+      - app/(app)/practice/page.tsx
+    entry_route: /practice
+    user_interactions:
+      - View vocabulary cards
+      - Submit answers
+      - View results
+    api_calls: []
+    auth_required: true
+  - name: Onboarding
+    description: Set user level and initial vocabulary
+    files:
+      - app/onboarding/page.tsx
+    entry_route: /onboarding
+    user_interactions:
+      - Answer level test questions
+      - Select topics of interest
+    api_calls: []
+    auth_required: true
+known_limitations: []

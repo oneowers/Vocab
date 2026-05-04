@@ -20,6 +20,7 @@ export interface NavItem {
   href: string
   label: string
   icon: LucideIcon
+  id?: string
   match?: (pathname: string) => boolean
 }
 
@@ -141,6 +142,11 @@ export interface AppSettingsRecord {
   cefrProfilerEnabled: boolean
   translationProvider: TranslationProvider
   translationPriority: TranslationEngine[]
+  grammarCorrectPoints: number
+  grammarPenaltyLow: number
+  grammarPenaltyMedium: number
+  grammarPenaltyHigh: number
+  mobileNavOrder: string[]
   updatedAt: string
 }
 

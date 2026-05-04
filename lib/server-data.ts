@@ -19,7 +19,7 @@ import {
   sharedCacheTag,
   userCacheTag
 } from "@/lib/server-cache"
-import { serializeCard } from "@/lib/serializers"
+import { serializeAppSettings, serializeCard } from "@/lib/serializers"
 import type {
   AdminAnalyticsPayload,
   CardsResponse,
@@ -253,7 +253,7 @@ export function getUserReviewData(userId: string): Promise<CardsResponse> {
 
 export async function getPracticePageData(userId: string) {
   const prisma = getPrisma()
-  const [reviewData, grammarData, historyRaw] = await Promise.all([
+  const [reviewData, grammarData, historyRaw, appSettingsRaw] = await Promise.all([
     getUserReviewData(userId),
     import("@/lib/grammar").then((m) => m.getUserGrammarSkillsData(userId, "weak")),
     prisma.grammarFinding.findMany({
@@ -261,8 +261,11 @@ export async function getPracticePageData(userId: string) {
       orderBy: { createdAt: "desc" },
       take: 50,
       include: { topic: { select: { key: true, titleEn: true } } }
-    })
+    }),
+    getOrCreateAppSettings(prisma)
   ])
+
+  const appSettings = serializeAppSettings(appSettingsRaw)
 
   const historyData = historyRaw.map(h => ({
     id: h.id,
@@ -283,7 +286,8 @@ export async function getPracticePageData(userId: string) {
   return {
     reviewData,
     grammarData,
-    historyData
+    historyData,
+    appSettings
   }
 }
 

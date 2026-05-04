@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 
 import type { NavItem } from "@/lib/types"
 
@@ -47,14 +48,11 @@ export function BottomTabBar({
   return (
     <nav
       aria-label={variant === "admin" ? "Admin navigation" : "Primary navigation"}
-      className={`fixed inset-x-0 bottom-0 z-50 border-t border-line bg-bg-secondary/80 backdrop-blur-[24px] transition-[transform,opacity] duration-200 ease-out md:hidden ${
-        keyboardActive ? "pointer-events-none translate-y-full opacity-0" : "translate-y-0 opacity-100"
+      className={`fixed bottom-8 left-1/2 z-50 w-[calc(100%-48px)] max-w-[400px] -translate-x-1/2 rounded-full border border-white/[0.08] bg-black/60 p-2 backdrop-blur-[32px] shadow-2xl transition-all duration-500 ease-out md:hidden ${
+        keyboardActive ? "pointer-events-none translate-y-32 opacity-0" : "translate-y-0 opacity-100"
       }`}
-      style={{
-        paddingBottom: "env(safe-area-inset-bottom)"
-      }}
     >
-      <div className="mx-auto flex h-[49px] max-w-xl items-stretch">
+      <div className="relative flex h-[64px] items-stretch gap-1">
         {items.map((item) => {
           const active = isActive(pathname, item)
           const Icon = item.icon
@@ -65,15 +63,36 @@ export function BottomTabBar({
               href={item.href}
               prefetch
               aria-current={active ? "page" : undefined}
-              className={`flex min-w-0 flex-1 scale-100 flex-col items-center justify-center gap-0.5 px-2 text-[10px] font-semibold leading-none transition-transform duration-300 ease-[var(--ease-standard)] active:scale-[0.88] motion-reduce:transition-none ${active ? "text-ink" : "text-muted"
-                }`}
+              className={`relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-full transition-all duration-300 active:scale-90 ${
+                active ? "text-white" : "text-white/20 hover:text-white/40"
+              }`}
             >
-              <Icon
-                size={24}
-                strokeWidth={active ? 2.25 : 1.9}
-                fill={active ? "currentColor" : "none"}
-              />
-              <span className="truncate">{item.label}</span>
+              <div className="relative z-10 flex flex-col items-center justify-center">
+                <Icon
+                  size={20}
+                  strokeWidth={active ? 2.5 : 2}
+                  className="transition-all duration-300"
+                />
+                <AnimatePresence>
+                  {active && (
+                    <motion.span 
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-[10px] font-black uppercase tracking-widest mt-1"
+                    >
+                      {item.label}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </div>
+              
+              {active && (
+                <motion.div 
+                  layoutId="active-pill"
+                  className="absolute inset-0 z-0 rounded-full bg-white/[0.05] border border-white/[0.05]" 
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
             </Link>
           )
         })}

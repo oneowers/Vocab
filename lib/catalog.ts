@@ -1,4 +1,4 @@
-import type { CefrLevel, PrismaClient } from "@prisma/client"
+import type { CefrLevel, PrismaClient, Prisma } from "@prisma/client"
 import { fetchDictionaryDetails } from "@/lib/dictionary"
 import type { TranslationEngine, TranslationProvider, TranslationSource } from "@/lib/types"
 
@@ -31,7 +31,7 @@ export function normalizeCatalogKey(value: string) {
   return normalizeValue(value).toLowerCase()
 }
 
-export async function getOrCreateAppSettings(prisma: PrismaClient) {
+export async function getOrCreateAppSettings(prisma: PrismaClient | Prisma.TransactionClient) {
   return prisma.appSettings.upsert({
     where: {
       id: APP_SETTINGS_ID
