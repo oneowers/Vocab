@@ -270,36 +270,34 @@ export function LoginCard() {
           </button>
         </form>
 
-        {/* Divider + Social */}
-        {supabaseEnabled && (
-          <>
-            <div className="my-5 flex items-center gap-3">
-              <div className="h-px flex-1 bg-line" />
-              <span className="text-[12px] font-bold uppercase tracking-wider text-muted/50">or</span>
-              <div className="h-px flex-1 bg-line" />
-            </div>
+        {/* Divider + Google */}
+        <>
+          <div className="my-5 flex items-center gap-3">
+            <div className="h-px flex-1 bg-line" />
+            <span className="text-[12px] font-bold uppercase tracking-wider text-muted/50">or</span>
+            <div className="h-px flex-1 bg-line" />
+          </div>
 
-            <button
-              type="button"
-              id="google-login-btn"
-              onClick={handleGoogleSignIn}
-              disabled={loading !== null}
-              className="flex h-12 w-full items-center justify-center gap-3 rounded-[14px] border border-line bg-bg-secondary text-[15px] font-bold text-ink transition hover:bg-bg-tertiary disabled:opacity-45"
-            >
-              {loading === "google" ? (
-                <span className="flex items-center gap-2">
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-muted/20 border-t-muted" />
-                  Redirecting…
-                </span>
-              ) : (
-                <>
-                  <GoogleIcon />
-                  Continue with Google
-                </>
-              )}
-            </button>
-          </>
-        )}
+          <button
+            type="button"
+            id="google-login-btn"
+            onClick={handleGoogleSignIn}
+            disabled={loading !== null}
+            className="flex h-12 w-full items-center justify-center gap-3 rounded-[14px] border border-line bg-bg-secondary text-[15px] font-bold text-ink transition hover:bg-bg-tertiary disabled:opacity-45"
+          >
+            {loading === "google" ? (
+              <span className="flex items-center gap-2">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-muted/20 border-t-muted" />
+                Redirecting…
+              </span>
+            ) : (
+              <>
+                <GoogleIcon />
+                Continue with Google
+              </>
+            )}
+          </button>
+        </>
 
         {/* Local dev */}
         {isLocalDevelopment() && (
