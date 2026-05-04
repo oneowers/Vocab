@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
       data: {
         email,
         name,
-        password: hashedPassword,
+        passwordHash: hashedPassword,
         role: role || "USER",
         onboardingStep: "COMPLETED", // Skip onboarding for admin-created users
         streak: 0
