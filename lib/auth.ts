@@ -82,6 +82,19 @@ export async function getOptionalAuthUser() {
   const sessionUser = await getOptionalSessionUser()
 
   if (!sessionUser?.email || !hasDatabaseEnv()) {
+    // Fallback: check email-session cookie (for email/password login without Supabase)
+    const cookieStore = cookies()
+    const emailSession = cookieStore.get("email-session")?.value
+    if (emailSession && hasDatabaseEnv()) {
+      try {
+        const parsed = JSON.parse(Buffer.from(emailSession, "base64").toString("utf-8")) as { userId?: string; email?: string }
+        if (parsed.userId) {
+          return getPrisma().user.findUnique({ where: { id: parsed.userId } })
+        }
+      } catch {
+        // invalid cookie — ignore
+      }
+    }
     return null
   }
 
