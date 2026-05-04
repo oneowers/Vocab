@@ -19,6 +19,10 @@ export function CardDetailsModal({ card, onClose }: CardDetailsModalProps) {
     speakText(card.original, card.direction === "en-ru" ? "en-US" : "ru-RU")
   }
 
+  const retention = card.reviewCount > 0 
+    ? Math.round((card.correctCount / card.reviewCount) * 100) 
+    : 0
+
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <motion.div
@@ -85,7 +89,7 @@ export function CardDetailsModal({ card, onClose }: CardDetailsModalProps) {
                 <Brain size={14} className="text-emerald-400" />
                 <span className="text-[11px] font-black uppercase tracking-wider text-white/20">Retention</span>
               </div>
-              <p className="text-[20px] font-black text-white">{card.stability || 0}%</p>
+              <p className="text-[20px] font-black text-white">{retention}%</p>
             </div>
             <div className="rounded-2xl bg-white/[0.02] p-4 border border-white/[0.05]">
               <div className="flex items-center gap-2 mb-2">
@@ -104,9 +108,9 @@ export function CardDetailsModal({ card, onClose }: CardDetailsModalProps) {
             <div className="rounded-2xl bg-white/[0.02] p-4 border border-white/[0.05]">
               <div className="flex items-center gap-2 mb-2">
                 <Zap size={14} className="text-purple-400" />
-                <span className="text-[11px] font-black uppercase tracking-wider text-white/20">Interval</span>
+                <span className="text-[11px] font-black uppercase tracking-wider text-white/20">Level</span>
               </div>
-              <p className="text-[14px] font-black text-white/60">{card.interval} days</p>
+              <p className="text-[14px] font-black text-white/60">{card.reviewCount >= 5 ? 'Mastered' : 'Learning'}</p>
             </div>
           </div>
         </div>
