@@ -124,7 +124,12 @@ export function getAppMobileNavItems(role: Role | null, settings?: AppSettingsRe
     })
   }
 
-  return items
+  // Filter to ensure uniqueness by href
+  const uniqueItems = items.filter((item, index, self) => 
+    index === self.findIndex((t) => t.href === item.href)
+  )
+
+  return uniqueItems
 }
 
 export const adminNavItems: NavItem[] = [

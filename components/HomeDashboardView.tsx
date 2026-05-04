@@ -1,8 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { motion } from "framer-motion"
-import { CheckCircle2, Flame, Rocket, Sparkles, Zap, ArrowRight } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
+import { CheckCircle2, Flame, Rocket, Sparkles, Zap, ArrowRight, ChevronRight, Target, Trophy, Clock, Star, TrendingUp, Menu, X } from "lucide-react"
+import Link from "next/link"
 import type { AppUserRecord, CardsResponse } from "@/lib/types"
 
 interface Task {
@@ -11,9 +12,12 @@ interface Task {
   subtitle: string
   icon: React.ReactNode
   color: string
+  accentColor: string
   progress: number
   target: number
   completed: boolean
+  rewardXp: number
+  time: string
 }
 
 interface HomeDashboardViewProps {
@@ -22,167 +26,207 @@ interface HomeDashboardViewProps {
 }
 
 export function HomeDashboardView({ user, initialCardsData }: HomeDashboardViewProps) {
-
   const tasks: Task[] = [
     {
       id: "words",
       title: "Vocabulary Expansion",
       subtitle: "Learn 10 new words today",
-      icon: <span className="text-[16px] font-black">Aa</span>,
-      color: "bg-white text-black",
+      icon: <span className="text-[14px] font-bold">Aa</span>,
+      color: "bg-[#0A84FF]",
+      accentColor: "blue",
       progress: initialCardsData?.dailyCatalog?.claimedToday ?? 0,
       target: 10,
-      completed: (initialCardsData?.dailyCatalog?.claimedToday ?? 0) >= 10
+      completed: (initialCardsData?.dailyCatalog?.claimedToday ?? 0) >= 10,
+      rewardXp: 50,
+      time: "0/10"
     },
     {
       id: "writing",
       title: "Creative Writing",
       subtitle: "Short practice session",
       icon: <Sparkles size={18} />,
-      color: "bg-white/[0.05] text-white",
+      color: "bg-[#BF5AF2]",
+      accentColor: "purple",
       progress: 0,
       target: 1,
-      completed: false
+      completed: false,
+      rewardXp: 40,
+      time: "0/1"
     },
     {
       id: "quiz",
       title: "Knowledge Check",
       subtitle: "Quick proficiency quiz",
-      icon: <Zap size={18} />,
-      color: "bg-white/[0.05] text-white",
+      icon: <Target size={18} />,
+      color: "bg-[#FF9F0A]",
+      accentColor: "orange",
       progress: 0,
       target: 1,
-      completed: false
+      completed: false,
+      rewardXp: 30,
+      time: "0/1"
     }
   ]
 
   const completedTasks = tasks.filter(t => t.completed).length
   const totalProgress = Math.round((completedTasks / tasks.length) * 100)
+  const remainingXp = tasks.reduce((sum, t) => sum + (t.completed ? 0 : t.rewardXp), 0)
+
+  // Animation variants for Apple-style spring
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { 
+      opacity: 1,
+      transition: { 
+        staggerChildren: 0.1,
+        delayChildren: 0.2
+      }
+    }
+  }
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20, scale: 0.98 },
+    visible: { 
+      opacity: 1, 
+      y: 0, 
+      scale: 1,
+      transition: { 
+        type: "spring", 
+        stiffness: 260, 
+        damping: 20 
+      }
+    }
+  }
 
   return (
-    <div className="mx-auto max-w-xl min-h-screen px-6 pb-40 pt-12 bg-black selection:bg-white selection:text-black">
-      {/* Header Section */}
-      <header className="relative mb-12">
-        <span suppressHydrationWarning className="text-[14px] font-bold uppercase tracking-[0.2em] text-white/30 mb-4 block">
-          {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-        </span>
-        <h1 className="text-[48px] font-black tracking-[-0.04em] text-white leading-[0.95] mb-8">
-          Today’s<br />Mission
-        </h1>
-        
-        <div className="flex items-center gap-8">
-          <div className="relative h-28 w-28">
-            <svg className="h-full w-full -rotate-90" viewBox="0 0 100 100">
-              <circle
-                className="text-white/[0.05]"
-                strokeWidth="8"
-                stroke="currentColor"
-                fill="transparent"
-                r="42"
-                cx="50"
-                cy="50"
-              />
-              <motion.circle
-                className="text-white"
-                strokeWidth="8"
-                strokeDasharray={263.89}
-                initial={{ strokeDashoffset: 263.89 }}
-                animate={{ strokeDashoffset: 263.89 - (263.89 * totalProgress) / 100 }}
-                strokeLinecap="round"
-                stroke="currentColor"
-                fill="transparent"
-                r="42"
-                cx="50"
-                cy="50"
-              />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-[24px] font-black text-white">{totalProgress}%</span>
-            </div>
-          </div>
-          
-          <div className="flex-1">
-            <p className="text-[16px] font-medium text-white/40 leading-relaxed max-w-[180px]">
-              You've completed {completedTasks} out of {tasks.length} tasks for today.
-            </p>
-          </div>
-        </div>
-      </header>
-
-      {/* Stats Section */}
-      <section className="grid grid-cols-2 gap-4 mb-12">
-        <div className="bg-white/[0.03] rounded-[32px] p-6 border border-white/[0.05] backdrop-blur-md">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[13px] font-bold text-white/20 uppercase tracking-wider">Streak</span>
-            <Flame size={16} className="text-orange-500/80" />
-          </div>
-          <p className="text-[32px] font-black text-white leading-none">
-            {user.streak}<span className="text-[14px] text-white/10 ml-1 font-bold">days</span>
-          </p>
-        </div>
-        
-        <div className="bg-white/[0.03] rounded-[32px] p-6 border border-white/[0.05] backdrop-blur-md">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[13px] font-bold text-white/20 uppercase tracking-wider">Today</span>
-            <Sparkles size={16} className="text-blue-500/80" />
-          </div>
-          <p className="text-[32px] font-black text-white leading-none">
-            +120<span className="text-[14px] text-white/10 ml-1 font-bold">xp</span>
-          </p>
-        </div>
-      </section>
-
-      {/* Task List */}
-      <section className="mb-12">
-        <div className="flex items-center justify-between mb-8 px-2">
-          <h2 className="text-[20px] font-black text-white">Your Schedule</h2>
-          <span className="text-[13px] font-bold text-white/20">{tasks.length} active tasks</span>
-        </div>
-        
-        <div className="space-y-4">
-          {tasks.map((task) => (
-            <div 
-              key={task.id}
-              className="group bg-white/[0.02] rounded-[32px] p-5 border border-white/[0.05] transition-all hover:bg-white/[0.04] active:scale-[0.98]"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-5">
-                  <div className={`flex h-14 w-14 items-center justify-center rounded-2xl ${task.color} shadow-2xl`}>
-                    {task.icon}
-                  </div>
-                  <div>
-                    <h4 className="text-[17px] font-bold text-white">{task.title}</h4>
-                    <p className="text-[14px] font-medium text-white/30">{task.subtitle}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center">
-                  {task.completed ? (
-                    <div className="h-10 w-10 flex items-center justify-center rounded-full bg-white text-black">
-                      <CheckCircle2 size={20} />
-                    </div>
-                  ) : (
-                    <div className="text-[13px] font-black text-white/20 px-3 py-1 bg-white/[0.03] rounded-full border border-white/5">
-                      {task.progress}/{task.target}
-                    </div>
-                  )}
-                </div>
+    <div className="mx-auto max-w-xl min-h-screen px-4 pb-32 pt-20 overflow-x-hidden bg-black">
+      <motion.div 
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="space-y-5"
+      >
+        {/* Progress Card (Storage style) */}
+        <motion.section variants={itemVariants} className="px-1">
+          <Link href="/stats" className="bg-[#1C1C1E] rounded-[20px] p-4 flex flex-col gap-3 active:scale-[0.98] transition-transform border border-white/[0.03]">
+            <div className="flex items-center justify-between">
+              <span className="text-[15px] font-semibold tracking-tight text-white">Daily Progress</span>
+              <div className="flex items-center text-white/30">
+                <span className="text-[13px] font-medium mr-1">{completedTasks} of {tasks.length} tasks</span>
+                <ChevronRight size={16} />
               </div>
             </div>
-          ))}
-        </div>
-      </section>
+            <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: `${totalProgress}%` }}
+                transition={{ duration: 1, ease: "easeOut" }}
+                className="h-full bg-[#34C759] rounded-full"
+              />
+            </div>
+          </Link>
+        </motion.section>
 
-      {/* CTA Section */}
-      <div className="fixed bottom-32 left-0 right-0 px-6 pointer-events-none md:static md:px-0 md:bottom-0">
-        <button 
-          onClick={() => window.location.href = "/practice"}
-          className="pointer-events-auto h-20 w-full bg-white text-black rounded-[32px] flex items-center justify-center gap-4 shadow-[0_20px_40px_rgba(255,255,255,0.05)] transition-all hover:bg-white/90 active:scale-[0.97]"
-        >
-          <span className="text-[18px] font-black tracking-tight">START SESSION</span>
-          <ArrowRight size={20} />
-        </button>
-      </div>
+        {/* Promo Banner (Get Apple Invites style) - Only show if not Pro/Admin */}
+        {user.role !== "PRO" && user.role !== "ADMIN" && (
+          <motion.section variants={itemVariants} className="px-1">
+            <div className="bg-[#1C1C1E] rounded-[20px] p-4 relative overflow-hidden group border border-white/[0.03]">
+               <button className="absolute top-4 right-4 text-white/20 hover:text-white/40 transition-colors">
+                 <X size={18} />
+               </button>
+               <div className="flex gap-3">
+                  <div className="h-10 w-10 shrink-0 rounded-lg bg-[#FF9F0A] flex items-center justify-center text-white shadow-inner shadow-white/20">
+                     <Zap size={20} fill="currentColor" />
+                  </div>
+                  <div className="flex-1 space-y-0.5">
+                     <h3 className="text-[15px] font-bold tracking-tight text-white">Boost Your Learning</h3>
+                     <p className="text-[12px] font-medium text-white/50 leading-snug">Unlock personalized AI coaching and unlimited practice.</p>
+                     <button className="text-[14px] font-bold text-[#0A84FF] pt-1.5 flex items-center gap-1 group-active:opacity-60 transition-opacity">
+                       Upgrade to Pro
+                     </button>
+                  </div>
+               </div>
+            </div>
+          </motion.section>
+        )}
+
+        {/* Saved Grid (Saved to iCloud style) */}
+        <section className="space-y-2.5">
+          <div className="flex items-center justify-between px-3">
+            <div className="flex items-center gap-1.5">
+               <div className="w-1 h-1 rounded-full bg-[#34C759]" />
+               <h3 className="text-[11px] font-semibold text-white/40 uppercase tracking-[0.05em]">
+                 YOUR MISSION
+               </h3>
+            </div>
+            <button className="text-[13px] font-semibold text-[#0A84FF] flex items-center active:opacity-60 transition-opacity">
+              See All <ChevronRight size={14} />
+            </button>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-2.5 px-1">
+            {tasks.map((task) => (
+              <Link
+                key={task.id}
+                href="/practice"
+                className="bg-[#1C1C1E] rounded-[20px] p-3.5 flex flex-col gap-2.5 active:scale-[0.97] transition-all border border-white/[0.03]"
+              >
+                <div className={`h-9 w-9 flex items-center justify-center rounded-lg ${task.color} text-white shadow-inner shadow-white/10`}>
+                  {task.icon}
+                </div>
+                <div className="space-y-0">
+                  <p className="text-[15px] font-bold tracking-tight text-white truncate">{task.title.split(' ')[0]}</p>
+                  <p className="text-[12px] font-medium text-white/30">{task.time} Completed</p>
+                </div>
+              </Link>
+            ))}
+            <Link
+              href="/grammar"
+              className="bg-[#1C1C1E] rounded-[20px] p-3.5 flex flex-col gap-2.5 active:scale-[0.97] transition-all border border-white/[0.03]"
+            >
+              <div className="h-9 w-9 flex items-center justify-center rounded-lg bg-[#5E5CE6] text-white shadow-inner shadow-white/10">
+                <Sparkles size={16} />
+              </div>
+              <div className="space-y-0">
+                <p className="text-[15px] font-bold tracking-tight text-white">Grammar</p>
+                <p className="text-[12px] font-medium text-white/30">12 Rules</p>
+              </div>
+            </Link>
+          </div>
+        </section>
+
+        {/* Bottom List Items (Backup style) */}
+        <motion.section variants={itemVariants} className="px-1">
+          <div className="bg-[#1C1C1E] rounded-[20px] overflow-hidden divide-y divide-white/[0.05] border border-white/[0.03]">
+            <Link href="/stats" className="flex items-center justify-between p-3.5 px-4 active:bg-white/5 transition-colors">
+              <div className="flex items-center gap-3">
+                 <div className="h-7 w-7 rounded-md bg-[#0A84FF] flex items-center justify-center text-white">
+                   <Target size={14} />
+                 </div>
+                 <span className="text-[15px] font-semibold text-white">Learning Goal</span>
+              </div>
+              <div className="flex items-center gap-2">
+                 <span className="text-[13px] text-white/20 font-medium">Daily</span>
+                 <ChevronRight size={16} className="text-white/10" />
+              </div>
+            </Link>
+            <Link href="/stats" className="flex items-center justify-between p-3.5 px-4 active:bg-white/5 transition-colors">
+              <div className="flex items-center gap-3">
+                 <div className="h-7 w-7 rounded-md bg-[#34C759] flex items-center justify-center text-white">
+                   <Flame size={14} />
+                 </div>
+                 <span className="text-[15px] font-semibold text-white">Keep Streak</span>
+              </div>
+              <div className="flex items-center gap-2">
+                 <span className="text-[13px] text-white/20 font-medium">1d</span>
+                 <ChevronRight size={16} className="text-white/10" />
+              </div>
+            </Link>
+          </div>
+        </motion.section>
+      </motion.div>
     </div>
   )
 }
+
+

@@ -139,18 +139,17 @@ export function LoginCard({ initialMode = "login" }: { initialMode?: Mode }) {
   return (
     <div className="mx-auto w-full max-w-md px-4">
       {/* Header */}
-      <div className="mb-8 flex flex-col items-center text-center">
-        <div className="brand-mark mb-4 h-14 w-14 text-xl font-semibold">
+      <div className="mb-10 flex flex-col items-center text-center">
+        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-[18px] bg-white text-black shadow-xl">
           <BrandLogo />
         </div>
-        <p className="text-xs font-bold uppercase tracking-[0.3em] text-muted">LexiFlow</p>
-        <h1 className="mt-2 text-[28px] font-black tracking-tight text-ink md:text-[32px]">
-          {mode === "login" ? "Welcome back" : "Create account"}
+        <h1 className="text-[32px] font-bold tracking-tight text-white leading-tight">
+          {mode === "login" ? "Sign In" : "Sign Up"}
         </h1>
-        <p className="mt-2 text-[14px] text-muted">
+        <p className="mt-2 text-[15px] font-medium text-white/40 leading-relaxed max-w-[280px]">
           {mode === "login"
-            ? "Sign in to continue learning"
-            : "Start your vocabulary journey"}
+            ? "Sign in to LexiFlow to continue your vocabulary journey."
+            : "Create your account and start mastering new words today."}
         </p>
       </div>
 
@@ -168,36 +167,23 @@ export function LoginCard({ initialMode = "login" }: { initialMode?: Mode }) {
         )}
         <form onSubmit={handleEmailSubmit} noValidate className="space-y-4">
           {/* Email */}
-          <div>
-            <label htmlFor="email" className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider text-muted">
-              Email
-            </label>
+          <div className="space-y-1.5">
             <input
               id="email"
               type="email"
               autoComplete="email"
               value={email}
               onChange={(e) => { setEmail(e.target.value); setErrors((p) => ({ ...p, email: undefined, form: undefined })) }}
-              placeholder="you@example.com"
-              className={`w-full rounded-[14px] border bg-bg-secondary px-4 py-3 text-[15px] font-medium text-ink outline-none transition placeholder:text-muted/40 focus:border-accent/60 focus:bg-bg-tertiary ${errors.email ? "border-rose-500/60" : "border-line"}`}
+              placeholder="Email"
+              className={`w-full rounded-[12px] border bg-white/[0.05] px-4 py-3.5 text-[17px] font-medium text-white outline-none transition-all placeholder:text-white/20 focus:bg-white/[0.08] ${errors.email ? "border-red-500/50" : "border-white/[0.05]"}`}
             />
             {errors.email && (
-              <p className="mt-1.5 text-[12px] font-medium text-rose-400">{errors.email}</p>
+              <p className="px-1 text-[13px] font-medium text-red-400">{errors.email}</p>
             )}
           </div>
 
           {/* Password */}
-          <div>
-            <div className="mb-1.5 flex items-center justify-between">
-              <label htmlFor="password" className="text-[12px] font-bold uppercase tracking-wider text-muted">
-                Password
-              </label>
-              {mode === "login" && (
-                <span className="text-[12px] font-medium text-muted/60">
-                  8+ characters required
-                </span>
-              )}
-            </div>
+          <div className="space-y-1.5">
             <div className="relative">
               <input
                 id="password"
@@ -205,20 +191,20 @@ export function LoginCard({ initialMode = "login" }: { initialMode?: Mode }) {
                 autoComplete={mode === "login" ? "current-password" : "new-password"}
                 value={password}
                 onChange={(e) => { setPassword(e.target.value); setErrors((p) => ({ ...p, password: undefined, form: undefined })) }}
-                placeholder="••••••••"
-                className={`w-full rounded-[14px] border bg-bg-secondary px-4 py-3 pr-11 text-[15px] font-medium text-ink outline-none transition placeholder:text-muted/40 focus:border-accent/60 focus:bg-bg-tertiary ${errors.password ? "border-rose-500/60" : "border-line"}`}
+                placeholder="Password"
+                className={`w-full rounded-[12px] border bg-white/[0.05] px-4 py-3.5 pr-12 text-[17px] font-medium text-white outline-none transition-all placeholder:text-white/20 focus:bg-white/[0.08] ${errors.password ? "border-red-500/50" : "border-white/[0.05]"}`}
               />
               <button
                 type="button"
                 tabIndex={-1}
                 onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted/50 hover:text-muted transition"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition"
               >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                {showPassword ? <EyeOff size={20} strokeWidth={2} /> : <Eye size={20} strokeWidth={2} />}
               </button>
             </div>
             {errors.password && (
-              <p className="mt-1.5 text-[12px] font-medium text-rose-400">{errors.password}</p>
+              <p className="px-1 text-[13px] font-medium text-red-400">{errors.password}</p>
             )}
           </div>
 
@@ -265,15 +251,15 @@ export function LoginCard({ initialMode = "login" }: { initialMode?: Mode }) {
             type="submit"
             id={mode === "login" ? "login-submit" : "register-submit"}
             disabled={loading !== null}
-            className="flex h-12 w-full items-center justify-center rounded-[14px] bg-ink text-[15px] font-black text-bg-primary transition hover:opacity-90 disabled:opacity-45"
+            className="flex h-12 w-full items-center justify-center rounded-[12px] bg-[#0A84FF] text-[17px] font-bold text-white transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-45 shadow-lg"
           >
             {loading === "email" ? (
               <span className="flex items-center gap-2">
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-bg-primary/20 border-t-bg-primary" />
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white" />
                 {mode === "login" ? "Signing in…" : "Creating account…"}
               </span>
             ) : (
-              mode === "login" ? "Log in" : "Create account"
+              mode === "login" ? "Sign In" : "Sign Up"
             )}
           </button>
         </form>

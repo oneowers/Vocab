@@ -1,5 +1,9 @@
 # Lexiflow Design Documentation
 
+## 0. Use for UI and UX only by this rules
+https://developer.apple.com/design/
+
+
 ## 1. Design Vision
 **Lexiflow** — это не просто приложение для заучивания слов, это "иммерсивный центр управления знаниями". Визуальная концепция базируется на стиле **Apple Liquid Glass**, который сочетает в себе глубину, прозрачность и текучесть.
 

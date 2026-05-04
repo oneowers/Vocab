@@ -386,16 +386,8 @@ export function TranslatorPanel({
             </div>
           </div>
 
-          {/* Right Side: Profile */}
-          <div className="flex flex-1 justify-end">
-            <Link
-              href="/profile"
-              aria-label="Open profile"
-              className="flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-full border border-line bg-bg-secondary/40 text-muted shadow-modal backdrop-blur-xl transition hover:bg-bg-tertiary hover:text-ink"
-            >
-              <UserRound size={20} />
-            </Link>
-          </div>
+          {/* Right Side: Spacer to keep centering */}
+          <div className="flex flex-1 justify-end" />
         </div>
       </div>
 

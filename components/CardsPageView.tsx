@@ -216,61 +216,26 @@ export function CardsPageView({ initialData = null, user = null }: CardsPageView
         onChange={(event) => void handleImportFile(event)}
       />
 
-      <div className="pt-6 pb-24 space-y-8">
-        <header className="flex flex-col gap-6">
-          <div className="flex items-start justify-between px-1">
+      <div className="pt-2 pb-24 space-y-10">
+        <header className="flex flex-col gap-8">
+          <div className="flex items-start justify-between px-2">
             <div>
-              <h1 className="text-[32px] font-black tracking-[-1.2px] text-white leading-none">
+              <h1 className="text-[34px] font-bold tracking-[-1.2px] text-white leading-tight">
                 Your cards
               </h1>
-              <div className="mt-2 flex items-center gap-2 text-[13px] font-bold text-white/30">
-                <span className="flex items-center gap-1">
-                  <span className="text-white/60">{totalCount}</span> total
+              <div className="mt-3 flex items-center gap-2.5 text-[13px] font-medium text-white/30">
+                <span className="flex items-center gap-1.5">
+                  <span className="text-white/60">{totalCount}</span> <span className="uppercase tracking-wider text-[10px] font-bold opacity-40">total</span>
                 </span>
                 <span className="h-1 w-1 rounded-full bg-white/10" />
-                <span className="flex items-center gap-1">
-                  <span className="text-blue-400">{waitingCount}</span> waiting
+                <span className="flex items-center gap-1.5">
+                  <span className="text-[#0A84FF]">{waitingCount}</span> <span className="uppercase tracking-wider text-[10px] font-bold opacity-40">waiting</span>
                 </span>
                 <span className="h-1 w-1 rounded-full bg-white/10" />
-                <span className="flex items-center gap-1">
-                  <span className="text-emerald-400">{learnedCount}</span> learned
+                <span className="flex items-center gap-1.5">
+                  <span className="text-[#30D158]">{learnedCount}</span> <span className="uppercase tracking-wider text-[10px] font-bold opacity-40">learned</span>
                 </span>
               </div>
-            </div>
-            <div className="relative">
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.03] text-white/40 border border-white/10 active:scale-90 transition-all hover:bg-white/[0.06] hover:text-white"
-              >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>
-              </button>
-
-              <AnimatePresence>
-                {isMenuOpen && (
-                  <motion.div
-                    ref={menuRef}
-                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                    className="absolute right-0 top-14 z-50 min-w-[180px] rounded-2xl bg-bg-tertiary p-1.5 shadow-2xl border border-line backdrop-blur-xl"
-                  >
-                    <button
-                      onClick={() => { handleExport(); setIsMenuOpen(false) }}
-                      className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-[14px] font-bold text-white hover:bg-white/5 transition-all"
-                    >
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                      Export JSON
-                    </button>
-                    <button
-                      onClick={() => { importRef.current?.click(); setIsMenuOpen(false) }}
-                      className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-[14px] font-bold text-white hover:bg-white/5 transition-all"
-                    >
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                      Import JSON
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
             </div>
           </div>
 
@@ -278,17 +243,16 @@ export function CardsPageView({ initialData = null, user = null }: CardsPageView
             {waitingCount > 0 ? (
               <button
                 onClick={() => window.location.href = "/review"}
-                className="group relative flex h-[60px] w-full items-center justify-center overflow-hidden rounded-[20px] bg-white text-[#0a0c10] transition-all hover:scale-[1.02] active:scale-[0.98] shadow-[0_20px_40px_rgba(255,255,255,0.1)]"
+                className="group relative flex h-[64px] w-full items-center justify-center overflow-hidden rounded-[14px] bg-[#0A84FF] text-white apple-spring shadow-[0_8px_32px_rgba(10,132,255,0.25)]"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-white/20 to-blue-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-                <span className="relative flex items-center gap-2 text-[16px] font-black uppercase tracking-wider">
+                <span className="relative flex items-center gap-2.5 text-[17px] font-bold tracking-[-0.2px]">
                   Review {waitingCount} cards
-                  <svg className="transition-transform group-hover:translate-x-1" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+                  <svg className="transition-transform group-hover:translate-x-1" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
                 </span>
               </button>
             ) : (
-              <div className="flex h-[60px] w-full items-center justify-center rounded-[20px] border border-white/[0.05] bg-white/[0.02] text-[15px] font-black text-white/20 uppercase tracking-widest">
-                <svg className="mr-2 opacity-50" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+              <div className="flex h-[64px] w-full items-center justify-center rounded-[14px] border border-white/[0.08] bg-white/[0.04] text-[15px] font-bold text-white/20 tracking-tight">
+                <svg className="mr-2 opacity-50" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
                 All caught up
               </div>
             )}
@@ -296,25 +260,24 @@ export function CardsPageView({ initialData = null, user = null }: CardsPageView
         </header>
 
         {mounted && user && (user.lastReviewDate !== getTodayDateKey() && user.lastReviewDate !== getYesterdayDateKey()) && user.lastStreakRecoveryDate !== getTodayDateKey() && (
-          <div className="relative overflow-hidden rounded-[32px] border border-orange-500/20 bg-[#1a120b] p-6 shadow-2xl">
-            <div className="absolute -right-4 -top-4 opacity-10 blur-2xl">
-              <Flame size={120} className="text-orange-500" />
+          <div className="liquid-glass p-7 apple-spring relative overflow-hidden">
+            <div className="absolute -right-6 -top-6 opacity-10 blur-3xl">
+              <Flame size={140} className="text-[#FF9F0A]" />
             </div>
-            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/[0.08] to-transparent" />
             
             <div className="relative z-10">
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500/20 text-orange-400">
-                  <Flame size={18} />
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-[#FF9F0A]/20 text-[#FF9F0A]">
+                  <Flame size={22} />
                 </div>
-                <h3 className="text-[18px] font-black text-white">Streak at risk</h3>
+                <h3 className="text-[20px] font-bold text-white tracking-tight">Streak at risk</h3>
               </div>
-              <p className="mt-3 text-[14px] font-bold leading-relaxed text-white/50">
-                Restore your progress in just <span className="text-orange-400">3 minutes</span>. Complete this session to keep your streak alive.
+              <p className="mt-4 text-[15px] font-medium leading-relaxed text-white/60">
+                Restore your progress in just <span className="text-[#FF9F0A]">3 minutes</span>. Complete this session to keep your streak alive.
               </p>
               <button
                 onClick={() => window.location.href = "/practice?mode=recovery"}
-                className="mt-6 flex h-11 items-center justify-center rounded-xl bg-orange-500 px-6 text-[14px] font-black uppercase tracking-wider text-white shadow-[0_10px_20px_rgba(249,115,22,0.2)] hover:scale-[1.05] active:scale-95 transition-all"
+                className="mt-8 flex h-12 items-center justify-center rounded-[12px] bg-[#FF9F0A] px-8 text-[15px] font-bold text-white apple-spring shadow-[0_8px_24px_rgba(255,159,10,0.3)]"
               >
                 Start Recovery
               </button>

@@ -60,7 +60,7 @@ export function PracticeModeSelector({
   const hasDue = dueCount > 0
 
   return (
-    <div className="mx-auto max-w-xl px-4 pb-32 pt-6 md:pt-12">
+    <div className="mx-auto max-w-xl px-4 pb-32 pt-0">
       {/* Compact Header */}
       <header className="mb-5 px-1">
         <h1 className="text-[28px] font-black tracking-tight text-ink md:text-[36px]">

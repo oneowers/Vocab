@@ -1,6 +1,7 @@
 "use client"
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
+import { AppleAlert } from "@/components/AppleAlert"
 
 type ToastTone = "info" | "success" | "error"
 
@@ -22,10 +23,15 @@ export function ToastProvider({
   children: React.ReactNode
 }) {
   const [toasts, setToasts] = useState<ToastItem[]>([])
+  const [activeError, setActiveError] = useState<string | null>(null)
 
   const showToast = useCallback((message: string, tone: ToastTone = "info") => {
-    const id = Date.now() + Math.floor(Math.random() * 1000)
-    setToasts((current) => [...current, { id, message, tone }])
+    if (tone === "error") {
+      setActiveError(message)
+    } else {
+      const id = Date.now() + Math.floor(Math.random() * 1000)
+      setToasts((current) => [...current, { id, message, tone }])
+    }
   }, [])
 
   const contextValue = useMemo(() => ({ showToast }), [showToast])
@@ -37,7 +43,7 @@ export function ToastProvider({
 
     const timeout = window.setTimeout(() => {
       setToasts((current) => current.slice(1))
-    }, 2000)
+    }, 2500)
 
     return () => window.clearTimeout(timeout)
   }, [toasts])
@@ -45,16 +51,29 @@ export function ToastProvider({
   return (
     <ToastContext.Provider value={contextValue}>
       {children}
+      
+      {/* iOS Style Alert for Errors */}
+      <AppleAlert 
+        open={!!activeError}
+        onClose={() => setActiveError(null)}
+        title="Attention"
+        message={activeError || ""}
+        primaryAction={{
+          label: "OK",
+          onClick: () => setActiveError(null)
+        }}
+      />
+
+      {/* Non-intrusive Toasts for Info/Success */}
       <div className="pointer-events-none fixed bottom-[calc(var(--tab-bar-height)+16px)] right-4 z-50 flex w-[min(92vw,24rem)] flex-col gap-3 md:bottom-6">
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`pointer-events-auto rounded-[18px] border px-4 py-3 text-[15px] shadow-panel backdrop-blur-xl animate-slide-in ${toast.tone === "success"
+            className={`pointer-events-auto rounded-[18px] border px-4 py-3 text-[15px] shadow-panel backdrop-blur-xl animate-slide-in ${
+              toast.tone === "success"
                 ? "border-line bg-successBg text-successText"
-                : toast.tone === "error"
-                  ? "border-line bg-dangerBg text-dangerText"
-                  : "border-line bg-bg-primary/90 text-ink"
-              }`}
+                : "border-line bg-bg-primary/90 text-ink"
+            }`}
           >
             {toast.message}
           </div>

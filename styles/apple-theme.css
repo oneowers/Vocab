@@ -1,145 +1,80 @@
 :root {
   color-scheme: dark;
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
-  --bg-primary: #000000;
-  --bg-secondary: #08080a;
-  --bg-tertiary: #1f1f25;
-  --text-primary: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.72);
-  --text-tertiary: rgba(255, 255, 255, 0.42);
-  --accent: #f2f2f4;
-  --accent-foreground: #ffffff;
-  --accent-soft: rgba(255, 255, 255, 0.1);
-  --accent-glow: rgba(255, 255, 255, 0.06);
-  --accent-glow-secondary: rgba(255, 255, 255, 0.03);
-  --separator: rgba(255, 255, 255, 0.08);
-  --destructive: #ff3b30;
-  --destructive-foreground: #ffffff;
-  --destructive-soft: rgba(255, 59, 48, 0.12);
-  --success: #34c759;
-  --success-soft: rgba(52, 199, 89, 0.14);
-  --warning: #ffcc00;
-  --warning-soft: rgba(255, 204, 0, 0.18);
-  --activity-level-0: #161b22;
-  --activity-level-1: #0e4429;
-  --activity-level-2: #006d32;
-  --activity-level-3: #26a641;
-  --activity-level-4: #39d353;
-  --radius-card: 26px;
-  --radius-button: 999px;
-  --radius-input: 20px;
-  --radius-sheet: 28px;
-  --shadow-subtle: none;
-  --shadow-card: 0 20px 48px rgba(0, 0, 0, 0.28);
-  --shadow-modal: 0 28px 72px rgba(0, 0, 0, 0.42);
-  --duration-standard: 320ms;
-  --duration-slow: 350ms;
-  --ease-standard: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --font-sans: -apple-system, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+  
+  /* Backgrounds */
+  --apple-bg: #000000;
+  --apple-elevated: #1C1C1E;
+  --apple-grouped: #2C2C2E;
+  
+  /* Liquid Glass Core */
+  --apple-glass: rgba(255, 255, 255, 0.08);
+  --apple-glass-border: rgba(255, 255, 255, 0.12);
+  --apple-glass-blur: 40px;
+  --apple-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  
+  /* Accents */
+  --apple-accent: #0A84FF;
+  --apple-success: #30D158;
+  --apple-danger: #FF453A;
+  --apple-warning: #FF9F0A;
+  
+  /* Text Levels */
+  --apple-text-primary: rgba(255, 255, 255, 1);
+  --apple-text-secondary: rgba(255, 255, 255, 0.6);
+  --apple-text-tertiary: rgba(255, 255, 255, 0.3);
+  
+  /* Radii */
+  --radius-card: 20px;
+  --radius-button: 14px;
+  --radius-input: 12px;
+  
+  /* Legacy/Compatibility mapping */
+  --bg-primary: var(--apple-bg);
+  --bg-secondary: var(--apple-elevated);
+  --bg-tertiary: var(--apple-grouped);
+  --text-primary: var(--apple-text-primary);
+  --text-secondary: var(--apple-text-secondary);
+  --text-tertiary: var(--apple-text-tertiary);
+  --accent: var(--apple-accent);
+  --success: var(--apple-success);
+  --destructive: var(--apple-danger);
+  --warning: var(--apple-warning);
+  
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
-  --tab-bar-height: calc(49px + var(--safe-area-bottom));
+  --tab-bar-height: calc(64px + var(--safe-area-bottom));
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
-    --bg-primary: #000000;
-    --bg-secondary: #050506;
-    --bg-tertiary: #101012;
-    --text-primary: #ffffff;
-    --text-secondary: #ebebf5;
-    --text-tertiary: #8e8e93;
-    --accent: #0a84ff;
-    --accent-foreground: #ffffff;
-    --accent-soft: rgba(10, 132, 255, 0.18);
-    --accent-glow: rgba(10, 132, 255, 0.16);
-    --accent-glow-secondary: rgba(10, 132, 255, 0.08);
-    --separator: rgba(255, 255, 255, 0.12);
-    --destructive: #ff453a;
-    --destructive-foreground: #ffffff;
-    --destructive-soft: rgba(255, 69, 58, 0.18);
-    --success: #30d158;
-    --success-soft: rgba(48, 209, 88, 0.18);
-    --warning: #ffd60a;
-    --warning-soft: rgba(255, 214, 10, 0.16);
-    --activity-level-0: #161b22;
-    --activity-level-1: #0e4429;
-    --activity-level-2: #006d32;
-    --activity-level-3: #26a641;
-    --activity-level-4: #39d353;
-    --shadow-subtle: none;
-    --shadow-card: none;
-    --practice-bg-idle: #060608;
-    --practice-bg-correct: #07110d;
-    --practice-bg-incorrect: #14090b;
-    --practice-bg-active: #0a0b14;
   }
 }
 
 [data-theme="dark"] {
   color-scheme: dark;
-  --bg-primary: #000000;
-  --bg-secondary: #050506;
-  --bg-tertiary: #101012;
-  --text-primary: #ffffff;
-  --text-secondary: #ebebf5;
-  --text-tertiary: #8e8e93;
-  --accent: #0a84ff;
-  --accent-foreground: #ffffff;
-  --accent-soft: rgba(10, 132, 255, 0.18);
-  --accent-glow: rgba(10, 132, 255, 0.16);
-  --accent-glow-secondary: rgba(10, 132, 255, 0.08);
-  --separator: rgba(255, 255, 255, 0.12);
-  --destructive: #ff453a;
-  --destructive-foreground: #ffffff;
-  --destructive-soft: rgba(255, 69, 58, 0.18);
-  --success: #30d158;
-  --success-soft: rgba(48, 209, 88, 0.18);
-  --warning: #ffd60a;
-  --warning-soft: rgba(255, 214, 10, 0.16);
-  --activity-level-0: #161b22;
-  --activity-level-1: #0e4429;
-  --activity-level-2: #006d32;
-  --activity-level-3: #26a641;
-  --activity-level-4: #39d353;
-  --shadow-subtle: none;
-  --shadow-card: none;
-  --practice-bg-idle: #060608;
-  --practice-bg-correct: #07110d;
-  --practice-bg-incorrect: #14090b;
-  --practice-bg-active: #0a0b14;
 }
 
-[data-theme="light"] {
-  color-scheme: light;
-  --bg-primary: #f2f2f7;
-  --bg-secondary: #ffffff;
-  --bg-tertiary: #e5e5ea;
-  --text-primary: #000000;
-  --text-secondary: #3c3c43;
-  --text-tertiary: #8e8e93;
-  --accent: #007aff;
-  --accent-foreground: #ffffff;
-  --accent-soft: rgba(0, 122, 255, 0.12);
-  --accent-glow: rgba(0, 122, 255, 0.06);
-  --accent-glow-secondary: rgba(0, 122, 255, 0.03);
-  --separator: rgba(60, 60, 67, 0.12);
-  --destructive: #ff3b30;
-  --destructive-foreground: #ffffff;
-  --destructive-soft: rgba(255, 59, 48, 0.12);
-  --success: #34c759;
-  --success-soft: rgba(52, 199, 89, 0.14);
-  --warning: #ffcc00;
-  --warning-soft: rgba(255, 204, 0, 0.18);
-  --activity-level-0: #ebedf0;
-  --activity-level-1: #9be9a8;
-  --activity-level-2: #40c463;
-  --activity-level-3: #30a14e;
-  --activity-level-4: #216e39;
-  --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.04);
-  --shadow-card: 0 12px 32px rgba(0, 0, 0, 0.08);
-  --shadow-modal: 0 24px 64px rgba(0, 0, 0, 0.12);
-  --practice-bg-idle: #f2f2f7;
-  --practice-bg-correct: #e8f5e9;
-  --practice-bg-incorrect: #ffebee;
-  --practice-bg-active: #e3f2fd;
+/* Liquid Glass Utility */
+.liquid-glass {
+  backdrop-filter: blur(50px) saturate(200%);
+  -webkit-backdrop-filter: blur(50px) saturate(200%);
+  background: rgba(255, 255, 255, 0.05);
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 
+    0 4px 24px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.apple-spring {
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
+              opacity 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.apple-spring:hover {
+  transform: scale(1.02);
+}
+
+.apple-spring:active {
+  transform: scale(0.97);
 }

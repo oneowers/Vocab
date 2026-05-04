@@ -13,28 +13,28 @@ import { CardDetailsModal } from "./CardDetailsModal"
 
 const CEFR_STYLES: Record<CefrLevel, { badge: string; dot: string }> = {
   A1: {
-    badge: "bg-emerald-500/10 text-emerald-300",
-    dot: "text-emerald-500"
+    badge: "bg-[#30D158]/10 text-[#30D158]",
+    dot: "text-[#30D158]"
   },
   A2: {
-    badge: "bg-lime-500/10 text-lime-300",
-    dot: "text-lime-500"
+    badge: "bg-[#30D158]/15 text-[#30D158]",
+    dot: "text-[#30D158]"
   },
   B1: {
-    badge: "bg-sky-500/10 text-sky-300",
-    dot: "text-sky-500"
+    badge: "bg-[#0A84FF]/10 text-[#0A84FF]",
+    dot: "text-[#0A84FF]"
   },
   B2: {
-    badge: "bg-indigo-500/10 text-indigo-300",
-    dot: "text-indigo-500"
+    badge: "bg-[#0A84FF]/15 text-[#0A84FF]",
+    dot: "text-[#0A84FF]"
   },
   C1: {
-    badge: "bg-fuchsia-500/10 text-fuchsia-300",
-    dot: "text-fuchsia-500"
+    badge: "bg-[#BF5AF2]/10 text-[#BF5AF2]",
+    dot: "text-[#BF5AF2]"
   },
   C2: {
-    badge: "bg-rose-500/10 text-rose-300",
-    dot: "text-rose-500"
+    badge: "bg-[#FF453A]/10 text-[#FF453A]",
+    dot: "text-[#FF453A]"
   }
 }
 
@@ -153,14 +153,14 @@ export function CardList({
           </div>
 
           {/* Level Filters - Horizontal Scroll */}
-          <div className="hide-scrollbar flex items-center gap-2 overflow-x-auto pb-1">
+          <div className="hide-scrollbar flex items-center gap-2.5 overflow-x-auto pb-1">
             {(["All", "A1", "A2", "B1", "B2", "C1", "C2"] as const).map((level) => (
               <button
                 key={level}
                 onClick={() => onSelectLevel(level)}
-                className={`h-8 shrink-0 rounded-xl px-4 text-[12px] font-black uppercase tracking-widest transition-all border ${selectedLevel === level
-                  ? "bg-white text-[#0a0c10] border-white shadow-[0_0_15px_rgba(255,255,255,0.2)]"
-                  : "bg-white/[0.03] text-white/40 border-white/5 hover:bg-white/[0.08] hover:text-white"
+                className={`h-9 shrink-0 rounded-[10px] px-5 text-[13px] font-bold transition-all apple-spring ${selectedLevel === level
+                  ? "bg-[#0A84FF] text-white shadow-[0_4px_12px_rgba(10,132,255,0.3)]"
+                  : "bg-white/[0.04] text-white/30 border border-white/[0.08] hover:text-white/60"
                   }`}
               >
                 {level}
@@ -169,7 +169,7 @@ export function CardList({
           </div>
 
           {/* Status Tabs */}
-          <div className="flex h-12 items-center rounded-[18px] bg-white/[0.03] border border-white/5 p-1.5">
+          <div className="flex h-[52px] items-center rounded-[14px] bg-white/[0.04] border border-white/[0.08] p-1.5">
             {(["Waiting", "Learned", "All"] as const).map((status) => {
               const isActive = selectedStatus === status
               const count = status === "Waiting" ? waitingCount : status === "Learned" ? learnedCount : totalCount
@@ -177,18 +177,18 @@ export function CardList({
                 <button
                   key={status}
                   onClick={() => onSelectStatus(status as CardStatusFilter)}
-                  className={`relative flex flex-1 items-center justify-center gap-2 rounded-xl text-[14px] font-black tracking-tight transition-all ${isActive ? "text-[#0a0c10]" : "text-white/40 hover:text-white"
+                  className={`relative flex flex-1 items-center justify-center gap-2 rounded-[10px] text-[15px] font-bold tracking-tight transition-all apple-spring ${isActive ? "text-white" : "text-white/30 hover:text-white/50"
                     }`}
                 >
                   {isActive && (
                     <motion.div
                       layoutId="activeTab"
-                      className="absolute inset-0 rounded-xl bg-white shadow-xl"
-                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                      className="absolute inset-0 rounded-[10px] bg-white/[0.08] border border-white/[0.1] shadow-xl"
+                      transition={{ type: "spring", bounce: 0.15, duration: 0.5 }}
                     />
                   )}
                   <span className="relative z-10">{status}</span>
-                  <span className={`relative z-10 text-[11px] font-bold opacity-50 ${isActive ? "text-[#0a0c10]/50" : ""}`}>
+                  <span className={`relative z-10 text-[12px] font-medium opacity-40 ${isActive ? "text-white/60" : ""}`}>
                     {count}
                   </span>
                 </button>
@@ -264,25 +264,25 @@ export function CardList({
               <article
                 key={card.id}
                 onClick={() => setInspectedCard(card)}
-                className="group relative overflow-hidden rounded-[28px] border border-white/[0.06] bg-gradient-to-br from-white/[0.04] to-transparent p-5 transition-all hover:scale-[1.02] hover:border-white/10 active:scale-[0.98] active:bg-white/[0.06] shadow-xl cursor-pointer"
+                className="liquid-glass group relative overflow-hidden p-6 apple-spring cursor-pointer"
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="absolute inset-0 bg-gradient-to-br from-[#0A84FF]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 
-                <div className="relative z-10 flex flex-col gap-1 pr-8">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-[22px] font-black tracking-[-0.5px] text-white">{card.original}</h3>
+                <div className="relative z-10 flex flex-col gap-1.5 pr-8">
+                  <div className="flex items-center gap-2.5">
+                    <h3 className="text-[22px] font-bold tracking-tight text-white">{card.original}</h3>
                     {card.cefrLevel && (
-                      <span className={`text-[10px] font-black uppercase tracking-tighter px-2 py-0.5 rounded-lg ${CEFR_STYLES[card.cefrLevel].badge}`}>
+                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-[6px] ${CEFR_STYLES[card.cefrLevel].badge}`}>
                         {card.cefrLevel}
                       </span>
                     )}
                   </div>
-                  <p className="text-[15px] font-bold text-white/50">{card.translation}</p>
+                  <p className="text-[15px] font-medium text-white/40">{card.translation}</p>
                   
                   {card.nextReviewDate <= getTodayDateKey() && (
-                    <div className="mt-3 flex items-center gap-1.5">
-                      <div className="flex h-6 items-center gap-1.5 rounded-full bg-blue-500/10 px-2.5 text-[10px] font-black uppercase tracking-widest text-blue-400 border border-blue-500/10">
-                        <div className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse" />
+                    <div className="mt-4 flex items-center gap-2">
+                      <div className="flex h-6 items-center gap-2 rounded-full bg-[#0A84FF]/10 px-3 text-[10px] font-bold uppercase tracking-wider text-[#0A84FF]">
+                        <div className="h-1.5 w-1.5 rounded-full bg-[#0A84FF] animate-pulse" />
                         Ready for review
                       </div>
                     </div>

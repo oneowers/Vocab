@@ -148,7 +148,7 @@ export function GrammarView({ payload }: GrammarViewProps) {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="relative px-4 pb-6 pt-6 md:px-0 md:pt-10"
+            className="relative px-4 pb-6 pt-0 md:px-0 md:pt-2"
           >
             <button 
               onClick={handleDismissIntro}
@@ -176,7 +176,7 @@ export function GrammarView({ payload }: GrammarViewProps) {
             key="compact"
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
-            className="px-4 pb-4 pt-6 md:px-0 md:pt-10"
+            className="px-4 pb-4 pt-0 md:px-0 md:pt-2"
           >
             <div className="flex items-center justify-between gap-4">
               <div className="space-y-0.5">

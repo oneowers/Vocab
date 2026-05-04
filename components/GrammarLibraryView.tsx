@@ -15,7 +15,7 @@ export function GrammarLibraryView({ grammarData, onBack, onSelectTopic }: Gramm
   const topics = Object.values(GRAMMAR_TOPICS)
 
   return (
-    <div className="mx-auto max-w-xl px-4 py-8">
+    <div className="mx-auto max-w-xl px-4 pt-0 pb-32">
       <header className="mb-10 flex items-center gap-4">
         <button
           onClick={onBack}

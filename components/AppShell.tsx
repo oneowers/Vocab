@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { ArrowRight, LogOut, Menu, X } from "lucide-react"
+import { ArrowRight, LogOut, Menu, X, ChevronRight } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 
 import { BottomTabBar } from "@/components/BottomTabBar"
@@ -66,10 +66,10 @@ export function AppShell({ user, settings, children }: AppShellProps) {
     if (supabase) {
       await supabase.auth.signOut()
     }
-    
+
     // Always call our logout API to clear server-side cookies (email-session)
     await fetch("/api/auth/logout", { method: "POST" })
-    
+
     router.push("/login")
     router.refresh()
   }
@@ -85,10 +85,10 @@ export function AppShell({ user, settings, children }: AppShellProps) {
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-[#000000] text-white">
       <div className="mx-auto flex min-h-screen w-full max-w-[1600px]">
         {/* Desktop Sidebar */}
-        <aside className="relative z-20 hidden min-h-screen w-[300px] flex-col justify-between border-r border-white/[0.05] bg-[#050505] px-8 py-12 md:flex">
+        <aside className="relative z-20 hidden min-h-screen w-[280px] flex-col justify-between border-r border-white/[0.08] bg-[#000000] px-6 py-10 md:flex">
           <div className="space-y-12">
             <Link href="/" prefetch className="flex items-center gap-4">
               <div className="h-10 w-10 flex items-center justify-center bg-white text-black rounded-xl">
@@ -96,7 +96,7 @@ export function AppShell({ user, settings, children }: AppShellProps) {
               </div>
               <span className="text-[16px] font-black uppercase tracking-widest text-white">LexiFlow</span>
             </Link>
-            
+
             <nav className="flex flex-col gap-2">
               {sidebarNavItems.map((item) => {
                 const active = isActive(pathname, item)
@@ -107,11 +107,10 @@ export function AppShell({ user, settings, children }: AppShellProps) {
                     key={item.href}
                     href={item.href}
                     prefetch
-                    className={`flex items-center gap-4 rounded-2xl px-5 py-4 text-[16px] font-bold transition-all ${
-                      active
-                        ? "bg-white/[0.05] text-white shadow-sm border border-white/[0.05]"
-                        : "text-white/20 hover:text-white/40 hover:bg-white/[0.02]"
-                    }`}
+                    className={`flex items-center gap-3.5 rounded-[12px] px-4 py-3 text-[15px] font-semibold transition-all apple-spring ${active
+                        ? "bg-[#0A84FF] text-white shadow-[0_8px_20px_rgba(10,132,255,0.2)]"
+                        : "text-white/30 hover:text-white/60 hover:bg-white/[0.04]"
+                      }`}
                   >
                     <Icon size={20} strokeWidth={active ? 2.5 : 2} />
                     <span>{item.label}</span>
@@ -121,11 +120,10 @@ export function AppShell({ user, settings, children }: AppShellProps) {
               {user?.role === "ADMIN" && (
                 <Link
                   href="/admin"
-                  className={`flex items-center gap-4 rounded-2xl px-5 py-4 text-[16px] font-bold transition-all ${
-                    pathname.startsWith("/admin")
+                  className={`flex items-center gap-4 rounded-2xl px-5 py-4 text-[16px] font-bold transition-all ${pathname.startsWith("/admin")
                       ? "bg-white/[0.05] text-white shadow-sm border border-white/[0.05]"
                       : "text-white/20 hover:text-white/40 hover:bg-white/[0.02]"
-                  }`}
+                    }`}
                 >
                   <ArrowRight size={20} />
                   <span>Admin Panel</span>
@@ -135,25 +133,25 @@ export function AppShell({ user, settings, children }: AppShellProps) {
           </div>
 
           <div className="space-y-6">
-            <Link 
+            <Link
               href="/profile"
-              className="group flex items-center gap-4 rounded-[32px] bg-white/[0.02] p-5 border border-white/[0.05] transition-all hover:bg-white/[0.04]"
+              className="group flex items-center gap-3.5 rounded-[18px] bg-white/[0.04] p-4 border border-white/[0.08] transition-all hover:bg-white/[0.06] apple-spring"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-sm">
+              <div className="flex h-11 w-11 items-center justify-center rounded-[12px] bg-white shadow-sm">
                 {user?.avatarUrl ? (
-                  <img src={user.avatarUrl} alt="Avatar" className="h-full w-full rounded-2xl object-cover" />
+                  <img src={user.avatarUrl} alt="Avatar" className="h-full w-full rounded-[12px] object-cover" />
                 ) : (
-                  <span className="text-[16px] font-black text-black">{initials}</span>
+                  <span className="text-[15px] font-bold text-black">{initials}</span>
                 )}
               </div>
               <div className="flex flex-col">
-                <span className="text-[15px] font-black text-white truncate max-w-[120px]">
+                <span className="text-[14px] font-bold text-white truncate max-w-[120px]">
                   {user?.name || user?.email?.split('@')[0]}
                 </span>
-                <span className="text-[12px] font-bold text-white/20 uppercase tracking-wider">{accountRole}</span>
+                <span className="text-[10px] font-bold text-white/30 uppercase tracking-[0.05em]">{accountRole}</span>
               </div>
             </Link>
-            
+
             <button
               onClick={handleExit}
               className="flex w-full items-center gap-4 rounded-2xl px-5 py-4 text-[16px] font-bold text-rose-500/80 transition-all hover:bg-rose-500/5"
@@ -190,7 +188,7 @@ export function AppShell({ user, settings, children }: AppShellProps) {
                       </div>
                       <span className="text-[14px] font-black uppercase tracking-widest text-white">LexiFlow</span>
                     </Link>
-                    <button 
+                    <button
                       onClick={() => setIsSidebarOpen(false)}
                       className="text-white/40 hover:text-white"
                     >
@@ -208,11 +206,10 @@ export function AppShell({ user, settings, children }: AppShellProps) {
                           key={item.href}
                           href={item.href}
                           onClick={() => setIsSidebarOpen(false)}
-                          className={`flex items-center gap-4 rounded-2xl px-4 py-3.5 text-[15px] font-bold transition-all ${
-                            active
+                          className={`flex items-center gap-4 rounded-2xl px-4 py-3.5 text-[15px] font-bold transition-all ${active
                               ? "bg-white/[0.05] text-white border border-white/[0.05]"
                               : "text-white/20 hover:text-white"
-                          }`}
+                            }`}
                         >
                           <Icon size={18} strokeWidth={active ? 2.5 : 2} />
                           <span>{item.label}</span>
@@ -223,7 +220,7 @@ export function AppShell({ user, settings, children }: AppShellProps) {
                 </div>
 
                 <div className="space-y-4">
-                  <Link 
+                  <Link
                     href="/profile"
                     onClick={() => setIsSidebarOpen(false)}
                     className="flex items-center gap-4 rounded-3xl bg-white/[0.02] p-4 border border-white/[0.05]"
@@ -254,28 +251,39 @@ export function AppShell({ user, settings, children }: AppShellProps) {
         <div className="relative z-0 flex min-h-screen min-w-0 flex-1 flex-col">
           {/* Mobile Header */}
           {mounted && (
-            <div className="fixed inset-x-0 top-0 z-50 flex h-20 items-center justify-between px-6 md:hidden">
-              <button 
-                onClick={() => setIsSidebarOpen(true)}
-                className="flex h-12 w-12 items-center justify-center rounded-2xl bg-black/40 border border-white/[0.08] backdrop-blur-xl text-white/60 active:scale-90 transition-all"
-              >
-                <Menu size={20} strokeWidth={2.5} />
-              </button>
-
-              <Link 
-                href="/profile" 
-                className="flex h-12 w-12 items-center justify-center rounded-2xl bg-black/40 border border-white/[0.08] backdrop-blur-xl shadow-2xl transition-transform active:scale-90"
-              >
-                {user?.avatarUrl ? (
-                  <img src={user.avatarUrl} alt="Avatar" className="h-full w-full rounded-2xl object-cover" />
+            <div className={`fixed inset-x-0 top-0 z-50 md:hidden ${pathname === "/" ? "bg-gradient-to-b from-black via-black/90 to-transparent h-28" : "bg-black/80 backdrop-blur-xl border-b border-white/[0.05] h-20"}`}>
+              <div className={`flex items-center justify-between px-6 pt-[env(safe-area-inset-top,20px)]`}>
+                {pathname === "/" && user ? (
+                  <Link href="/profile" className="flex w-full items-center justify-between group active:opacity-60 transition-opacity mt-0.5">
+                    <div className="flex flex-col">
+                      <h1 className="text-[28px] font-bold tracking-tight text-white leading-none">LexiFlow+</h1>
+                      <p className="text-[15px] font-medium text-white/40 mt-0.5">{user.name || user.email?.split('@')[0]}</p>
+                    </div>
+                    <ChevronRight size={20} className="text-white/20" />
+                  </Link>
                 ) : (
-                  <span className="text-[16px] font-black text-white">{initials}</span>
+                  <>
+                    <h1 className="text-[28px] font-extrabold tracking-tight text-white mt-2">
+                      {pathname.split("/").pop()?.charAt(0).toUpperCase() + pathname.split("/").pop()?.slice(1) || ""}
+                    </h1>
+                    <div className="flex items-center gap-2 mt-2">
+                      <button 
+                        onClick={() => setIsSidebarOpen(true)}
+                        className="flex h-10 w-10 items-center justify-center rounded-full bg-white/[0.08] text-white active:scale-90 transition-transform"
+                      >
+                        <Menu size={20} />
+                      </button>
+                      <button className="flex h-10 items-center justify-center rounded-full bg-white/[0.08] px-5 text-[15px] font-semibold text-white active:scale-90 transition-transform">
+                        Select
+                      </button>
+                    </div>
+                  </>
                 )}
-              </Link>
+              </div>
             </div>
           )}
 
-          <div className="flex-1 pt-20 md:pt-0">
+          <div className="flex-1 pt-6 md:pt-0">
             <div className="mx-auto flex w-full max-w-6xl flex-col">
               <main className="min-w-0 flex-1">
                 <PageTransition>{children}</PageTransition>
