@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence, Variants } from "framer-motion"
 import { CheckCircle2, Flame, Rocket, Sparkles, Zap, ArrowRight, ChevronRight, Target, Trophy, Clock, Star, TrendingUp, Menu, X } from "lucide-react"
 import Link from "next/link"
 import type { AppUserRecord, CardsResponse } from "@/lib/types"
@@ -73,7 +73,7 @@ export function HomeDashboardView({ user, initialCardsData }: HomeDashboardViewP
   const remainingXp = tasks.reduce((sum, t) => sum + (t.completed ? 0 : t.rewardXp), 0)
 
   // Animation variants for Apple-style spring
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -84,7 +84,7 @@ export function HomeDashboardView({ user, initialCardsData }: HomeDashboardViewP
     }
   }
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 20, scale: 0.98 },
     visible: {
       opacity: 1,
