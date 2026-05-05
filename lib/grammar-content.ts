@@ -64,6 +64,7 @@ export interface GrammarTopicContent {
   titleRu: string
   cefrLevel: CefrLevel
   category: string
+  descriptionEn: string
   descriptionRu: string
   formulas: {
     positive: string
@@ -83,6 +84,7 @@ export const GRAMMAR_TOPICS: Record<string, GrammarTopicContent> = {
     titleRu: "Глагол 'to be'",
     cefrLevel: "A1",
     category: "Basics",
+    descriptionEn: "The foundation of English. Used to express state or location.",
     descriptionRu: "Основа английского языка. Обозначает состояние или нахождение.",
     formulas: { positive: "am / is / are", negative: "am not / isn't / aren't", question: "Am / Is / Are ...?" },
     usage: ["Имя", "Возраст", "Профессия", "Местоположение"],
