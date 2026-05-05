@@ -56,6 +56,7 @@ export type {
   DailyCatalogStatus,
   CardsResponse,
   DailyClaimResponse,
+  ReviewSummaryPayload,
   ReviewSummary,
   GuestReviewLog,
 } from "./cards"
@@ -66,6 +67,8 @@ export type {
   GrammarFindingRecord,
   GrammarSkillRecord,
   GrammarSkillsPayload,
+  GrammarSummaryPayload,
+  GrammarTopicsPayload,
   GrammarWritingFeedback,
 } from "./grammar"
 
@@ -79,6 +82,7 @@ export type {
   PracticeWritingChallengeResult,
   TranslationChallengeTask,
   TranslationChallengeResult,
+  PracticeEntryPayload,
 } from "./practice"
 
 // ─── Catalog ─────────────────────────────────────────────────────────────────
@@ -106,6 +110,7 @@ export type {
   ChartPoint,
   StatsPayload,
   DetailedStatsPayload,
+  StatsSummaryPayload,
   ProfileActivityDay,
   ProfileActivityMonthLabel,
   ProfileActivityPayload,

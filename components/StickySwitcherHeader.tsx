@@ -35,7 +35,7 @@ export function StickySwitcherHeader({
     <div 
       className={`-mx-4 px-4 ${
         sticky 
-          ? "sticky top-0 z-40 bg-black/60 pt-[env(safe-area-inset-top,20px)] pb-3 backdrop-blur-2xl md:static md:mx-0 md:bg-transparent md:pt-0 md:backdrop-blur-none" 
+          ? "sticky top-0 z-40 bg-black pt-[env(safe-area-inset-top,20px)] pb-3 md:static md:mx-0 md:bg-transparent md:pt-0" 
           : "relative mb-6 pt-1"
       }`}
     >
@@ -100,4 +100,3 @@ export function StickySwitcherHeader({
     </div>
   )
 }
-

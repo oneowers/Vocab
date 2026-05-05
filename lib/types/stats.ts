@@ -32,6 +32,12 @@ export interface DetailedStatsPayload {
   }>
 }
 
+export interface StatsSummaryPayload {
+  totalCardsLearned: number
+  currentStreak: number
+  activeDays: number
+}
+
 export interface ProfileActivityDay {
   date: string
   count: number

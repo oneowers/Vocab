@@ -1,8 +1,18 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { Trash2 } from "lucide-react"
 
+import {
+  AdminEmptyState,
+  AdminPageIntro,
+  AdminPagination,
+  AdminPillButton,
+  AdminSearchInput,
+  AdminSurface
+} from "@/components/admin/AdminAppleUI"
 import { AdminTable } from "@/components/AdminTable"
+import { AdminTableSkeleton } from "@/components/admin/AdminLoadingSkeletons"
 import { ConfirmModal } from "@/components/ConfirmModal"
 import { useToast } from "@/components/Toast"
 import { useClientResource } from "@/hooks/useClientResource"
@@ -78,11 +88,16 @@ export function AdminCardsView() {
 
   return (
     <>
+      <AdminPageIntro
+        title="Card Registry"
+        description="Search across the full vocabulary base, inspect ownership, and remove broken or unwanted records without leaving the admin deck."
+      />
+
       <AdminTable
         title="Cards"
         subtitle="Search and manage cards across the app."
         actions={
-          <input
+          <AdminSearchInput
             value={search}
             onChange={(event) => {
               setSearch(event.target.value)
@@ -92,20 +107,24 @@ export function AdminCardsView() {
             autoCorrect="off"
             autoComplete="off"
             placeholder="Search word or user email"
-            className="input-field"
           />
         }
       >
-        {loading || !payload ? null : (
+        {loading || !payload ? <AdminTableSkeleton /> : payload.items.length === 0 ? (
+          <AdminEmptyState
+            title="No cards matched"
+            description="Try another search to locate a word, translation, or account email."
+          />
+        ) : (
           <div className={`transition-opacity ${refreshing ? "opacity-70" : "opacity-100"}`}>
             <div className="space-y-3 md:hidden">
               {payload.items.map((card) => (
-                <article key={card.id} className="rounded-card border border-separator bg-bg-primary p-4">
+                <AdminSurface key={card.id} className="p-4">
                   <div className="space-y-1">
-                    <p className="text-[17px] font-semibold text-text-primary">{card.original}</p>
-                    <p className="text-[15px] text-text-secondary">{card.translation}</p>
+                    <p className="text-[17px] font-semibold text-white">{card.original}</p>
+                    <p className="text-[15px] text-white/44">{card.translation}</p>
                   </div>
-                  <div className="mt-4 grid grid-cols-2 gap-3 text-[13px] text-text-tertiary">
+                  <div className="mt-4 grid grid-cols-2 gap-3 text-[13px] text-white/40">
                     <div>Direction: {card.direction}</div>
                     <div>Reviews: {card.reviewCount}</div>
                     <div>User: {card.userEmail || "—"}</div>
@@ -118,12 +137,12 @@ export function AdminCardsView() {
                   >
                     Delete
                   </button>
-                </article>
+                </AdminSurface>
               ))}
             </div>
 
             <table className="hidden min-w-full text-left text-sm md:table">
-              <thead className="text-quiet">
+              <thead className="text-white/34">
                 <tr>
                   {[
                     "Original",
@@ -143,53 +162,29 @@ export function AdminCardsView() {
               <tbody>
                 {payload.items.map((card) => (
                   <tr key={card.id} className="border-t border-line">
-                    <td className="px-3 py-4 font-medium text-ink">{card.original}</td>
-                    <td className="px-3 py-4 text-muted">{card.translation}</td>
-                    <td className="px-3 py-4 text-muted">{card.direction}</td>
-                    <td className="px-3 py-4 text-muted">{card.userEmail || "—"}</td>
-                    <td className="px-3 py-4 text-muted">{formatTimestamp(card.dateAdded)}</td>
-                    <td className="px-3 py-4 text-muted">{card.reviewCount}</td>
+                    <td className="px-3 py-4 font-medium text-white">{card.original}</td>
+                    <td className="px-3 py-4 text-white/48">{card.translation}</td>
+                    <td className="px-3 py-4 text-white/48">{card.direction}</td>
+                    <td className="px-3 py-4 text-white/48">{card.userEmail || "—"}</td>
+                    <td className="px-3 py-4 text-white/48">{formatTimestamp(card.dateAdded)}</td>
+                    <td className="px-3 py-4 text-white/48">{card.reviewCount}</td>
                     <td className="px-3 py-4">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedCard(card)}
-                        className="button-secondary border-separator px-3 py-2 text-xs font-medium text-dangerText"
-                      >
+                      <AdminPillButton type="button" tone="danger" onClick={() => setSelectedCard(card)} className="h-9 px-3 text-xs">
+                        <Trash2 size={14} />
                         Delete
-                      </button>
+                      </AdminPillButton>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
 
-            <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <p className="text-sm text-muted">
-                Page {payload.page} of {payload.totalPages}
-              </p>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPage((current) => Math.max(current - 1, 1))}
-                  disabled={page === 1}
-                  className="button-secondary"
-                >
-                  Previous
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setPage((current) =>
-                      Math.min(current + 1, payload.totalPages)
-                    )
-                  }
-                  disabled={page >= payload.totalPages}
-                  className="button-secondary"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
+            <AdminPagination
+              page={payload.page}
+              totalPages={payload.totalPages}
+              onPrevious={() => setPage((current) => Math.max(current - 1, 1))}
+              onNext={() => setPage((current) => Math.min(current + 1, payload.totalPages))}
+            />
           </div>
         )}
       </AdminTable>

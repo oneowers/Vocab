@@ -1,18 +1,4 @@
-import {
-  BookOpen,
-  BookOpenCheck,
-  ChartColumnBig,
-  Cog,
-  Crown,
-  House,
-  Library,
-  MessageCircle,
-  Shield,
-  Sparkles,
-  Ticket,
-  UserRound,
-  Users
-} from "lucide-react"
+import { BookOpen, BookOpenCheck, Cog, Crown, House, Library, MessageCircle, Shield, Sparkles, Ticket, UserRound, Users } from "lucide-react"
 
 import type { NavItem, Role, AppSettingsRecord } from "@/lib/types"
 
@@ -132,53 +118,94 @@ export function getAppMobileNavItems(role: Role | null, settings?: AppSettingsRe
   return uniqueItems
 }
 
-export const adminNavItems: NavItem[] = [
+const adminOverviewNavItem: NavItem = {
+  href: "/admin",
+  label: "Overview",
+  icon: Shield,
+  match: (pathname) => pathname === "/admin" || pathname.startsWith("/admin/analytics")
+}
+
+const adminUsersNavItem: NavItem = {
+  href: "/admin/users",
+  label: "Users",
+  icon: Users,
+  match: (pathname) => pathname.startsWith("/admin/users")
+}
+
+const adminCatalogNavItem: NavItem = {
+  href: "/admin/catalog",
+  label: "Catalog",
+  icon: Library,
+  match: (pathname) =>
+    pathname.startsWith("/admin/catalog") ||
+    pathname.startsWith("/admin/cards") ||
+    pathname.startsWith("/admin/grammar-topics")
+}
+
+const adminGrammarNavItem: NavItem = {
+  href: "/admin/grammar-topics",
+  label: "Grammar",
+  icon: BookOpenCheck,
+  match: (pathname) => pathname.startsWith("/admin/grammar-topics")
+}
+
+const adminCardsNavItem: NavItem = {
+  href: "/admin/cards",
+  label: "Cards",
+  icon: Library,
+  match: (pathname) => pathname.startsWith("/admin/cards")
+}
+
+const adminSystemNavItem: NavItem = {
+  href: "/admin/settings",
+  label: "System",
+  icon: Cog,
+  match: (pathname) =>
+    pathname.startsWith("/admin/settings") ||
+    pathname.startsWith("/admin/promo-codes")
+}
+
+const adminPromoNavItem: NavItem = {
+  href: "/admin/promo-codes",
+  label: "Promo Codes",
+  icon: Ticket,
+  match: (pathname) => pathname.startsWith("/admin/promo-codes")
+}
+
+export const adminSidebarSections: Array<{ label: string; items: NavItem[] }> = [
   {
-    href: "/admin",
-    label: "Overview",
-    icon: Shield,
-    match: (pathname) => pathname === "/admin"
+    label: "Monitor",
+    items: [adminOverviewNavItem]
   },
   {
-    href: "/admin/users",
-    label: "Users",
-    icon: Users,
-    match: (pathname) => pathname.startsWith("/admin/users")
+    label: "People",
+    items: [adminUsersNavItem]
   },
+  {
+    label: "Content",
+    items: [adminCatalogNavItem, adminGrammarNavItem, adminCardsNavItem]
+  },
+  {
+    label: "System",
+    items: [adminSystemNavItem, adminPromoNavItem]
+  }
+]
+
+export const adminNavItems: NavItem[] = adminSidebarSections.flatMap((section) => section.items)
+
+export const adminMobileNavItems: NavItem[] = [
+  adminOverviewNavItem,
+  adminUsersNavItem,
   {
     href: "/admin/catalog",
-    label: "Catalog",
-    icon: Cog,
-    match: (pathname) => pathname.startsWith("/admin/catalog")
-  },
-  {
-    href: "/admin/grammar-topics",
-    label: "Grammar",
-    icon: BookOpenCheck,
-    match: (pathname) => pathname.startsWith("/admin/grammar-topics")
-  },
-  {
-    href: "/admin/promo-codes",
-    label: "Promo Codes",
-    icon: Ticket,
-    match: (pathname) => pathname.startsWith("/admin/promo-codes")
+    label: "Content",
+    icon: Library,
+    match: adminCatalogNavItem.match
   },
   {
     href: "/admin/settings",
-    label: "Settings",
+    label: "System",
     icon: Cog,
-    match: (pathname) => pathname.startsWith("/admin/settings")
-  },
-  {
-    href: "/admin/cards",
-    label: "Cards",
-    icon: Library,
-    match: (pathname) => pathname.startsWith("/admin/cards")
-  },
-  {
-    href: "/admin/analytics",
-    label: "Analytics",
-    icon: ChartColumnBig,
-    match: (pathname) => pathname.startsWith("/admin/analytics")
+    match: adminSystemNavItem.match
   }
 ]

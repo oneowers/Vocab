@@ -2,9 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
+type ClientResourcePriority = "high" | "low"
+
 interface ClientResourceCacheEntry<T> {
   data: T
   updatedAt: number
+}
+
+interface ClientResourceLoadOptions {
+  force?: boolean
+  staleTimeMs?: number
 }
 
 interface UseClientResourceOptions<T> {
@@ -14,6 +21,9 @@ interface UseClientResourceOptions<T> {
   enabled?: boolean
   keepPreviousData?: boolean
   revalidateOnMount?: boolean
+  staleTimeMs?: number
+  hydrateFromCacheOnly?: boolean
+  priority?: ClientResourcePriority
   onError?: (error: unknown) => void
 }
 
@@ -46,14 +56,14 @@ export function updateClientResourceData<T>(key: string, updater: (current: T | 
   setClientResourceData(key, nextData)
 }
 
-function getCachedEntry<T>(key: string) {
+function getCachedEntry<T>(key: string, staleTimeMs = CACHE_TTL_MS) {
   const cached = resourceCache.get(key) as ClientResourceCacheEntry<T> | undefined
 
   if (!cached) {
     return null
   }
 
-  if (Date.now() - cached.updatedAt > CACHE_TTL_MS) {
+  if (Date.now() - cached.updatedAt > staleTimeMs) {
     resourceCache.delete(key)
     return null
   }
@@ -61,8 +71,54 @@ function getCachedEntry<T>(key: string) {
   return cached
 }
 
-function getCachedValue<T>(key: string) {
-  return getCachedEntry<T>(key)?.data ?? null
+function getCachedValue<T>(key: string, staleTimeMs = CACHE_TTL_MS) {
+  return getCachedEntry<T>(key, staleTimeMs)?.data ?? null
+}
+
+function getAnyCachedValue<T>(key: string) {
+  const cached = resourceCache.get(key) as ClientResourceCacheEntry<T> | undefined
+  return cached?.data ?? null
+}
+
+async function fetchAndCacheClientResource<T>(
+  key: string,
+  loader: () => Promise<T>,
+  options: ClientResourceLoadOptions = {}
+) {
+  const { force = false, staleTimeMs = CACHE_TTL_MS } = options
+
+  if (!force) {
+    const cached = getCachedEntry<T>(key, staleTimeMs)
+    if (cached) {
+      return cached.data
+    }
+  }
+
+  let pendingRequest = inflightRequests.get(key) as Promise<T> | undefined
+
+  if (!pendingRequest) {
+    pendingRequest = loader()
+    inflightRequests.set(key, pendingRequest)
+  }
+
+  try {
+    const nextData = await pendingRequest
+    resourceCache.set(key, {
+      data: nextData,
+      updatedAt: Date.now()
+    })
+    return nextData
+  } finally {
+    inflightRequests.delete(key)
+  }
+}
+
+export async function prefetchClientResource<T>(
+  key: string,
+  loader: () => Promise<T>,
+  options: ClientResourceLoadOptions = {}
+) {
+  return fetchAndCacheClientResource(key, loader, options)
 }
 
 export function useClientResource<T>({
@@ -72,9 +128,12 @@ export function useClientResource<T>({
   enabled = true,
   keepPreviousData = true,
   revalidateOnMount = true,
+  staleTimeMs = CACHE_TTL_MS,
+  hydrateFromCacheOnly = false,
+  priority = "high",
   onError
 }: UseClientResourceOptions<T>): UseClientResourceResult<T> {
-  const cachedData = useMemo(() => getCachedValue<T>(key), [key])
+  const cachedData = useMemo(() => getCachedValue<T>(key, staleTimeMs), [key, staleTimeMs])
   const startingData = initialData ?? cachedData ?? null
   const [data, setData] = useState<T | null>(startingData)
   const [loading, setLoading] = useState(enabled && startingData === null)
@@ -116,7 +175,17 @@ export function useClientResource<T>({
         return
       }
 
-      const visibleData = force ? dataRef.current : initialData ?? getCachedValue<T>(key) ?? dataRef.current
+      if (hydrateFromCacheOnly && !force) {
+        const cached = getAnyCachedValue<T>(key)
+        setData(cached)
+        setLoading(false)
+        setRefreshing(false)
+        return
+      }
+
+      const visibleData = force
+        ? dataRef.current
+        : initialData ?? getAnyCachedValue<T>(key) ?? dataRef.current
 
       if (visibleData === null || !keepPreviousData) {
         setLoading(true)
@@ -125,28 +194,19 @@ export function useClientResource<T>({
       }
 
       try {
-        let pendingRequest = inflightRequests.get(key) as Promise<T> | undefined
-
-        if (!pendingRequest) {
-          pendingRequest = loaderRef.current()
-          inflightRequests.set(key, pendingRequest)
-        }
-
-        const nextData = await pendingRequest
-        resourceCache.set(key, {
-          data: nextData,
-          updatedAt: Date.now()
+        const nextData = await fetchAndCacheClientResource(key, loaderRef.current, {
+          force,
+          staleTimeMs
         })
         setData(nextData)
       } catch (error) {
         onErrorRef.current?.(error)
       } finally {
-        inflightRequests.delete(key)
         setLoading(false)
         setRefreshing(false)
       }
     },
-    [enabled, initialData, keepPreviousData, key]
+    [enabled, hydrateFromCacheOnly, initialData, keepPreviousData, key, staleTimeMs]
   )
 
   useEffect(() => {
@@ -155,15 +215,31 @@ export function useClientResource<T>({
       return
     }
 
-    const hasFreshCache = getCachedEntry<T>(key) !== null
+    const hasFreshCache = getCachedEntry<T>(key, staleTimeMs) !== null
 
     if (!revalidateOnMount && (initialData !== null || hasFreshCache)) {
       setLoading(false)
       return
     }
 
+    if (priority === "low" && (initialData !== null || hasFreshCache)) {
+      const scheduleBackgroundRefresh = () => {
+        void load()
+      }
+
+      if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+        const idleId = window.requestIdleCallback(scheduleBackgroundRefresh, {
+          timeout: 1_500
+        })
+        return () => window.cancelIdleCallback(idleId)
+      }
+
+      const timeoutId = globalThis.setTimeout(scheduleBackgroundRefresh, 250)
+      return () => globalThis.clearTimeout(timeoutId)
+    }
+
     void load()
-  }, [enabled, initialData, key, load, revalidateOnMount])
+  }, [enabled, initialData, key, load, priority, revalidateOnMount, staleTimeMs])
 
   const revalidate = useCallback(async () => {
     await load(true)

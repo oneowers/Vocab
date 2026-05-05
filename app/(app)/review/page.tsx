@@ -1,10 +1,8 @@
 import { ReviewSession } from "@/components/ReviewSession"
 import { requireSignedInAppUser } from "@/lib/auth"
-import { getUserReviewData } from "@/lib/server-data"
 
 export default async function ReviewPage() {
-  const user = await requireSignedInAppUser()
-  const initialData = user ? await getUserReviewData(user.id) : null
+  await requireSignedInAppUser()
 
-  return <ReviewSession initialData={initialData} />
+  return <ReviewSession initialData={null} />
 }

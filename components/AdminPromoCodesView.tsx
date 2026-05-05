@@ -1,18 +1,25 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, Ticket, Search, MoreHorizontal, Trash, Power, PowerOff, Crown } from "lucide-react"
+import { Plus, Ticket, Trash, Power, PowerOff, Crown } from "lucide-react"
 
+import {
+  AdminBadge,
+  AdminEmptyState,
+  AdminPageIntro,
+  AdminPagination,
+  AdminPillButton,
+  AdminSurface
+} from "@/components/admin/AdminAppleUI"
 import { useToast } from "@/components/Toast"
 import { useClientResource } from "@/hooks/useClientResource"
-import type { AdminPromoCodesPayload, PromoCodeRecord } from "@/lib/types"
+import type { AdminPromoCodesPayload } from "@/lib/types"
 import { motion, AnimatePresence } from "framer-motion"
 
-export function AdminPromoCodesView() {
+export function AdminPromoCodesView({ embedded = false }: { embedded?: boolean }) {
   const { showToast } = useToast()
   const [page, setPage] = useState(1)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-  const [creating, setCreating] = useState(false)
 
   const { data, loading, revalidate } = useClientResource<AdminPromoCodesPayload>({
     key: `admin:promo-codes:page=${page}`,
@@ -68,27 +75,39 @@ export function AdminPromoCodesView() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-black text-white">Promo Codes</h1>
-          <p className="text-[14px] text-white/50">Manage subscription promo codes</p>
-        </div>
-        
-        <button
-          type="button"
-          onClick={() => setIsCreateModalOpen(true)}
-          className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-500/20 px-4 text-[14px] font-bold text-blue-400 border border-blue-500/20 hover:bg-blue-500/30 transition-all"
-        >
-          <Plus size={16} />
-          Create Promo Code
-        </button>
-      </div>
+      {!embedded ? (
+        <AdminPageIntro
+          title="Promo Codes"
+          description="Manage PRO subscription codes."
+          actions={
+            <AdminPillButton type="button" tone="primary" onClick={() => setIsCreateModalOpen(true)}>
+              <Plus size={16} />
+              Create Promo Code
+            </AdminPillButton>
+          }
+        />
+      ) : null}
 
-      <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-1">
+      {embedded ? (
+        <div className="flex justify-end">
+          <AdminPillButton type="button" tone="primary" onClick={() => setIsCreateModalOpen(true)}>
+            <Plus size={16} />
+            Create Promo Code
+          </AdminPillButton>
+        </div>
+      ) : null}
+
+      <AdminSurface
+        className={
+          embedded
+            ? "overflow-hidden border-0 bg-transparent p-0 shadow-none"
+            : "overflow-hidden p-1"
+        }
+      >
         <div className="overflow-x-auto">
           <table className="w-full text-left text-[14px]">
             <thead>
-              <tr className="border-b border-white/5 text-white/40">
+              <tr className="border-b border-white/[0.06] text-white/34">
                 <th className="p-4 font-semibold">Code</th>
                 <th className="p-4 font-semibold">Uses</th>
                 <th className="p-4 font-semibold">Duration</th>
@@ -106,12 +125,17 @@ export function AdminPromoCodesView() {
               ) : data?.items.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="p-8 text-center text-white/40">
-                    No promo codes found.
+                    <div className="py-4">
+                      <AdminEmptyState
+                        title="No promo codes yet"
+                        description="Create the first subscription code to start running campaigns and grants."
+                      />
+                    </div>
                   </td>
                 </tr>
               ) : (
                 data?.items.map((code) => (
-                  <tr key={code.id} className="border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors">
+                  <tr key={code.id} className="border-b border-white/[0.05] last:border-0 hover:bg-white/[0.02] transition-colors">
                     <td className="p-4">
                       <div className="flex flex-col">
                         <span className="font-bold text-white uppercase tracking-wider">{code.code}</span>
@@ -130,13 +154,7 @@ export function AdminPromoCodesView() {
                       </span>
                     </td>
                     <td className="p-4">
-                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold ${
-                        code.isActive 
-                          ? 'bg-emerald-500/10 text-emerald-400' 
-                          : 'bg-rose-500/10 text-rose-400'
-                      }`}>
-                        {code.isActive ? 'Active' : 'Inactive'}
-                      </span>
+                      <AdminBadge tone={code.isActive ? "success" : "danger"}>{code.isActive ? "Active" : "Inactive"}</AdminBadge>
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end gap-2">
@@ -168,7 +186,16 @@ export function AdminPromoCodesView() {
             </tbody>
           </table>
         </div>
-      </div>
+      </AdminSurface>
+
+      {data && !embedded ? (
+        <AdminPagination
+          page={data.page}
+          totalPages={data.totalPages}
+          onPrevious={() => setPage((current) => Math.max(current - 1, 1))}
+          onNext={() => setPage((current) => Math.min(current + 1, data.totalPages))}
+        />
+      ) : null}
 
       <AnimatePresence>
         {isCreateModalOpen && (

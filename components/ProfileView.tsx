@@ -8,6 +8,8 @@ import { motion, AnimatePresence } from "framer-motion"
 import { useTheme } from "@/lib/theme-context"
 
 import { useToast } from "@/components/Toast"
+import { ProfileCardSkeleton } from "@/components/profile/ProfileCardSkeleton"
+import { Skeleton } from "@/components/ui/Skeleton"
 import { useClientResource } from "@/hooks/useClientResource"
 import { isGuestSessionActive, clearGuestSession } from "@/lib/guest"
 import { getRoleLabel } from "@/lib/roles"
@@ -45,6 +47,7 @@ export function ProfileView({ user, initialActivity = null }: ProfileViewProps) 
   
   const {
     data: activity,
+    loading: activityLoading
   } = useClientResource<ProfileActivityPayload>({
     key: guestActive || !profileUser ? "profile-activity:guest" : `profile-activity:${profileUser.id}`,
     enabled: !guestActive && Boolean(profileUser),
@@ -60,6 +63,7 @@ export function ProfileView({ user, initialActivity = null }: ProfileViewProps) 
 
   const {
     data: grammarSkills,
+    loading: grammarSkillsLoading
   } = useClientResource<GrammarSkillsPayload>({
     key: guestActive || !profileUser ? "profile-grammar:guest" : `profile-grammar:${profileUser.id}:weak`,
     enabled: !guestActive && Boolean(profileUser),
@@ -137,6 +141,17 @@ export function ProfileView({ user, initialActivity = null }: ProfileViewProps) 
 
   const { theme, toggleTheme } = useTheme()
 
+  if (!profileUser && !guestActive) {
+    return (
+      <div className="min-h-screen bg-black pb-20 overflow-x-hidden">
+        <AppleHeader title="LexiFlow Account" />
+        <div className="mx-auto max-w-xl space-y-8 px-4 pt-28">
+          <ProfileCardSkeleton />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-black pb-20 overflow-x-hidden">
       <AppleHeader title="LexiFlow Account" />
@@ -212,7 +227,7 @@ export function ProfileView({ user, initialActivity = null }: ProfileViewProps) 
             iconColor="bg-gradient-to-br from-[#0A84FF] to-[#5E5CE6]" 
             showDivider={true}
             href="/stats"
-            rightLabel={`${resolvedActivity.activeDaysLastYear}d`}
+            rightLabel={activityLoading && !activity ? <Skeleton className="h-4 w-10 rounded-full" /> : `${resolvedActivity.activeDaysLastYear}d`}
           />
           <AppleListItem 
             title="Grammar Path" 
@@ -221,7 +236,11 @@ export function ProfileView({ user, initialActivity = null }: ProfileViewProps) 
             iconColor="bg-gradient-to-br from-[#BF5AF2] to-[#AF52DE]" 
             showDivider={true}
             onClick={() => setShowLevelPicker(true)}
-            rightLabel={grammarSkills?.weakCount ? `${grammarSkills.weakCount} weak · ${cefrLevel}` : cefrLevel}
+            rightLabel={
+              grammarSkillsLoading && !grammarSkills
+                ? <Skeleton className="h-4 w-24 rounded-full" />
+                : grammarSkills?.weakCount ? `${grammarSkills.weakCount} weak · ${cefrLevel}` : cefrLevel
+            }
           />
           {profileUser?.role === "ADMIN" && (
             <AppleListItem 

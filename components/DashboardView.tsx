@@ -6,7 +6,8 @@ import { DailyWordsModal } from "@/components/DailyWordsModal"
 import { TranslatorPanel } from "@/components/TranslatorPanel"
 import { StreakCard } from "@/components/StreakCard"
 import { useToast } from "@/components/Toast"
-import type { DailyCatalogStatus, DailyClaimResponse, AppUserRecord } from "@/lib/types"
+import { useClientResource } from "@/hooks/useClientResource"
+import type { DailyCatalogStatus, DailyClaimResponse, AppUserRecord, ReviewSummaryPayload } from "@/lib/types"
 import { getTodayDateKey, getYesterdayDateKey } from "@/lib/date"
 
 interface DashboardViewProps {
@@ -19,11 +20,35 @@ export function DashboardView({ user, initialDailyCatalog = null }: DashboardVie
   const [dailyCatalog, setDailyCatalog] = useState(initialDailyCatalog)
   const [dailyModalOpen, setDailyModalOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const { data: cardsPayload } = useClientResource<ReviewSummaryPayload>({
+    key: "review:summary",
+    initialData: null,
+    revalidateOnMount: true,
+    staleTimeMs: 60_000,
+    priority: "low",
+    loader: async () => {
+      const response = await fetch("/api/review/summary", {
+        cache: "no-store"
+      })
+
+      if (!response.ok) {
+        throw new Error("Could not load deck status.")
+      }
+
+      return (await response.json()) as ReviewSummaryPayload
+    }
+  })
 
   useEffect(() => {
     setMounted(true)
     setDailyCatalog(initialDailyCatalog)
   }, [initialDailyCatalog])
+
+  useEffect(() => {
+    if (cardsPayload?.dailyCatalog) {
+      setDailyCatalog((current) => current ?? cardsPayload.dailyCatalog)
+    }
+  }, [cardsPayload?.dailyCatalog])
 
   function handleClaimed(payload: DailyClaimResponse) {
     setDailyCatalog((current) => ({

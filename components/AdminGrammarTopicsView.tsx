@@ -3,7 +3,14 @@
 import { useEffect, useState } from "react"
 import { Pencil, Power, PowerOff } from "lucide-react"
 
+import {
+  AdminPageIntro,
+  AdminPagination,
+  AdminPillButton,
+  AdminSearchInput
+} from "@/components/admin/AdminAppleUI"
 import { AdminTable } from "@/components/AdminTable"
+import { AdminTableSkeleton } from "@/components/admin/AdminLoadingSkeletons"
 import { Modal } from "@/components/Modal"
 import { useToast } from "@/components/Toast"
 import { useClientResource } from "@/hooks/useClientResource"
@@ -229,16 +236,17 @@ export function AdminGrammarTopicsView() {
 
   return (
     <div className="space-y-4">
-      <section className="panel-admin rounded-[2rem] p-5">
-        <p className="section-label">Grammar Topics</p>
-        <h1 className="mt-2 text-[26px] font-bold tracking-[-0.5px] text-ink">
-          Manage grammar skill tracking
-        </h1>
-        <p className="mt-2 text-sm text-muted">
-          Active topics are sent to AI writing checks and used for learner weak-point tracking.
-        </p>
+      <AdminPageIntro
+        title="Grammar Topic Library"
+        description="Keep the tracking model clean: active topics feed AI checks, learner scoring, and weak-point reporting."
+        actions={
+          <AdminPillButton type="button" tone="primary" onClick={() => setIsFormOpen(true)}>
+            Add Topic
+          </AdminPillButton>
+        }
+      />
 
-        <Modal
+      <Modal
           open={isFormOpen}
           onClose={resetForm}
           title={editingItemId ? "Edit grammar topic" : "Add grammar topic"}
@@ -386,21 +394,19 @@ export function AdminGrammarTopicsView() {
             </div>
           </div>
         </Modal>
-      </section>
-
       <AdminTable
         title="Grammar topics"
         subtitle="Create, edit, and activate the grammar areas AI is allowed to track."
         actions={
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <input
+            <AdminSearchInput
               value={search}
               onChange={(event) => {
                 setSearch(event.target.value)
                 setPage(1)
               }}
               placeholder="Search topics..."
-              className="input-field w-full md:w-72"
+              className="w-full md:w-72"
             />
             <div className="flex gap-2">
               <select
@@ -426,7 +432,7 @@ export function AdminGrammarTopicsView() {
           </div>
         }
       >
-        {loading || !payload ? null : (
+        {loading || !payload ? <AdminTableSkeleton /> : (
           <div className={`space-y-4 transition-opacity ${refreshing ? "opacity-70" : "opacity-100"}`}>
             <div className="space-y-2 md:hidden">
               {payload.items.map((item) => (
@@ -515,29 +521,12 @@ export function AdminGrammarTopicsView() {
               </tbody>
             </table>
 
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <p className="text-sm text-muted">
-                Page {payload.page} of {payload.totalPages}
-              </p>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPage((current) => Math.max(current - 1, 1))}
-                  disabled={page === 1}
-                  className="button-secondary"
-                >
-                  Previous
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPage((current) => Math.min(current + 1, payload.totalPages))}
-                  disabled={page >= payload.totalPages}
-                  className="button-secondary"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
+            <AdminPagination
+              page={payload.page}
+              totalPages={payload.totalPages}
+              onPrevious={() => setPage((current) => Math.max(current - 1, 1))}
+              onNext={() => setPage((current) => Math.min(current + 1, payload.totalPages))}
+            />
           </div>
         )}
       </AdminTable>

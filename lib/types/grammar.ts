@@ -51,6 +51,17 @@ export interface GrammarSkillsPayload {
   trend: Array<{ date: string; value: number }>
 }
 
+export interface GrammarSummaryPayload {
+  weakCount: number
+  trend: Array<{ date: string; value: number }>
+  recommendedTopic: GrammarSkillRecord | null
+  totalTopics: number
+}
+
+export interface GrammarTopicsPayload {
+  items: GrammarSkillRecord[]
+}
+
 export interface GrammarWritingFeedback {
   type: "writing_feedback"
   score: number

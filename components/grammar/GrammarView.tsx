@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from "framer-motion"
 
 import type { 
   CefrLevel, 
+  GrammarSummaryPayload,
   GrammarSkillRecord, 
   GrammarSkillsPayload 
 } from "@/lib/types"
@@ -22,15 +23,47 @@ import { GrammarTopicList } from "./GrammarTopicList"
 import { GrammarLessonView } from "../GrammarLessonView"
 import { GrammarTrendChart } from "./GrammarTrendChart"
 import { AppleHeader, AppleCard } from "@/components/AppleDashboardComponents"
+import { Skeleton, SkeletonCard, SkeletonLine } from "@/components/ui/Skeleton"
 
 interface GrammarViewProps {
-  payload: GrammarSkillsPayload
+  payload: GrammarSkillsPayload | null
+  summary?: GrammarSummaryPayload | null
+  topicsLoading?: boolean
 }
 
 export type GrammarFilterType = "all" | "weak" | "learning" | "strong" | "no_data"
 export type GrammarSortType = "priority" | "weakest" | "recent" | "cefr"
 
-export function GrammarView({ payload }: GrammarViewProps) {
+function GrammarLibrarySkeleton() {
+  return (
+    <div className="space-y-8 pb-20">
+      {["A1", "A2"].map((level) => (
+        <div key={level} className="space-y-3">
+          <div className="flex items-center gap-3 px-1">
+            <SkeletonLine className="h-3 w-8 rounded-full" />
+            <Skeleton className="h-px flex-1 rounded-full" />
+          </div>
+          <SkeletonCard className="overflow-hidden rounded-[32px] border-white/[0.15] p-0">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={`${level}-${index}`} className="px-5 py-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="space-y-2">
+                    <SkeletonLine className="h-4 w-36 rounded-full" />
+                    <SkeletonLine className="h-3 w-24 rounded-full" />
+                  </div>
+                  <SkeletonLine className="h-5 w-12 rounded-full" />
+                </div>
+                {index < 2 ? <div className="mt-4 h-px bg-white/[0.05]" /> : null}
+              </div>
+            ))}
+          </SkeletonCard>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+export function GrammarView({ payload, summary = null, topicsLoading = false }: GrammarViewProps) {
   const [search, setSearch] = useState("")
   const [filter, setFilter] = useState<GrammarFilterType>("all")
   const [cefrFilter, setCefrFilter] = useState<CefrLevel | "all">("all")
@@ -64,8 +97,11 @@ export function GrammarView({ payload }: GrammarViewProps) {
     return Math.max(0, -score) + (mistakeCount * 2) + (daysSinceLast * 0.2)
   }
 
+  const items = payload?.items ?? []
+  const trend = summary?.trend ?? payload?.trend ?? []
+
   const { activeItems, noInfoItems } = useMemo(() => {
-    const sorted = payload.items
+    const sorted = items
       .filter(item => {
         const matchesSearch = 
           item.topic.titleEn.toLowerCase().includes(search.toLowerCase()) ||
@@ -99,14 +135,18 @@ export function GrammarView({ payload }: GrammarViewProps) {
       activeItems: sorted.filter(i => i.evidenceCount > 0),
       noInfoItems: sorted.filter(i => i.evidenceCount === 0)
     }
-  }, [payload.items, search, filter, cefrFilter, sort])
+  }, [items, search, filter, cefrFilter, sort])
 
   const mainRecommended = useMemo(() => {
-    const items = payload.items
+    if (summary?.recommendedTopic) {
+      return summary.recommendedTopic
+    }
+
+    const recommendedItems = items
       .filter(item => item.score < 0)
       .sort((a, b) => getPriority(b) - getPriority(a))
-    return items.length > 0 ? items[0] : null
-  }, [payload.items])
+    return recommendedItems.length > 0 ? recommendedItems[0] : null
+  }, [items, summary])
 
   if (selectedTopic) {
     return (
@@ -123,11 +163,11 @@ export function GrammarView({ payload }: GrammarViewProps) {
     <div className="min-h-screen bg-black pb-32">
       <div className="pt-20 px-4 space-y-6">
         {/* Statistics & Trend */}
-        {payload.trend && payload.trend.length > 0 && (
+        {trend.length > 0 && (
           <section>
              <AppleCard>
                 <div className="p-4">
-                   <GrammarTrendChart data={payload.trend} />
+                   <GrammarTrendChart data={trend} />
                 </div>
              </AppleCard>
           </section>
@@ -151,19 +191,23 @@ export function GrammarView({ payload }: GrammarViewProps) {
           <div className="space-y-4">
             <div className="flex items-center justify-between px-1">
                <h2 className="text-[13px] font-black uppercase tracking-widest text-white/30">Topic Library</h2>
-               <span className="text-[12px] font-bold text-white/20">{payload.items.length} items</span>
+               <span className="text-[12px] font-bold text-white/20">{summary?.totalTopics ?? items.length} items</span>
             </div>
           </div>
 
-          <div className="overflow-hidden">
-             <GrammarTopicList 
-                items={activeItems} 
-                onSelect={(item) => setSelectedTopic(item.topic)}
-             />
-          </div>
+          {topicsLoading && items.length === 0 ? (
+            <GrammarLibrarySkeleton />
+          ) : (
+            <div className="overflow-hidden">
+              <GrammarTopicList 
+                  items={activeItems} 
+                  onSelect={(item) => setSelectedTopic(item.topic)}
+              />
+            </div>
+          )}
 
           {/* New Topics */}
-          {noInfoItems.length > 0 && (
+          {!topicsLoading && noInfoItems.length > 0 && (
             <div className="pt-4">
               <button
                 onClick={() => setShowNoInfo(!showNoInfo)}

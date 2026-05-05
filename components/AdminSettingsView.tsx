@@ -3,6 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { GripVertical } from "lucide-react"
 
+import { AdminPageIntro, AdminSurface } from "@/components/admin/AdminAppleUI"
+import { AdminPromoCodesView } from "@/components/AdminPromoCodesView"
+import { AdminSettingsSkeleton } from "@/components/admin/AdminLoadingSkeletons"
 import { useToast } from "@/components/Toast"
 import { useClientResource } from "@/hooks/useClientResource"
 import type { AdminSettingsPayload, TranslationEngine } from "@/lib/types"
@@ -105,10 +108,6 @@ export function AdminSettingsView() {
     setGrammarPenaltyHigh(String(data.settings.grammarPenaltyHigh ?? -12))
     setMobileNavOrder(data.settings.mobileNavOrder ?? ["home", "cards", "translate", "practice", "grammar", "ai"])
   }, [data])
-
-  if (!mounted || loading) {
-    return null
-  }
 
   const orderedTranslators = useMemo(() => {
     const disabled = ALL_TRANSLATORS.filter((engine) => !translationPriority.includes(engine))
@@ -220,6 +219,10 @@ export function AdminSettingsView() {
     return [...mobileNavOrder, ...disabled]
   }, [mobileNavOrder])
 
+  if (!mounted || loading) {
+    return <AdminSettingsSkeleton />
+  }
+
   function toggleNavItem(item: string, enabled: boolean) {
     setMobileNavOrder((current) => {
       if (enabled) {
@@ -326,17 +329,12 @@ export function AdminSettingsView() {
 
   return (
     <div className="space-y-5">
-      <section className="panel-admin rounded-[2rem] p-5">
-        <p className="section-label">Site settings</p>
-        <h1 className="mt-2 text-[26px] font-bold tracking-[-0.5px] text-ink">
-          Configure global app behavior
-        </h1>
-        <p className="mt-2 text-sm text-muted">
-          These settings affect translation flow and daily card limits across the app.
-        </p>
-      </section>
+      <AdminPageIntro
+        title="System Settings"
+        description="Tune the global behavior of translation, review pressure, grammar scoring, and mobile navigation from one iOS-style control surface."
+      />
 
-      <section className="panel-admin rounded-[2rem] p-5">
+      <AdminSurface className="p-5">
         <div className="overflow-hidden rounded-[1.5rem] border border-separator bg-bg-secondary">
           <div className="flex items-center justify-between gap-4 border-b border-separator px-5 py-4">
             <div>
@@ -457,9 +455,9 @@ export function AdminSettingsView() {
         <div className="mt-6 flex justify-end opacity-20 pointer-events-none">
           <p className="text-[12px] font-bold text-white uppercase tracking-widest">Scroll down to save all</p>
         </div>
-      </section>
+      </AdminSurface>
 
-      <section className="panel-admin rounded-[2rem] p-5">
+      <AdminSurface className="p-5">
         <p className="section-label">Grammar Hub Scoring</p>
         <h2 className="mt-2 text-[22px] font-bold tracking-[-0.5px] text-ink">
           Balance learning difficulty
@@ -524,7 +522,20 @@ export function AdminSettingsView() {
             />
           </div>
         </div>
-      </section>
+      </AdminSurface>
+
+      <AdminSurface className="p-5">
+        <div className="mb-5">
+          <p className="section-label">Promo Codes</p>
+          <h2 className="mt-2 text-[22px] font-bold tracking-[-0.5px] text-ink">
+            Subscription access
+          </h2>
+          <p className="mt-2 text-sm text-muted">
+            Create and manage promo codes inside the same system surface.
+          </p>
+        </div>
+        <AdminPromoCodesView embedded />
+      </AdminSurface>
 
       <section className="mt-12">
         <h2 className="text-xl font-black text-white">Bottom bar priority</h2>

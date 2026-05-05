@@ -9,6 +9,7 @@ import { CardList } from "@/components/CardList"
 import { ConfirmModal } from "@/components/ConfirmModal"
 import { StickySwitcherHeader } from "@/components/StickySwitcherHeader"
 import { useToast } from "@/components/Toast"
+import { WordsListSkeleton } from "@/components/words/WordsListSkeleton"
 import { useClientResource } from "@/hooks/useClientResource"
 import { getGuestCards, isGuestSessionActive } from "@/lib/guest"
 import { matchesCardStatus, sortDueCards } from "@/lib/spaced-repetition"
@@ -43,6 +44,7 @@ export function CardsPageView({ initialData = null, user = null }: CardsPageView
     key: "cards:collection",
     enabled: !guestMode,
     initialData,
+    staleTimeMs: 60_000,
     revalidateOnMount: initialData === null,
     loader: async () => {
       const response = await fetch("/api/cards")
@@ -261,7 +263,9 @@ export function CardsPageView({ initialData = null, user = null }: CardsPageView
         )}
 
         <div className="space-y-4">
-          {loading ? null : (
+          {loading && !cardsPayload && !guestMode ? (
+            <WordsListSkeleton />
+          ) : (
             <CardList
               cards={visibleCards}
               refreshing={refreshing}

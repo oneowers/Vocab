@@ -5,15 +5,13 @@ import { PracticeModeSelector } from "@/components/PracticeModeSelector"
 import { ReviewSession } from "@/components/ReviewSession"
 import { GrammarPracticeView } from "@/components/GrammarPracticeView"
 import { TranslationChallengeView } from "@/components/TranslationChallengeView"
-import type { CardsResponse, GrammarSkillsPayload } from "@/lib/types"
+import { PracticeModesSkeleton } from "@/components/practice/PracticeModesSkeleton"
+import { GrammarTopicsSkeleton } from "@/components/grammar/GrammarTopicsSkeleton"
+import { useClientResource } from "@/hooks/useClientResource"
+import type { GrammarFindingRecord, GrammarSkillsPayload, PracticeEntryPayload } from "@/lib/types"
 
 interface PracticeViewProps {
-  initialData: {
-    reviewData: CardsResponse
-    grammarData: GrammarSkillsPayload
-    historyData: any[]
-    appSettings: any
-  }
+  initialData: PracticeEntryPayload
   initialMode?: "SELECT" | "WORDS" | "GRAMMAR" | "TRANSLATION" | "HISTORY"
 }
 
@@ -24,9 +22,45 @@ export function PracticeView({ initialData, initialMode }: PracticeViewProps) {
     (initialMode?.toUpperCase() as any) || "SELECT"
   )
   const [grammarSubMode, setGrammarSubMode] = useState<any>(null)
+  const { data: grammarData, loading: grammarLoading } = useClientResource<GrammarSkillsPayload>({
+    key: "practice:grammar:weak",
+    enabled: mode === "GRAMMAR",
+    staleTimeMs: 60_000,
+    loader: async () => {
+      const response = await fetch("/api/profile/grammar-skills?scope=weak", {
+        cache: "no-store"
+      })
+
+      if (!response.ok) {
+        throw new Error("Could not load grammar practice.")
+      }
+
+      return (await response.json()) as GrammarSkillsPayload
+    }
+  })
+  const { data: historyData, loading: historyLoading } = useClientResource<GrammarFindingRecord[]>({
+    key: "practice:history",
+    enabled: mode === "HISTORY",
+    staleTimeMs: 60_000,
+    loader: async () => {
+      const response = await fetch("/api/practice/history", {
+        cache: "no-store"
+      })
+
+      if (!response.ok) {
+        throw new Error("Could not load practice history.")
+      }
+
+      return (await response.json()) as GrammarFindingRecord[]
+    }
+  })
 
   if (mode === "HISTORY") {
-    return <GrammarHistoryView historyData={initialData.historyData} onBack={() => setMode("SELECT")} />
+    if (historyLoading && !historyData) {
+      return <PracticeModesSkeleton />
+    }
+
+    return <GrammarHistoryView historyData={historyData ?? initialData.historyPreview} onBack={() => setMode("SELECT")} />
   }
 
   if (mode === "TRANSLATION") {
@@ -48,15 +82,19 @@ export function PracticeView({ initialData, initialMode }: PracticeViewProps) {
   if (mode === "WORDS") {
     return (
       <div className="min-h-screen">
-        <ReviewSession initialData={initialData.reviewData} />
+        <ReviewSession initialData={null} />
       </div>
     )
   }
 
   if (mode === "GRAMMAR") {
+    if (grammarLoading && !grammarData) {
+      return <GrammarTopicsSkeleton />
+    }
+
     return (
       <GrammarPracticeView 
-        grammarData={initialData.grammarData} 
+        grammarData={grammarData ?? { items: [], weakCount: initialData.grammarSummary.weakCount, trend: initialData.grammarSummary.trend }} 
         onBack={() => {
           setMode("SELECT")
           setGrammarSubMode(null)
@@ -81,9 +119,9 @@ export function PracticeView({ initialData, initialMode }: PracticeViewProps) {
       }}
       onSelectTranslation={() => setMode("TRANSLATION")}
       onSelectHistory={() => setMode("HISTORY")}
-      dueCount={initialData.reviewData.summary.dueToday}
-      weakGrammarCount={initialData.grammarData.weakCount}
-      historyData={initialData.historyData}
+      dueCount={initialData.reviewSummary.summary.dueToday}
+      weakGrammarCount={initialData.grammarSummary.weakCount}
+      historyData={initialData.historyPreview}
     />
   )
 }

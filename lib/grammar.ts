@@ -9,7 +9,9 @@ import type {
   GrammarFindingRecord,
   GrammarScoreBand,
   GrammarSeverity,
+  GrammarSummaryPayload,
   GrammarSkillsPayload,
+  GrammarTopicsPayload,
   PracticeWritingGrammarFinding
 } from "@/lib/types"
 
@@ -468,10 +470,7 @@ function serializeLatestGrammarFinding(
   }
 }
 
-async function buildUserGrammarSkills(
-  userId: string,
-  scope: "weak" | "all"
-): Promise<GrammarSkillsPayload> {
+async function buildGrammarSkillsBundle(userId: string) {
   const prisma = getPrisma()
   const topics = await prisma.grammarTopic.findMany({
     where: {
@@ -567,9 +566,41 @@ async function buildUserGrammarSkills(
   })
 
   return {
+    allItems,
+    weakItems,
+    trend
+  }
+}
+
+async function buildUserGrammarSkills(
+  userId: string,
+  scope: "weak" | "all"
+): Promise<GrammarSkillsPayload> {
+  const { allItems, weakItems, trend } = await buildGrammarSkillsBundle(userId)
+
+  return {
     items: scope === "weak" ? weakItems : allItems,
     weakCount: weakItems.length,
     trend
+  }
+}
+
+async function buildGrammarSummary(userId: string): Promise<GrammarSummaryPayload> {
+  const { allItems, weakItems, trend } = await buildGrammarSkillsBundle(userId)
+
+  return {
+    weakCount: weakItems.length,
+    trend,
+    recommendedTopic: weakItems[0] ?? allItems.find((item) => item.score < 0) ?? null,
+    totalTopics: allItems.length
+  }
+}
+
+async function buildGrammarTopics(userId: string, scope: "weak" | "all"): Promise<GrammarTopicsPayload> {
+  const { allItems, weakItems } = await buildGrammarSkillsBundle(userId)
+
+  return {
+    items: scope === "weak" ? weakItems : allItems
   }
 }
 
@@ -581,5 +612,24 @@ export function getUserGrammarSkillsData(
     [`grammar-skills:${scope}:${userId}`],
     [userCacheTag.grammar(userId), userCacheTag.profile(userId), adminCacheTag.grammarTopics],
     () => buildUserGrammarSkills(userId, scope)
+  )
+}
+
+export function getUserGrammarSummaryData(userId: string): Promise<GrammarSummaryPayload> {
+  return cacheUserResource(
+    [`grammar-summary:${userId}`],
+    [userCacheTag.grammar(userId), userCacheTag.profile(userId), adminCacheTag.grammarTopics],
+    () => buildGrammarSummary(userId)
+  )
+}
+
+export function getUserGrammarTopicsData(
+  userId: string,
+  scope: "weak" | "all" = "all"
+): Promise<GrammarTopicsPayload> {
+  return cacheUserResource(
+    [`grammar-topics:${scope}:${userId}`],
+    [userCacheTag.grammar(userId), userCacheTag.profile(userId), adminCacheTag.grammarTopics],
+    () => buildGrammarTopics(userId, scope)
   )
 }

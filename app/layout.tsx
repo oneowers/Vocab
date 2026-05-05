@@ -10,13 +10,19 @@ import "./globals.css"
 
 export const metadata: Metadata = {
   title: "LexiFlow",
-  description: "Spaced repetition vocabulary learning for English and Russian learners."
+  description: "Spaced repetition vocabulary learning for English and Russian learners.",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "LexiFlow"
+  }
 }
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  viewportFit: "cover"
+  viewportFit: "cover",
+  themeColor: "#000000"
 }
 
 export default function RootLayout({
@@ -25,7 +31,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning style={{ backgroundColor: "#000000" }}>
       <body className="bg-shell text-ink antialiased">
         <NextTopLoader
           color="var(--accent)"

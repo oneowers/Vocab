@@ -20,6 +20,15 @@ import { FlipCard } from "@/components/FlipCard"
 import { MobileHeader } from "@/components/MobileHeader"
 import { StickySwitcherHeader } from "@/components/StickySwitcherHeader"
 import { GrammarTrendChart } from "@/components/grammar/GrammarTrendChart"
+import { Skeleton, SkeletonCard, SkeletonLine } from "@/components/ui/Skeleton"
+import { ProfileCardSkeleton } from "@/components/profile/ProfileCardSkeleton"
+import { StatsCardsSkeleton } from "@/components/stats/StatsCardsSkeleton"
+import { RecentMistakesSkeleton } from "@/components/stats/RecentMistakesSkeleton"
+import { WordsListSkeleton } from "@/components/words/WordsListSkeleton"
+import { GrammarTopicsSkeleton } from "@/components/grammar/GrammarTopicsSkeleton"
+import { DailyPracticeSkeleton } from "@/components/practice/DailyPracticeSkeleton"
+import { AIRecommendationSkeleton } from "@/components/ai/AIRecommendationSkeleton"
+import { AdminSettingsSkeleton, AdminStatsGridSkeleton, AdminTableSkeleton } from "@/components/admin/AdminLoadingSkeletons"
 import { 
   Shield, 
   User, 
@@ -62,23 +71,24 @@ type ShowcaseItem = {
   description: string
   code: string
   render: ReactNode
+  skeleton?: ReactNode
 }
 
 const inventoryItems: ShowcaseItem[] = [
   { id: "app-shell", name: "AppShell", description: "Desktop shell and primary app chrome.", code: "components/AppShell.tsx", render: <InventoryCard name="AppShell" path="components/AppShell.tsx" group="Layout" /> },
   { id: "admin-shell", name: "AdminShell", description: "Admin navigation shell for back-office pages.", code: "components/AdminShell.tsx", render: <InventoryCard name="AdminShell" path="components/AdminShell.tsx" group="Admin" /> },
-  { id: "admin-table", name: "AdminTable", description: "Shared table wrapper for admin resources.", code: "components/AdminTable.tsx", render: <InventoryCard name="AdminTable" path="components/AdminTable.tsx" group="Admin" /> },
-  { id: "admin-overview", name: "AdminOverviewView", description: "Overview dashboard for admin analytics.", code: "components/AdminOverviewView.tsx", render: <InventoryCard name="AdminOverviewView" path="components/AdminOverviewView.tsx" group="Admin" /> },
-  { id: "admin-analytics", name: "AdminAnalyticsView", description: "Detailed analytics dashboard.", code: "components/AdminAnalyticsView.tsx", render: <InventoryCard name="AdminAnalyticsView" path="components/AdminAnalyticsView.tsx" group="Admin" /> },
+  { id: "admin-table", name: "AdminTable", description: "Shared table wrapper for admin resources.", code: "components/AdminTable.tsx", render: <InventoryCard name="AdminTable" path="components/AdminTable.tsx" group="Admin" />, skeleton: <div className="w-full max-w-3xl"><AdminTableSkeleton /></div> },
+  { id: "admin-overview", name: "AdminOverviewView", description: "Overview dashboard for admin analytics.", code: "components/AdminOverviewView.tsx", render: <InventoryCard name="AdminOverviewView" path="components/AdminOverviewView.tsx" group="Admin" />, skeleton: <div className="w-full max-w-4xl"><AdminStatsGridSkeleton /></div> },
+  { id: "admin-analytics", name: "AdminAnalyticsView", description: "Detailed analytics dashboard.", code: "components/AdminAnalyticsView.tsx", render: <InventoryCard name="AdminAnalyticsView" path="components/AdminAnalyticsView.tsx" group="Admin" />, skeleton: <div className="w-full max-w-4xl"><AdminStatsGridSkeleton /></div> },
   { id: "admin-users", name: "AdminUsersView", description: "User management view with role controls.", code: "components/AdminUsersView.tsx", render: <InventoryCard name="AdminUsersView" path="components/AdminUsersView.tsx" group="Admin" /> },
   { id: "admin-cards", name: "AdminCardsView", description: "Admin card management screen.", code: "components/AdminCardsView.tsx", render: <InventoryCard name="AdminCardsView" path="components/AdminCardsView.tsx" group="Admin" /> },
   { id: "admin-catalog", name: "AdminCatalogView", description: "Catalog curation and publishing view.", code: "components/AdminCatalogView.tsx", render: <InventoryCard name="AdminCatalogView" path="components/AdminCatalogView.tsx" group="Admin" /> },
-  { id: "admin-settings", name: "AdminSettingsView", description: "Global settings management panel.", code: "components/AdminSettingsView.tsx", render: <InventoryCard name="AdminSettingsView" path="components/AdminSettingsView.tsx" group="Admin" /> },
+  { id: "admin-settings", name: "AdminSettingsView", description: "Global settings management panel.", code: "components/AdminSettingsView.tsx", render: <InventoryCard name="AdminSettingsView" path="components/AdminSettingsView.tsx" group="Admin" />, skeleton: <div className="w-full max-w-4xl"><AdminSettingsSkeleton /></div> },
   { id: "admin-promo", name: "AdminPromoCodesView", description: "Promo code creation and tracking.", code: "components/AdminPromoCodesView.tsx", render: <InventoryCard name="AdminPromoCodesView" path="components/AdminPromoCodesView.tsx" group="Admin" /> },
   { id: "admin-grammar-topics", name: "AdminGrammarTopicsView", description: "Grammar topic administration.", code: "components/AdminGrammarTopicsView.tsx", render: <InventoryCard name="AdminGrammarTopicsView" path="components/AdminGrammarTopicsView.tsx" group="Admin" /> },
   { id: "dashboard-view", name: "DashboardView", description: "Translate/dashboard root surface.", code: "components/DashboardView.tsx", render: <InventoryCard name="DashboardView" path="components/DashboardView.tsx" group="Core screens" /> },
-  { id: "home-dashboard", name: "HomeDashboardView", description: "Main home dashboard composition.", code: "components/HomeDashboardView.tsx", render: <InventoryCard name="HomeDashboardView" path="components/HomeDashboardView.tsx" group="Core screens" /> },
-  { id: "cards-page", name: "CardsPageView", description: "Deck browsing and filtering page.", code: "components/CardsPageView.tsx", render: <InventoryCard name="CardsPageView" path="components/CardsPageView.tsx" group="Core screens" /> },
+  { id: "home-dashboard", name: "HomeDashboardView", description: "Main home dashboard composition.", code: "components/HomeDashboardView.tsx", render: <InventoryCard name="HomeDashboardView" path="components/HomeDashboardView.tsx" group="Core screens" />, skeleton: <div className="w-full max-w-xl"><DailyPracticeSkeleton /></div> },
+  { id: "cards-page", name: "CardsPageView", description: "Deck browsing and filtering page.", code: "components/CardsPageView.tsx", render: <InventoryCard name="CardsPageView" path="components/CardsPageView.tsx" group="Core screens" />, skeleton: <div className="w-full max-w-4xl"><WordsListSkeleton /></div> },
   { id: "card-list", name: "CardList", description: "List/grid surface used by cards page.", code: "components/CardList.tsx", render: <InventoryCard name="CardList" path="components/CardList.tsx" group="Learning" /> },
   { id: "card-details", name: "CardDetailsModal", description: "Expanded card details modal.", code: "components/CardDetailsModal.tsx", render: <InventoryCard name="CardDetailsModal" path="components/CardDetailsModal.tsx" group="Learning" /> },
   { id: "daily-words", name: "DailyWordsModal", description: "Daily word claim modal.", code: "components/DailyWordsModal.tsx", render: <InventoryCard name="DailyWordsModal" path="components/DailyWordsModal.tsx" group="Learning" /> },
@@ -117,12 +127,12 @@ const inventoryItems: ShowcaseItem[] = [
   { id: "grammar-stats-summary", name: "GrammarStatsSummary", description: "Summary block for grammar metrics.", code: "components/grammar/GrammarStatsSummary.tsx", render: <InventoryCard name="GrammarStatsSummary" path="components/grammar/GrammarStatsSummary.tsx" group="Grammar subcomponents" /> },
   { id: "grammar-stats-row", name: "GrammarStatsRow", description: "Row layout for grammar stats.", code: "components/grammar/GrammarStatsRow.tsx", render: <InventoryCard name="GrammarStatsRow" path="components/grammar/GrammarStatsRow.tsx" group="Grammar subcomponents" /> },
   { id: "grammar-stats-compact", name: "GrammarStatsCompact", description: "Compact grammar stat widget.", code: "components/grammar/GrammarStatsCompact.tsx", render: <InventoryCard name="GrammarStatsCompact" path="components/grammar/GrammarStatsCompact.tsx" group="Grammar subcomponents" /> },
-  { id: "profile-view", name: "ProfileView", description: "Profile page composition and activity surface.", code: "components/ProfileView.tsx", render: <InventoryCard name="ProfileView" path="components/ProfileView.tsx" group="Profile" /> },
-  { id: "stats-view", name: "StatsView", description: "Learning stats page component.", code: "components/StatsView.tsx", render: <InventoryCard name="StatsView" path="components/StatsView.tsx" group="Analytics" /> },
+  { id: "profile-view", name: "ProfileView", description: "Profile page composition and activity surface.", code: "components/ProfileView.tsx", render: <InventoryCard name="ProfileView" path="components/ProfileView.tsx" group="Profile" />, skeleton: <div className="w-full max-w-xl"><ProfileCardSkeleton /></div> },
+  { id: "stats-view", name: "StatsView", description: "Learning stats page component.", code: "components/StatsView.tsx", render: <InventoryCard name="StatsView" path="components/StatsView.tsx" group="Analytics" />, skeleton: <div className="w-full max-w-3xl"><StatsCardsSkeleton /></div> },
   { id: "stats-filter", name: "StatsFilter", description: "Stats filtering control.", code: "components/StatsFilter.tsx", render: <InventoryCard name="StatsFilter" path="components/StatsFilter.tsx" group="Analytics" /> },
   { id: "css-bar-chart", name: "CSSBarChart", description: "Reusable bar chart widget.", code: "components/CSSBarChart.tsx", render: <InventoryCard name="CSSBarChart" path="components/CSSBarChart.tsx" group="Analytics" /> },
   { id: "seed-catalog", name: "SeedCatalogSection", description: "Catalog breakdown analytics card.", code: "components/SeedCatalogSection.tsx", render: <InventoryCard name="SeedCatalogSection" path="components/SeedCatalogSection.tsx" group="Analytics" /> },
-  { id: "ai-coach", name: "AiCoachView", description: "AI coach chat surface.", code: "components/AiCoachView.tsx", render: <InventoryCard name="AiCoachView" path="components/AiCoachView.tsx" group="AI" /> },
+  { id: "ai-coach", name: "AiCoachView", description: "AI coach chat surface.", code: "components/AiCoachView.tsx", render: <InventoryCard name="AiCoachView" path="components/AiCoachView.tsx" group="AI" />, skeleton: <div className="w-full max-w-3xl"><AIRecommendationSkeleton /></div> },
   { id: "ai-coach-components", name: "AiCoachComponents", description: "Supporting chat UI pieces for AI coach.", code: "components/AiCoachComponents.tsx", render: <InventoryCard name="AiCoachComponents" path="components/AiCoachComponents.tsx" group="AI" /> },
   { id: "login-card", name: "LoginCard", description: "Authentication sheet and form.", code: "components/LoginCard.tsx", render: <InventoryCard name="LoginCard" path="components/LoginCard.tsx" group="Auth" /> },
   { id: "onboarding-flow", name: "OnboardingFlow", description: "Primary onboarding flow container.", code: "components/OnboardingFlow.tsx", render: <InventoryCard name="OnboardingFlow" path="components/OnboardingFlow.tsx" group="Onboarding" /> },
@@ -159,10 +169,175 @@ function InventoryCard({ name, path, group }: { name: string; path: string; grou
   )
 }
 
+function UIKitSwitch({
+  checked,
+  onChange,
+  label
+}: {
+  checked: boolean
+  onChange: (checked: boolean) => void
+  label: string
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className="flex items-center gap-3 rounded-2xl border border-white/5 bg-white/5 px-4 py-2 text-sm font-bold transition-all hover:bg-white/10"
+    >
+      <span className="text-white/70">{label}</span>
+      <span
+        className={`relative h-7 w-12 rounded-full transition-colors ${checked ? "bg-[#0A84FF]" : "bg-white/10"}`}
+      >
+        <span
+          className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${checked ? "translate-x-6" : "translate-x-1"}`}
+        />
+      </span>
+    </button>
+  )
+}
+
+function GenericCardSkeletonPreview() {
+  return (
+    <div className="w-full max-w-sm">
+      <SkeletonCard className="rounded-[28px] border-white/[0.15] bg-[#1C1C1E] p-6">
+        <SkeletonLine className="h-6 w-32 rounded-2xl" />
+        <SkeletonLine className="mt-3 h-4 w-24 rounded-full" />
+      </SkeletonCard>
+    </div>
+  )
+}
+
+function GenericTileSkeletonPreview() {
+  return (
+    <div className="w-full max-w-[220px]">
+      <SkeletonCard className="rounded-[20px] border-white/[0.03] bg-[#1C1C1E] p-3.5">
+        <Skeleton className="h-9 w-9 rounded-lg" />
+        <SkeletonLine className="mt-6 h-4 w-20 rounded-full" />
+        <SkeletonLine className="mt-2 h-3 w-24 rounded-full" />
+      </SkeletonCard>
+    </div>
+  )
+}
+
+function GenericListItemSkeletonPreview() {
+  return (
+    <div className="w-full max-w-sm overflow-hidden rounded-[24px] border border-white/[0.03] bg-[#1C1C1E]">
+      {Array.from({ length: 2 }).map((_, index) => (
+        <div key={index} className="px-4 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-8 w-8 rounded-[8px]" />
+              <div className="space-y-2">
+                <SkeletonLine className="h-4 w-28 rounded-full" />
+                <SkeletonLine className="h-3 w-20 rounded-full" />
+              </div>
+            </div>
+            <SkeletonLine className="h-4 w-12 rounded-full" />
+          </div>
+          {index === 0 ? <div className="mt-3 h-px bg-white/[0.05]" /> : null}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function GenericSkillCardSkeletonPreview() {
+  return (
+    <div className="w-full max-w-sm">
+      <SkeletonCard className="rounded-[24px] border-white/10 bg-[#1C1C1E] p-5">
+        <div className="flex items-start justify-between">
+          <div className="flex gap-2">
+            <Skeleton className="h-6 w-10 rounded-full" />
+            <Skeleton className="h-6 w-16 rounded-full" />
+          </div>
+          <SkeletonLine className="h-7 w-12 rounded-2xl" />
+        </div>
+        <SkeletonLine className="mt-6 h-5 w-36 rounded-xl" />
+        <SkeletonLine className="mt-2 h-4 w-28 rounded-full" />
+        <Skeleton className="mt-6 h-1.5 w-full rounded-full" />
+      </SkeletonCard>
+    </div>
+  )
+}
+
+function GenericSkillListSkeletonPreview() {
+  return (
+    <div className="w-full max-w-sm overflow-hidden rounded-[32px] border border-white/[0.05] bg-[#1C1C1E]">
+      {Array.from({ length: 3 }).map((_, index) => (
+        <div key={index} className="px-5 py-4">
+          <div className="flex items-center justify-between gap-3">
+            <SkeletonLine className="h-4 w-36 rounded-full" />
+            <SkeletonLine className="h-4 w-10 rounded-full" />
+          </div>
+          <Skeleton className="mt-4 h-1.5 w-full rounded-full" />
+          {index < 2 ? <div className="mt-4 h-px bg-white/[0.05]" /> : null}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function GenericHeroSkeletonPreview() {
+  return (
+    <div className="w-full max-w-sm">
+      <SkeletonCard className="rounded-[32px] border-white/[0.15] bg-[#1C1C1E] p-5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-10 w-10 rounded-2xl" />
+            <div className="space-y-2">
+              <SkeletonLine className="h-5 w-32 rounded-xl" />
+              <SkeletonLine className="h-4 w-24 rounded-full" />
+            </div>
+          </div>
+          <SkeletonLine className="h-6 w-10 rounded-full" />
+        </div>
+        <Skeleton className="mt-5 h-1.5 w-full rounded-full" />
+      </SkeletonCard>
+    </div>
+  )
+}
+
+function GenericHeaderSkeletonPreview() {
+  return (
+    <div className="w-full max-w-sm rounded-[32px] border border-white/10 bg-black p-4">
+      <div className="flex items-center justify-between gap-3">
+        <Skeleton className="h-10 w-10 rounded-full" />
+        <Skeleton className="h-12 flex-1 rounded-full" />
+        <Skeleton className="h-10 w-10 rounded-full" />
+      </div>
+    </div>
+  )
+}
+
+function GenericChartSkeletonPreview() {
+  return (
+    <div className="w-full max-w-sm">
+      <SkeletonCard className="rounded-[28px] bg-[#1C1C1E] p-4">
+        <SkeletonLine className="h-4 w-24 rounded-full" />
+        <div className="mt-6 grid grid-cols-[24px_1fr] gap-3">
+          <div className="space-y-5">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <SkeletonLine key={index} className="h-3 w-4 rounded-full" />
+            ))}
+          </div>
+          <div className="flex h-40 items-end gap-3">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <Skeleton key={index} className="flex-1 rounded-t-2xl" style={{ height: `${45 + index * 12}px` }} />
+            ))}
+          </div>
+        </div>
+      </SkeletonCard>
+    </div>
+  )
+}
+
 export default function UIKitPage() {
   const [activeCategory, setActiveCategory] = useState<Category>("Apple Core")
   const [isAlertOpen, setIsAlertOpen] = useState(false)
   const [selectedComponent, setSelectedComponent] = useState<string | null>(null)
+  const [skeletonStates, setSkeletonStates] = useState<Record<string, boolean>>({})
 
   const categories: { id: Category; icon: any }[] = [
     { id: "Apple Core", icon: Layout },
@@ -196,7 +371,8 @@ export default function UIKitPage() {
               </div>
             </AppleCard>
           </div>
-        )
+        ),
+        skeleton: <GenericCardSkeletonPreview />
       },
       {
         id: "apple-tile",
@@ -213,7 +389,8 @@ export default function UIKitPage() {
               href="/grammar"
             />
           </div>
-        )
+        ),
+        skeleton: <GenericTileSkeletonPreview />
       },
       {
         id: "apple-progress-card",
@@ -224,7 +401,8 @@ export default function UIKitPage() {
           <div className="w-full max-w-sm">
             <AppleProgressCard title="Level Test" current={18} total={24} href="/onboarding/level-test" />
           </div>
-        )
+        ),
+        skeleton: <GenericCardSkeletonPreview />
       },
       {
         id: "apple-list-item",
@@ -252,7 +430,8 @@ export default function UIKitPage() {
               rightLabel="Secure"
             />
           </div>
-        )
+        ),
+        skeleton: <GenericListItemSkeletonPreview />
       },
       {
         id: "apple-skill-card",
@@ -270,7 +449,8 @@ export default function UIKitPage() {
               progress={45}
             />
           </div>
-        )
+        ),
+        skeleton: <GenericSkillCardSkeletonPreview />
       },
       {
         id: "apple-skill-list-item",
@@ -306,7 +486,8 @@ export default function UIKitPage() {
               progress={92}
             />
           </div>
-        )
+        ),
+        skeleton: <GenericSkillListSkeletonPreview />
       },
       {
         id: "apple-recommended-card",
@@ -322,7 +503,8 @@ export default function UIKitPage() {
               progress={30}
             />
           </div>
-        )
+        ),
+        skeleton: <GenericHeroSkeletonPreview />
       },
       {
         id: "apple-spinner",
@@ -333,7 +515,8 @@ export default function UIKitPage() {
           <div className="flex h-24 w-24 items-center justify-center rounded-[28px] border border-white/10 bg-[#1C1C1E]">
             <AppleSpinner className="h-16" />
           </div>
-        )
+        ),
+        skeleton: <div className="flex h-24 w-24 items-center justify-center rounded-[28px] border border-white/10 bg-[#1C1C1E]"><Skeleton className="h-16 w-16 rounded-full" /></div>
       }
     ],
     "Navigation": [
@@ -352,7 +535,8 @@ export default function UIKitPage() {
                 <ChevronRight size={20} className="text-white/20" />
              </div>
           </div>
-        )
+        ),
+        skeleton: <GenericHeaderSkeletonPreview />
       },
       {
         id: "segmented-header",
@@ -376,7 +560,8 @@ export default function UIKitPage() {
                 </div>
              </div>
           </div>
-        )
+        ),
+        skeleton: <GenericHeaderSkeletonPreview />
       },
       {
         id: "centered-header",
@@ -393,7 +578,8 @@ export default function UIKitPage() {
                 <div className="w-9" />
              </div>
           </div>
-        )
+        ),
+        skeleton: <GenericHeaderSkeletonPreview />
       },
       {
         id: "bottom-tab-bar",
@@ -417,7 +603,8 @@ export default function UIKitPage() {
                </div>
             </div>
           </div>
-        )
+        ),
+        skeleton: <div className="relative h-24 w-full rounded-3xl border border-white/5 bg-black/40 p-3"><Skeleton className="h-14 w-full rounded-[28px]" /></div>
       },
       {
         id: "desktop-sidebar",
@@ -452,7 +639,8 @@ export default function UIKitPage() {
                 </div>
              </div>
           </div>
-        )
+        ),
+        skeleton: <div className="w-64 h-[400px] scale-75 origin-top-left -mb-24"><Skeleton className="h-full rounded-[28px]" /></div>
       },
       {
         id: "admin-sidebar",
@@ -490,7 +678,8 @@ export default function UIKitPage() {
                 </div>
              </div>
           </div>
-        )
+        ),
+        skeleton: <div className="w-64 h-[400px] scale-75 origin-top-left -mb-24"><Skeleton className="h-full rounded-[28px]" /></div>
       }
     ],
     "Learning": [
@@ -507,7 +696,8 @@ export default function UIKitPage() {
               <button className="mt-8 mx-auto h-11 px-6 rounded-2xl bg-white/[0.08] text-white font-bold text-sm">Reveal Translation</button>
             </div>
           </div>
-        )
+        ),
+        skeleton: <GenericCardSkeletonPreview />
       },
       {
         id: "streak-card",
@@ -529,7 +719,8 @@ export default function UIKitPage() {
                 <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400 border border-blue-500/20 text-xs font-bold">2</div>
              </div>
           </div>
-        )
+        ),
+        skeleton: <GenericHeroSkeletonPreview />
       }
     ],
     "Feedback": [
@@ -545,7 +736,8 @@ export default function UIKitPage() {
           >
             Trigger Alert Modal
           </button>
-        )
+        ),
+        skeleton: <GenericCardSkeletonPreview />
       },
       {
         id: "toast-system",
@@ -563,7 +755,8 @@ export default function UIKitPage() {
               <span className="text-sm font-medium text-white">Password mismatch</span>
             </div>
           </div>
-        )
+        ),
+        skeleton: <div className="w-full max-w-[280px] space-y-3"><Skeleton className="h-12 rounded-xl" /><Skeleton className="h-12 rounded-xl" /></div>
       }
     ],
     "Auth & Entry": [
@@ -585,7 +778,8 @@ export default function UIKitPage() {
               </div>
             </div>
           </div>
-        )
+        ),
+        skeleton: <div className="w-full max-w-sm"><Skeleton className="h-[360px] rounded-[40px]" /></div>
       }
     ],
     "Branding": [
@@ -609,7 +803,8 @@ export default function UIKitPage() {
               <span className="text-[12px] font-bold text-white/40">Circle (Accent)</span>
             </div>
           </div>
-        )
+        ),
+        skeleton: <div className="flex flex-wrap items-center gap-12"><Skeleton className="h-20 w-20 rounded-[22%]" /><Skeleton className="h-12 w-12 rounded-full" /></div>
       }
     ],
     "Analytics": [
@@ -633,7 +828,8 @@ export default function UIKitPage() {
               </div>
             </AppleCard>
           </div>
-        )
+        ),
+        skeleton: <GenericChartSkeletonPreview />
       }
     ],
     "Project Inventory": inventoryItems
@@ -696,13 +892,27 @@ export default function UIKitPage() {
                   <h2 className="text-3xl font-bold">{comp.name}</h2>
                   <p className="text-white/40 font-medium">{comp.description}</p>
                 </div>
-                <button 
-                  onClick={() => setSelectedComponent(selectedComponent === comp.id ? null : comp.id)}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all font-bold text-sm"
-                >
-                  {selectedComponent === comp.id ? <Eye size={18} /> : <Code size={18} />}
-                  {selectedComponent === comp.id ? "Live Preview" : "Get Code"}
-                </button>
+                <div className="flex items-center gap-3">
+                  {comp.skeleton ? (
+                    <UIKitSwitch
+                      checked={Boolean(skeletonStates[comp.id])}
+                      onChange={(checked) =>
+                        setSkeletonStates((current) => ({
+                          ...current,
+                          [comp.id]: checked
+                        }))
+                      }
+                      label="Show Skeleton"
+                    />
+                  ) : null}
+                  <button 
+                    onClick={() => setSelectedComponent(selectedComponent === comp.id ? null : comp.id)}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all font-bold text-sm"
+                  >
+                    {selectedComponent === comp.id ? <Eye size={18} /> : <Code size={18} />}
+                    {selectedComponent === comp.id ? "Live Preview" : "Get Code"}
+                  </button>
+                </div>
               </div>
 
               <div className="relative min-h-[280px] bg-[#09090B] rounded-[40px] border border-white/[0.03] overflow-hidden flex items-center justify-center p-12">
@@ -723,13 +933,13 @@ export default function UIKitPage() {
                     </motion.div>
                   ) : (
                     <motion.div 
-                      key="render"
+                      key={skeletonStates[comp.id] && comp.skeleton ? "skeleton" : "render"}
                       initial={{ opacity: 0, scale: 0.98 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 1.02 }}
                       className="w-full flex justify-center"
                     >
-                      {comp.render}
+                      {skeletonStates[comp.id] && comp.skeleton ? comp.skeleton : comp.render}
                     </motion.div>
                   )}
                 </AnimatePresence>

@@ -11,6 +11,7 @@ import { BrandLogo } from "@/components/BrandLogo"
 import { MobileHeader } from "@/components/MobileHeader"
 import { PageTransition } from "@/components/PageTransition"
 import { useToast } from "@/components/Toast"
+import { prefetchClientResource } from "@/hooks/useClientResource"
 import { getAppMobileNavItems, getAppSidebarNavItems } from "@/lib/navigation"
 import { getRoleLabel } from "@/lib/roles"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
@@ -40,12 +41,62 @@ export function AppShell({ user, settings, children }: AppShellProps) {
   }, [pathname])
 
   useEffect(() => {
-    const appRoutes = ["/", "/dashboard", "/profile", "/login"]
+    const appRoutes = ["/", "/dashboard", "/translate", "/cards", "/practice", "/grammar", "/stats", "/review", "/profile", "/login"]
     appRoutes.forEach((href) => router.prefetch(href))
     if (user?.role === "ADMIN") {
       ;["/admin", "/admin/users"].forEach((href) => router.prefetch(href))
     }
   }, [router, user])
+
+  useEffect(() => {
+    if (!mounted || guestActive || !user) {
+      return
+    }
+
+    const fetchJson = async <T,>(url: string) => {
+      const response = await fetch(url, {
+        cache: "no-store"
+      })
+
+      if (!response.ok) {
+        throw new Error(`Prefetch failed for ${url}`)
+      }
+
+      return (await response.json()) as T
+    }
+
+    const warmup = () => {
+      const jobs = [
+        prefetchClientResource("review:summary", () => fetchJson("/api/review/summary"), {
+          staleTimeMs: 60_000
+        }),
+        prefetchClientResource("grammar:summary", () => fetchJson("/api/grammar/summary"), {
+          staleTimeMs: 60_000
+        }),
+        prefetchClientResource("stats:summary:7", () => fetchJson("/api/stats/summary?days=7"), {
+          staleTimeMs: 60_000
+        })
+      ]
+
+      if (pathname === "/" || pathname === "/dashboard" || pathname === "/translate") {
+        jobs.push(
+          prefetchClientResource("practice:entry", () => fetchJson("/api/practice/entry"), {
+            staleTimeMs: 60_000
+          })
+        )
+      }
+
+      void Promise.allSettled(jobs)
+    }
+
+    if ("requestIdleCallback" in window) {
+      const idleId = window.requestIdleCallback(warmup, { timeout: 2_000 })
+      return () => window.cancelIdleCallback(idleId)
+    }
+
+    const timeoutId = globalThis.setTimeout(warmup, 400)
+    return () => globalThis.clearTimeout(timeoutId)
+  }, [guestActive, mounted, pathname, user])
 
   async function handleExit() {
     if (guestActive) {

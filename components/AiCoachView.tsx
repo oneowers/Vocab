@@ -10,6 +10,7 @@ import Link from "next/link"
 import { useEffect, useMemo, useRef, useState } from "react"
 
 import { ProUpgradeBanner } from "@/components/ProUpgradeBanner"
+import { AIRecommendationSkeleton } from "@/components/ai/AIRecommendationSkeleton"
 import { useToast } from "@/components/Toast"
 import { AiMessage } from "@/components/AiCoachComponents"
 import { useClientResource } from "@/hooks/useClientResource"
@@ -116,6 +117,7 @@ export function AiCoachView({ isPro }: { isPro: boolean }) {
   const { data: cardsPayload, loading: cardsLoading } = useClientResource<CardsResponse>({
     key: "cards:collection",
     enabled: isPro && !guestMode,
+    staleTimeMs: 60_000,
     revalidateOnMount: true,
     loader: async () => {
       const r = await fetch("/api/cards")
@@ -238,23 +240,29 @@ export function AiCoachView({ isPro }: { isPro: boolean }) {
             <motion.div key="hero" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
               className="flex flex-col items-center py-4 text-center md:py-10"
             >
-              <div className="relative mb-4 flex h-14 w-14 items-center justify-center rounded-[20px] bg-gradient-to-br from-amber-400 to-orange-600 p-[1px] md:h-20 md:w-20 md:rounded-3xl shadow-lg shadow-orange-500/20">
-                <div className="flex h-full w-full items-center justify-center rounded-[19px] bg-bg-secondary md:rounded-[1.4rem]">
-                  <Sparkles size={24} className="text-amber-400 md:size-8" />
-                </div>
-              </div>
-              <h1 className="max-w-[280px] text-[20px] font-black leading-tight md:max-w-none md:text-4xl text-ink">
-                Practice English with <span className="text-amber-400">saved words</span>
-              </h1>
-              <p className="mt-2 max-w-[300px] text-[13px] text-muted md:mt-3 md:max-w-md md:text-base">
-                Explain words, quiz yourself, or build a study plan.
-              </p>
-              <DeckBadges total={deckCards.length} due={dueCount} level={level} loading={cardsLoading} />
-              <div className="mt-6 grid w-full grid-cols-1 gap-2.5 sm:grid-cols-2 md:mt-10 md:gap-3">
-                {SUGGESTED_ACTIONS.map(a => (
-                  <ActionCard key={a.id} action={a} onClick={() => sendMessage(a.visibleMessage, a.mode)} />
-                ))}
-              </div>
+              {cardsLoading && !cardsPayload && !guestMode ? (
+                <AIRecommendationSkeleton />
+              ) : (
+                <>
+                  <div className="relative mb-4 flex h-14 w-14 items-center justify-center rounded-[20px] bg-gradient-to-br from-amber-400 to-orange-600 p-[1px] md:h-20 md:w-20 md:rounded-3xl shadow-lg shadow-orange-500/20">
+                    <div className="flex h-full w-full items-center justify-center rounded-[19px] bg-bg-secondary md:rounded-[1.4rem]">
+                      <Sparkles size={24} className="text-amber-400 md:size-8" />
+                    </div>
+                  </div>
+                  <h1 className="max-w-[280px] text-[20px] font-black leading-tight md:max-w-none md:text-4xl text-ink">
+                    Practice English with <span className="text-amber-400">saved words</span>
+                  </h1>
+                  <p className="mt-2 max-w-[300px] text-[13px] text-muted md:mt-3 md:max-w-md md:text-base">
+                    Explain words, quiz yourself, or build a study plan.
+                  </p>
+                  <DeckBadges total={deckCards.length} due={dueCount} level={level} loading={cardsLoading} />
+                  <div className="mt-6 grid w-full grid-cols-1 gap-2.5 sm:grid-cols-2 md:mt-10 md:gap-3">
+                    {SUGGESTED_ACTIONS.map(a => (
+                      <ActionCard key={a.id} action={a} onClick={() => sendMessage(a.visibleMessage, a.mode)} />
+                    ))}
+                  </div>
+                </>
+              )}
             </motion.div>
           ) : (
             <div ref={scrollRef} className="space-y-4 pt-4 md:space-y-5 md:pt-6">

@@ -75,7 +75,7 @@ interface AppleListItemProps {
   iconColor: string
   href?: string
   onClick?: () => void
-  rightLabel?: string
+  rightLabel?: React.ReactNode
   showDivider?: boolean
 }
 

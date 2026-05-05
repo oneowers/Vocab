@@ -24,9 +24,13 @@ import type {
   AdminAnalyticsPayload,
   CardsResponse,
   DetailedStatsPayload,
+  GrammarFindingRecord,
+  PracticeEntryPayload,
   ProfileActivityDay,
   ProfileActivityMonthLabel,
   ProfileActivityPayload,
+  ReviewSummaryPayload,
+  StatsSummaryPayload,
   StatsPayload
 } from "@/lib/types"
 
@@ -159,6 +163,39 @@ function getDailyTarget(value: number | null | undefined) {
   return typeof value === "number" && value > 0 ? value : 10
 }
 
+function serializeGrammarHistoryFinding(
+  finding: {
+    id: string
+    severity: string
+    confidence: number
+    isCorrect: boolean
+    originalText: string
+    correctedText: string
+    explanationRu: string
+    scoreDelta: number
+    createdAt: Date
+    sourceType: string | null
+    sourceId: string | null
+    topic?: { key: string; titleEn: string } | null
+  }
+): GrammarFindingRecord {
+  return {
+    id: finding.id,
+    topicKey: finding.topic?.key ?? "unknown",
+    severity: finding.severity as GrammarFindingRecord["severity"],
+    confidence: finding.confidence,
+    isCorrect: finding.isCorrect,
+    original: finding.originalText,
+    corrected: finding.correctedText,
+    explanationRu: finding.explanationRu,
+    scoreDelta: finding.scoreDelta,
+    createdAt: finding.createdAt.toISOString(),
+    topicTitleEn: finding.topic?.titleEn ?? "Unknown Topic",
+    sourceType: finding.sourceType as GrammarFindingRecord["sourceType"],
+    sourceId: finding.sourceId
+  }
+}
+
 async function buildCardsPageData(userId: string): Promise<CardsResponse> {
   const prisma = getPrisma()
   const today = getTodayDateKey()
@@ -235,6 +272,89 @@ async function buildCardsPageData(userId: string): Promise<CardsResponse> {
   }
 }
 
+async function buildReviewSummaryData(userId: string): Promise<ReviewSummaryPayload> {
+  const prisma = getPrisma()
+  const today = getTodayDateKey()
+  const todayStart = new Date(`${today}T00:00:00.000Z`)
+  const tomorrowStart = new Date(todayStart)
+  tomorrowStart.setUTCDate(tomorrowStart.getUTCDate() + 1)
+
+  const [settings, user, totalCards, masteredCount, rawDueToday, claimedToday, weakCount] =
+    await Promise.all([
+      getOrCreateAppSettings(prisma),
+      prisma.user.findUniqueOrThrow({
+        where: { id: userId },
+        select: {
+          streak: true,
+          cefrLevel: true,
+          dailyWordTarget: true,
+          firstPracticeDate: true
+        }
+      }),
+      prisma.card.count({
+        where: { userId }
+      }),
+      prisma.card.count({
+        where: {
+          userId,
+          reviewCount: {
+            gte: 3
+          }
+        }
+      }),
+      prisma.card.count({
+        where: {
+          userId,
+          nextReviewDate: {
+            lte: today
+          }
+        }
+      }),
+      prisma.userCatalogWord.count({
+        where: {
+          userId,
+          status: "ACTIVE",
+          createdAt: {
+            gte: todayStart,
+            lt: tomorrowStart
+          }
+        }
+      }),
+      prisma.$queryRaw<Array<{ value: bigint }>>(Prisma.sql`
+        SELECT COUNT(*)::bigint AS value
+        FROM "Card"
+        WHERE "userId" = ${userId}
+          AND ("wrongCount" * 2 - "correctCount") >= 3
+      `)
+    ])
+
+  const dailyTarget = getDailyTarget(user.dailyWordTarget)
+  const dueToday = Math.min(rawDueToday, dailyTarget)
+  const weakCardsCount = Number(weakCount[0]?.value ?? 0)
+
+  return {
+    summary: {
+      streak: user.streak,
+      reviewLives: settings.reviewLives,
+      totalCards,
+      dueToday,
+      mastered: masteredCount,
+      weakCardsCount,
+      isFirstPractice: !user.firstPracticeDate
+    },
+    dailyCatalog: {
+      dailyTarget,
+      todayCount: dueToday,
+      savedCount: totalCards,
+      waitingCount: Math.max(totalCards - dueToday, 0),
+      claimedToday,
+      dailyLimit: settings.dailyNewCardsLimit,
+      remainingToday: Math.max(settings.dailyNewCardsLimit - claimedToday, 0),
+      cefrLevel: user.cefrLevel
+    }
+  }
+}
+
 export function getUserCardsPageData(userId: string): Promise<CardsResponse> {
   return cacheUserResource(
     [`cards-page:${userId}`],
@@ -249,6 +369,48 @@ export function getUserReviewData(userId: string): Promise<CardsResponse> {
     [userCacheTag.cards(userId), userCacheTag.review(userId), sharedCacheTag.appSettings],
     () => buildCardsPageData(userId)
   )
+}
+
+export function getUserReviewSummaryData(userId: string): Promise<ReviewSummaryPayload> {
+  return cacheUserResource(
+    [`review-summary:${userId}`],
+    [userCacheTag.cards(userId), userCacheTag.review(userId), sharedCacheTag.appSettings],
+    () => buildReviewSummaryData(userId)
+  )
+}
+
+export async function getPracticeEntryData(userId: string): Promise<PracticeEntryPayload> {
+  const prisma = getPrisma()
+  const [reviewSummary, grammarSummary, historyRaw, appSettingsRaw] = await Promise.all([
+    getUserReviewSummaryData(userId),
+    import("@/lib/grammar").then((m) => m.getUserGrammarSummaryData(userId)),
+    prisma.grammarFinding.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+      take: 12,
+      include: { topic: { select: { key: true, titleEn: true } } }
+    }),
+    getOrCreateAppSettings(prisma)
+  ])
+
+  return {
+    reviewSummary,
+    grammarSummary,
+    historyPreview: historyRaw.map(serializeGrammarHistoryFinding),
+    appSettings: serializeAppSettings(appSettingsRaw)
+  }
+}
+
+export async function getPracticeHistoryData(userId: string) {
+  const prisma = getPrisma()
+  const historyRaw = await prisma.grammarFinding.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+    include: { topic: { select: { key: true, titleEn: true } } }
+  })
+
+  return historyRaw.map(serializeGrammarHistoryFinding)
 }
 
 export async function getPracticePageData(userId: string) {
@@ -267,21 +429,7 @@ export async function getPracticePageData(userId: string) {
 
   const appSettings = serializeAppSettings(appSettingsRaw)
 
-  const historyData = historyRaw.map(h => ({
-    id: h.id,
-    topicKey: h.topic?.key ?? "unknown",
-    severity: h.severity,
-    confidence: h.confidence,
-    isCorrect: h.isCorrect,
-    original: h.originalText,
-    corrected: h.correctedText,
-    explanationRu: h.explanationRu,
-    scoreDelta: h.scoreDelta,
-    createdAt: h.createdAt.toISOString(),
-    topicTitleEn: h.topic?.titleEn ?? "Unknown Topic",
-    sourceType: h.sourceType,
-    sourceId: h.sourceId
-  }))
+  const historyData = historyRaw.map(serializeGrammarHistoryFinding)
 
   return {
     reviewData,
@@ -499,11 +647,182 @@ export async function buildDetailedUserStats(userId: string, daysCount = 7): Pro
   }
 }
 
+export async function buildDetailedStatsSummary(userId: string, daysCount = 7): Promise<StatsSummaryPayload> {
+  const prisma = getPrisma()
+  const today = getTodayDateKey()
+  const recentDays = listRecentDateKeys(daysCount, today)
+  const rangeStart = parseDateKey(recentDays[0])
+
+  const [user, totalCardsLearned, reviewDateCounts] = await Promise.all([
+    prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: { streak: true }
+    }),
+    prisma.card.count({
+      where: {
+        userId,
+        reviewCount: {
+          gt: 0
+        }
+      }
+    }),
+    prisma.$queryRaw<Array<{ date: string; value: bigint }>>(Prisma.sql`
+      SELECT
+        TO_CHAR(DATE("createdAt" AT TIME ZONE 'UTC'), 'YYYY-MM-DD') AS date,
+        COUNT(*)::bigint AS value
+      FROM "ReviewLog"
+      WHERE "userId" = ${userId}
+        AND "createdAt" >= ${rangeStart}
+      GROUP BY 1
+    `)
+  ])
+
+  const countsByDate = toCountMap(reviewDateCounts)
+
+  return {
+    totalCardsLearned,
+    currentStreak: user.streak,
+    activeDays: Object.values(countsByDate).filter((count) => count > 0).length
+  }
+}
+
+export async function buildDetailedStatsWeeklyProgress(userId: string, daysCount = 7) {
+  const prisma = getPrisma()
+  const today = getTodayDateKey()
+  const recentDays = listRecentDateKeys(daysCount, today)
+  const rangeStart = parseDateKey(recentDays[0])
+  const reviewDateCounts = await prisma.$queryRaw<Array<{ date: string; value: bigint }>>(Prisma.sql`
+    SELECT
+      TO_CHAR(DATE("createdAt" AT TIME ZONE 'UTC'), 'YYYY-MM-DD') AS date,
+      COUNT(*)::bigint AS value
+    FROM "ReviewLog"
+    WHERE "userId" = ${userId}
+      AND "createdAt" >= ${rangeStart}
+    GROUP BY 1
+  `)
+
+  return toChartPoints(recentDays, toCountMap(reviewDateCounts))
+}
+
+export async function buildDetailedStatsCefrBreakdown(userId: string) {
+  const prisma = getPrisma()
+  const cardsByLevel = await prisma.card.findMany({
+    where: {
+      userId,
+      catalogWord: {
+        isNot: null
+      }
+    },
+    select: {
+      catalogWord: {
+        select: {
+          cefrLevel: true
+        }
+      }
+    }
+  })
+
+  const cardsByCefrLevel = {
+    A1: 0,
+    A2: 0,
+    B1: 0,
+    B2: 0,
+    C1: 0,
+    C2: 0
+  }
+
+  for (const card of cardsByLevel) {
+    const level = card.catalogWord?.cefrLevel
+    if (level) {
+      cardsByCefrLevel[level] += 1
+    }
+  }
+
+  return cardsByCefrLevel
+}
+
+export async function buildDetailedStatsMistakes(userId: string) {
+  const prisma = getPrisma()
+  const recentMistakes = await prisma.reviewLog.findMany({
+    where: {
+      userId,
+      result: "unknown"
+    },
+    orderBy: {
+      createdAt: "desc"
+    },
+    take: 10,
+    select: {
+      id: true,
+      cardId: true,
+      createdAt: true
+    }
+  })
+
+  const recentMistakeCardIds = Array.from(new Set(recentMistakes.map((item) => item.cardId)))
+  const recentMistakeCards =
+    recentMistakeCardIds.length === 0
+      ? []
+      : await prisma.card.findMany({
+          where: {
+            id: {
+              in: recentMistakeCardIds
+            }
+          },
+          select: serializedCardSelect
+        })
+  const recentMistakeCardMap = new Map(
+    recentMistakeCards.map((card) => [
+      card.id,
+      card.catalogWord?.word ?? card.original ?? card.translation ?? "Unknown word"
+    ])
+  )
+
+  return recentMistakes.map((item) => ({
+    id: item.id,
+    cardId: item.cardId,
+    word: recentMistakeCardMap.get(item.cardId) ?? "Unknown word",
+    createdAt: item.createdAt.toISOString()
+  }))
+}
+
 export function getDetailedUserStatsData(userId: string, daysCount = 7): Promise<DetailedStatsPayload> {
   return cacheUserResource(
     [`detailed-user-stats:${userId}:${daysCount}`],
     [userCacheTag.stats(userId), userCacheTag.review(userId), userCacheTag.cards(userId)],
     () => buildDetailedUserStats(userId, daysCount)
+  )
+}
+
+export function getDetailedStatsSummaryData(userId: string, daysCount = 7): Promise<StatsSummaryPayload> {
+  return cacheUserResource(
+    [`detailed-user-stats:summary:${userId}:${daysCount}`],
+    [userCacheTag.stats(userId), userCacheTag.review(userId), userCacheTag.cards(userId)],
+    () => buildDetailedStatsSummary(userId, daysCount)
+  )
+}
+
+export function getDetailedStatsWeeklyProgressData(userId: string, daysCount = 7) {
+  return cacheUserResource(
+    [`detailed-user-stats:weekly:${userId}:${daysCount}`],
+    [userCacheTag.stats(userId), userCacheTag.review(userId)],
+    () => buildDetailedStatsWeeklyProgress(userId, daysCount)
+  )
+}
+
+export function getDetailedStatsCefrBreakdownData(userId: string) {
+  return cacheUserResource(
+    [`detailed-user-stats:cefr:${userId}`],
+    [userCacheTag.stats(userId), userCacheTag.cards(userId)],
+    () => buildDetailedStatsCefrBreakdown(userId)
+  )
+}
+
+export function getDetailedStatsMistakesData(userId: string) {
+  return cacheUserResource(
+    [`detailed-user-stats:mistakes:${userId}`],
+    [userCacheTag.stats(userId), userCacheTag.review(userId), userCacheTag.cards(userId)],
+    () => buildDetailedStatsMistakes(userId)
   )
 }
 

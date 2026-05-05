@@ -1,4 +1,3 @@
-import { AdminPromoCodesView } from "@/components/AdminPromoCodesView"
 import { getOptionalAuthUser } from "@/lib/auth"
 import { redirect } from "next/navigation"
 
@@ -13,5 +12,5 @@ export default async function AdminPromoCodesPage() {
     redirect("/")
   }
 
-  return <AdminPromoCodesView />
+  redirect("/admin/settings")
 }

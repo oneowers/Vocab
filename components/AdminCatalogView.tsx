@@ -3,7 +3,14 @@
 import { useEffect, useState } from "react"
 import { EyeOff, Globe, Pencil, Sparkles } from "lucide-react"
 
+import { AppleCard } from "@/components/AppleDashboardComponents"
+import {
+  AdminPagination,
+  AdminPillButton,
+  AdminSearchInput
+} from "@/components/admin/AdminAppleUI"
 import { AdminTable } from "@/components/AdminTable"
+import { AdminTableSkeleton } from "@/components/admin/AdminLoadingSkeletons"
 import { Modal } from "@/components/Modal"
 import { useToast } from "@/components/Toast"
 import { useClientResource } from "@/hooks/useClientResource"
@@ -11,8 +18,6 @@ import { CEFR_LEVELS } from "@/lib/catalog"
 import { formatTimestamp } from "@/lib/date"
 import type {
   AdminCatalogPayload,
-  CatalogEnrichmentStatus,
-  CatalogReviewStatus,
   CefrLevel,
   DictionaryPayload,
   TranslationPayload,
@@ -367,20 +372,7 @@ export function AdminCatalogView() {
 
   return (
     <div className="space-y-4">
-      <section className="panel-admin rounded-[2rem] p-5">
-        <div className="space-y-4">
-          <div>
-            <p className="section-label">Word catalog</p>
-            <h1 className="mt-2 text-[26px] font-bold tracking-[-0.5px] text-ink">
-              Build the shared word bank
-            </h1>
-            <p className="mt-2 text-sm text-muted">
-              Add curated words once, then let learners claim them manually by CEFR level.
-            </p>
-          </div>
-        </div>
-
-          <Modal
+      <Modal
             open={isFormOpen}
             onClose={resetForm}
             title={editingItemId ? "Edit word" : "Add curated word"}
@@ -521,16 +513,13 @@ export function AdminCatalogView() {
               </div>
             </div>
           </Modal>
-      </section>
-
       <AdminTable
         title="Catalog words"
-        subtitle="Search, filter, and publish the shared bank."
         actions={
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             {/* Search - Full width on mobile */}
             <div className="w-full md:w-64">
-              <input
+              <AdminSearchInput
                 type="text"
                 value={search}
                 onChange={(event) => {
@@ -538,7 +527,6 @@ export function AdminCatalogView() {
                   setPage(1)
                 }}
                 placeholder="Search words..."
-                className="input-field w-full px-3 text-sm"
               />
             </div>
 
@@ -582,11 +570,11 @@ export function AdminCatalogView() {
           </div>
         }
       >
-        {loading || !payload ? null : (
+        {loading || !payload ? <AdminTableSkeleton /> : (
           <div className={`space-y-4 transition-opacity ${refreshing ? "opacity-70" : "opacity-100"}`}>
-            <div className="space-y-2 md:hidden">
-              {payload.items.map((item) => (
-                <article key={item.id} className="rounded-2xl border border-separator bg-bg-primary p-3">
+            <AppleCard className="overflow-hidden p-0">
+              {payload.items.map((item, index) => (
+                <div key={item.id} className="relative px-4 py-3 md:px-5">
                   <div className="flex items-center justify-between gap-4">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-baseline gap-2">
@@ -595,13 +583,13 @@ export function AdminCatalogView() {
                             className={`h-1.5 w-1.5 rounded-full flex-shrink-0 ${item.isPublished ? "bg-green-500" : "bg-red-500"
                               }`}
                           />
-                          <p className="truncate font-semibold text-text-primary">{item.word}</p>
+                          <p className="truncate text-[15px] font-bold text-white">{item.word}</p>
                         </div>
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap ${getStylesForCEFRLevel(item.cefrLevel)}`}>
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold whitespace-nowrap ${getStylesForCEFRLevel(item.cefrLevel)}`}>
                           {item.cefrLevel}
                         </span>
                       </div>
-                      <p className="truncate text-sm text-text-secondary">{item.translation || "—"}</p>
+                      <p className="truncate text-[13px] text-white/38">{item.translation || "—"}</p>
                     </div>
 
                     <div className="flex items-center gap-1.5">
@@ -639,103 +627,24 @@ export function AdminCatalogView() {
                   {item.enrichmentError ? (
                     <p className="mt-2 text-[10px] text-dangerText">{item.enrichmentError}</p>
                   ) : null}
-                </article>
+                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] font-medium text-white/34">
+                    <span>{item.isPublished ? "Published" : "Draft"}</span>
+                    <span>{item.topic || "General"}</span>
+                    <span>{formatTimestamp(item.updatedAt)}</span>
+                  </div>
+                  {index !== payload.items.length - 1 ? (
+                    <div className="absolute bottom-0 right-0 h-px bg-white/[0.06]" style={{ left: "20px" }} />
+                  ) : null}
+                </div>
               ))}
-            </div>
+            </AppleCard>
 
-            <table className="hidden min-w-full text-center text-sm md:table">
-              <thead className="text-quiet">
-                <tr>
-                  {["Word", "Translation", "Level", "Status", "Updated", "Actions"].map((heading) => (
-                    <th key={heading} className="px-3 py-3 font-medium whitespace-nowrap">
-                      {heading}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {payload.items.map((item) => (
-                  <tr key={item.id} className="border-t border-line">
-                    <td className="px-3 py-4 font-medium text-ink">{item.word}</td>
-                    <td className="px-3 py-4 text-muted">
-                      {item.translation || "—"}
-                    </td>
-                    <td className="px-3 py-4">
-                      <span className={`px-2 py-1 rounded-full text-[11px] font-bold whitespace-nowrap ${getStylesForCEFRLevel(item.cefrLevel)}`}>
-                        {item.cefrLevel}
-                      </span>
-                    </td>
-                    <td className="px-3 py-4 text-muted">
-                      <div className="flex items-center justify-center gap-2">
-                        <span
-                          className={`h-2 w-2 rounded-full ${item.isPublished ? "bg-green-500" : "bg-red-500"
-                            }`}
-                        />
-                        <span>{item.isPublished ? "Published" : "Draft"}</span>
-                      </div>
-                    </td>
-                    <td className="px-3 py-4 text-muted whitespace-nowrap text-xs">{formatTimestamp(item.updatedAt)}</td>
-                    <td className="px-2 py-4">
-                      <div className="flex justify-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => startEditing(item)}
-                          className="button-secondary flex h-8 w-8 items-center justify-center p-0"
-                          title="Edit"
-                        >
-                          <Pencil size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => void startReview(item)}
-                          disabled={!!autofilling}
-                          className="button-secondary flex h-8 w-8 items-center justify-center p-0"
-                          title="Autofill"
-                        >
-                          {autofilling === item.id ? (
-                            <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                          ) : (
-                            <Sparkles size={14} />
-                          )}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => void handleTogglePublished(item)}
-                          className="button-secondary flex h-8 w-8 items-center justify-center p-0"
-                          title={item.isPublished ? "Unpublish" : "Publish"}
-                        >
-                          {item.isPublished ? <EyeOff size={14} /> : <Globe size={14} />}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <p className="text-sm text-muted">
-                Page {payload.page} of {payload.totalPages}
-              </p>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPage((current) => Math.max(current - 1, 1))}
-                  disabled={page === 1}
-                  className="button-secondary"
-                >
-                  Previous
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPage((current) => Math.min(current + 1, payload.totalPages))}
-                  disabled={page >= payload.totalPages}
-                  className="button-secondary"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
+            <AdminPagination
+              page={payload.page}
+              totalPages={payload.totalPages}
+              onPrevious={() => setPage((current) => Math.max(current - 1, 1))}
+              onNext={() => setPage((current) => Math.min(current + 1, payload.totalPages))}
+            />
           </div>
         )}
       </AdminTable>

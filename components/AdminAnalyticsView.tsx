@@ -2,7 +2,9 @@
 
 import { BarChart3, CheckCircle2, Clock3, Layers, TrendingUp, Users, Zap } from "lucide-react"
 
+import { AdminPageIntro, AdminStatCard, AdminStatGrid, AdminSurface } from "@/components/admin/AdminAppleUI"
 import { CSSBarChart } from "@/components/CSSBarChart"
+import { AdminStatsGridSkeleton } from "@/components/admin/AdminLoadingSkeletons"
 import { useToast } from "@/components/Toast"
 import { useClientResource } from "@/hooks/useClientResource"
 import type { AdminAnalyticsPayload } from "@/lib/types"
@@ -19,8 +21,8 @@ function HorizontalBars({
   const maxValue = Math.max(1, ...items.map((item) => item.value))
 
   return (
-    <section className="panel-admin rounded-[2rem] p-5 bg-bg-secondary/40 border border-line backdrop-blur-sm">
-      <h2 className="text-lg font-black text-ink mb-6 px-1">{title}</h2>
+    <AdminSurface className="border border-white/[0.06] bg-[#141416] p-5">
+      <h2 className="mb-6 px-1 text-lg font-black text-white">{title}</h2>
       <div className="h-[200px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
@@ -60,7 +62,7 @@ function HorizontalBars({
           </BarChart>
         </ResponsiveContainer>
       </div>
-    </section>
+    </AdminSurface>
   )
 }
 
@@ -86,7 +88,15 @@ export function AdminAnalyticsView() {
   const weeklyDays = data?.days.slice(-7) ?? []
 
   if (loading || !data) {
-    return null
+    return (
+      <div className="space-y-5">
+        <AdminStatsGridSkeleton />
+        <div className="grid gap-5 xl:grid-cols-2">
+          <div className="rounded-[2rem] border border-white/[0.06] bg-white/[0.02] p-5" />
+          <div className="rounded-[2rem] border border-white/[0.06] bg-white/[0.02] p-5" />
+        </div>
+      </div>
+    )
   }
 
   const stats = [
@@ -141,21 +151,22 @@ export function AdminAnalyticsView() {
 
   return (
     <div className="space-y-5">
-      <section className="grid grid-cols-4 gap-2 md:gap-4">
+      <AdminPageIntro
+        title="Behavior Analytics"
+        description="Follow acquisition, retention, catalog adoption, and weak spots with the same surface language across the whole admin console."
+      />
+
+      <AdminStatGrid>
         {stats.map((item) => (
-          <article key={item.label} className="panel-admin flex flex-col items-center justify-center gap-1.5 rounded-2xl p-2.5 text-center md:items-start md:justify-start md:gap-3 md:rounded-[2rem] md:p-6 md:text-left">
-            <div className={`flex h-9 w-9 items-center justify-center rounded-xl md:h-12 md:w-12 md:rounded-2xl ${item.bg} ${item.color}`}>
-              <item.icon className="h-5 w-5 md:h-6 md:w-6" />
-            </div>
-            <div className="min-w-0">
-              <p className="truncate text-[10px] font-bold uppercase tracking-wide text-quiet md:text-[11px] md:tracking-[0.15em]">
-                {item.label.split(" ")[0]}
-              </p>
-              <p className="truncate text-lg font-bold text-ink md:mt-1 md:text-3xl">{item.value}</p>
-            </div>
-          </article>
+          <AdminStatCard
+            key={item.label}
+            label={item.label}
+            value={item.value}
+            icon={<item.icon className="h-5 w-5 md:h-6 md:w-6" />}
+            tone={`${item.bg} ${item.color}`}
+          />
         ))}
-      </section>
+      </AdminStatGrid>
 
       <div className="grid gap-5 xl:grid-cols-2">
         <CSSBarChart
@@ -203,24 +214,17 @@ export function AdminAnalyticsView() {
       <section className="space-y-3">
         <div>
           <p className="section-label">Retention (day-1 / day-7 / day-30)</p>
-          <h2 className="mt-1 text-lg font-semibold text-ink">Return activity snapshots</h2>
+          <h2 className="mt-1 text-lg font-semibold text-white">Return activity snapshots</h2>
         </div>
-        <div className="grid grid-cols-3 gap-2 md:gap-4">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3 md:gap-4">
           {retentionStats.map((item) => (
-            <article
+            <AdminStatCard
               key={item.label}
-              className="panel-admin flex flex-col items-center justify-center gap-1.5 rounded-2xl p-2.5 text-center md:items-start md:justify-start md:gap-3 md:rounded-[2rem] md:p-6 md:text-left"
-            >
-              <div className={`flex h-9 w-9 items-center justify-center rounded-xl md:h-12 md:w-12 md:rounded-2xl ${item.bg} ${item.color}`}>
-                <item.icon className="h-5 w-5 md:h-6 md:w-6" />
-              </div>
-              <div className="min-w-0">
-                <p className="truncate text-[10px] font-bold uppercase tracking-wide text-quiet md:text-[11px] md:tracking-[0.15em]">
-                  {item.label}
-                </p>
-                <p className="truncate text-lg font-bold text-ink md:mt-1 md:text-3xl">{item.value}</p>
-              </div>
-            </article>
+              label={item.label}
+              value={item.value}
+              icon={<item.icon className="h-5 w-5 md:h-6 md:w-6" />}
+              tone={`${item.bg} ${item.color}`}
+            />
           ))}
         </div>
       </section>
@@ -230,24 +234,17 @@ export function AdminAnalyticsView() {
       <section className="space-y-3">
         <div>
           <p className="section-label">Catalog engagement</p>
-          <h2 className="mt-1 text-lg font-semibold text-ink">Catalog usage snapshot</h2>
+          <h2 className="mt-1 text-lg font-semibold text-white">Catalog usage snapshot</h2>
         </div>
         <div className="grid grid-cols-2 gap-2 md:gap-4">
           {catalogStats.map((item) => (
-            <article
+            <AdminStatCard
               key={item.label}
-              className="panel-admin flex flex-col items-center justify-center gap-1.5 rounded-2xl p-2.5 text-center md:items-start md:justify-start md:gap-3 md:rounded-[2rem] md:p-6 md:text-left"
-            >
-              <div className={`flex h-9 w-9 items-center justify-center rounded-xl md:h-12 md:w-12 md:rounded-2xl ${item.bg} ${item.color}`}>
-                <item.icon className="h-5 w-5 md:h-6 md:w-6" />
-              </div>
-              <div className="min-w-0">
-                <p className="truncate text-[10px] font-bold uppercase tracking-wide text-quiet md:text-[11px] md:tracking-[0.15em]">
-                  {item.label}
-                </p>
-                <p className="truncate text-lg font-bold text-ink md:mt-1 md:text-3xl">{item.value}</p>
-              </div>
-            </article>
+              label={item.label}
+              value={item.value}
+              icon={<item.icon className="h-5 w-5 md:h-6 md:w-6" />}
+              tone={`${item.bg} ${item.color}`}
+            />
           ))}
         </div>
       </section>

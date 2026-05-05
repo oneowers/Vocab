@@ -196,6 +196,7 @@ export function ReviewSession({ initialData = null }: ReviewSessionProps) {
     key: "cards:collection",
     enabled: !guestMode,
     initialData,
+    staleTimeMs: 60_000,
     revalidateOnMount: initialData === null,
     loader: async () => {
       const response = await fetch("/api/cards")

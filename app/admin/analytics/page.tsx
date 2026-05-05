@@ -1,5 +1,5 @@
-import { AdminAnalyticsView } from "@/components/AdminAnalyticsView"
+import { redirect } from "next/navigation"
 
 export default function AdminAnalyticsPage() {
-  return <AdminAnalyticsView />
+  redirect("/admin")
 }

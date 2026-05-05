@@ -5,7 +5,9 @@ import { motion, AnimatePresence, Variants } from "framer-motion"
 import { CheckCircle2, Flame, Rocket, Sparkles, Zap, ArrowRight, ChevronRight, Target, Trophy, Clock, Star, TrendingUp, Menu, X } from "lucide-react"
 import Link from "next/link"
 import { AppleProgressCard, AppleTile, AppleListItem } from "./AppleDashboardComponents"
-import type { AppUserRecord, CardsResponse } from "@/lib/types"
+import { useClientResource } from "@/hooks/useClientResource"
+import { DailyPracticeSkeleton } from "@/components/practice/DailyPracticeSkeleton"
+import type { AppUserRecord, ReviewSummaryPayload } from "@/lib/types"
 
 interface Task {
   id: string
@@ -23,10 +25,30 @@ interface Task {
 
 interface HomeDashboardViewProps {
   user: AppUserRecord
-  initialCardsData: CardsResponse | null
+  initialCardsData: ReviewSummaryPayload | null
 }
 
 export function HomeDashboardView({ user, initialCardsData }: HomeDashboardViewProps) {
+  const { data: cardsData, loading: cardsLoading } = useClientResource<ReviewSummaryPayload>({
+    key: "review:summary",
+    initialData: initialCardsData,
+    revalidateOnMount: initialCardsData === null,
+    staleTimeMs: 60_000,
+    priority: "low",
+    loader: async () => {
+      const response = await fetch("/api/review/summary", {
+        cache: "no-store"
+      })
+
+      if (!response.ok) {
+        throw new Error("Could not load dashboard cards.")
+      }
+
+      return (await response.json()) as ReviewSummaryPayload
+    }
+  })
+
+  const resolvedCardsData = cardsData ?? initialCardsData
   const tasks: Task[] = [
     {
       id: "words",
@@ -35,9 +57,9 @@ export function HomeDashboardView({ user, initialCardsData }: HomeDashboardViewP
       icon: <span className="text-[14px] font-bold">Aa</span>,
       color: "bg-[#0A84FF]",
       accentColor: "blue",
-      progress: initialCardsData?.dailyCatalog?.claimedToday ?? 0,
+      progress: resolvedCardsData?.dailyCatalog?.claimedToday ?? 0,
       target: 10,
-      completed: (initialCardsData?.dailyCatalog?.claimedToday ?? 0) >= 10,
+      completed: (resolvedCardsData?.dailyCatalog?.claimedToday ?? 0) >= 10,
       rewardXp: 50,
       time: "0/10"
     },
@@ -107,16 +129,6 @@ export function HomeDashboardView({ user, initialCardsData }: HomeDashboardViewP
         animate="visible"
         className="space-y-5"
       >
-        {/* Progress Card (Storage style) */}
-        <motion.section variants={itemVariants} className="px-1">
-          <AppleProgressCard
-            title="Daily Progress"
-            current={completedTasks}
-            total={tasks.length}
-            href="/stats"
-          />
-        </motion.section>
-
         {/* Promo Banner (Get Apple Invites style) - Only show if not Pro/Admin */}
         {user.role !== "PRO" && user.role !== "ADMIN" && (
           <motion.section variants={itemVariants} className="px-1">
@@ -140,66 +152,79 @@ export function HomeDashboardView({ user, initialCardsData }: HomeDashboardViewP
           </motion.section>
         )}
 
-        {/* Saved Grid (Saved to iCloud style) */}
-        <section className="space-y-2.5">
-          <div className="flex items-center justify-between px-3">
-            <div className="flex items-center gap-1.5">
-              <div className="w-1 h-1 rounded-full bg-[#34C759]" />
-              <h3 className="text-[11px] font-semibold text-white/40 uppercase tracking-[0.05em]">
-                YOUR MISSION
-              </h3>
-            </div>
-            <button className="text-[13px] font-semibold text-[#0A84FF] flex items-center active:opacity-60 transition-opacity">
-              See All <ChevronRight size={14} />
-            </button>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2.5 px-1">
-            {tasks.map((task) => (
-              <AppleTile
-                key={task.id}
-                title={task.title.split(' ')[0]}
-                subtitle={`${task.time} Completed`}
-                icon={task.icon}
-                color={task.color}
-                href="/practice"
+        {cardsLoading && !resolvedCardsData ? (
+          <motion.section variants={itemVariants} className="px-1">
+            <DailyPracticeSkeleton />
+          </motion.section>
+        ) : (
+          <>
+            <motion.section variants={itemVariants} className="px-1">
+              <AppleProgressCard
+                title="Daily Progress"
+                current={completedTasks}
+                total={tasks.length}
+                href="/stats"
               />
-            ))}
-            <AppleTile
-              title="Grammar"
-              subtitle="12 Rules"
-              icon={<Sparkles size={16} />}
-              color="bg-[#5E5CE6]"
-              href="/grammar"
-            />
-          </div>
-        </section>
+            </motion.section>
 
-        {/* Bottom List Items (Backup style) */}
-        <motion.section variants={itemVariants} className="px-1">
-          <div className="bg-[#1C1C1E] rounded-[20px] overflow-hidden border border-white/[0.03]">
-            <AppleListItem
-              title="Learning Goal"
-              subtitle="Learn 10 words today"
-              icon={<Target size={18} />}
-              iconColor="bg-[#0A84FF]"
-              href="/stats"
-              rightLabel="Daily"
-              showDivider={true}
-            />
-            <AppleListItem
-              title="Keep Streak"
-              subtitle="Consistency is key"
-              icon={<Flame size={18} />}
-              iconColor="bg-[#34C759]"
-              href="/stats"
-              rightLabel="1d"
-            />
-          </div>
-        </motion.section>
+            <section className="space-y-2.5">
+              <div className="flex items-center justify-between px-3">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1 h-1 rounded-full bg-[#34C759]" />
+                  <h3 className="text-[11px] font-semibold text-white/40 uppercase tracking-[0.05em]">
+                    YOUR MISSION
+                  </h3>
+                </div>
+                <button className="text-[13px] font-semibold text-[#0A84FF] flex items-center active:opacity-60 transition-opacity">
+                  See All <ChevronRight size={14} />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5 px-1">
+                {tasks.map((task) => (
+                  <AppleTile
+                    key={task.id}
+                    title={task.title.split(" ")[0]}
+                    subtitle={`${task.time} Completed`}
+                    icon={task.icon}
+                    color={task.color}
+                    href="/practice"
+                  />
+                ))}
+                <AppleTile
+                  title="Grammar"
+                  subtitle="12 Rules"
+                  icon={<Sparkles size={16} />}
+                  color="bg-[#5E5CE6]"
+                  href="/grammar"
+                />
+              </div>
+            </section>
+
+            <motion.section variants={itemVariants} className="px-1">
+              <div className="bg-[#1C1C1E] rounded-[20px] overflow-hidden border border-white/[0.03]">
+                <AppleListItem
+                  title="Learning Goal"
+                  subtitle="Learn 10 words today"
+                  icon={<Target size={18} />}
+                  iconColor="bg-[#0A84FF]"
+                  href="/stats"
+                  rightLabel="Daily"
+                  showDivider={true}
+                />
+                <AppleListItem
+                  title="Keep Streak"
+                  subtitle="Consistency is key"
+                  icon={<Flame size={18} />}
+                  iconColor="bg-[#34C759]"
+                  href="/stats"
+                  rightLabel="1d"
+                />
+              </div>
+            </motion.section>
+          </>
+        )}
       </motion.div>
     </div>
   )
 }
-
-

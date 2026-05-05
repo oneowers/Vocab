@@ -49,6 +49,11 @@ export interface CardsResponse {
   dailyCatalog: DailyCatalogStatus
 }
 
+export interface ReviewSummaryPayload {
+  summary: DashboardSummary
+  dailyCatalog: DailyCatalogStatus
+}
+
 export interface DailyClaimResponse {
   cards: CardRecord[]
   createdCount: number

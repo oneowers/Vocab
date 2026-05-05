@@ -1,5 +1,8 @@
 import type { CefrLevel, GrammarSeverity } from "./common"
 import type { GrammarFindingRecord } from "./grammar"
+import type { AppSettingsRecord } from "./admin"
+import type { GrammarSummaryPayload } from "./grammar"
+import type { ReviewSummaryPayload } from "./cards"
 
 // ─── Writing Challenge ────────────────────────────────────────────────────────
 
@@ -71,4 +74,11 @@ export interface TranslationChallengeResult {
     severity: GrammarSeverity
   }>
   grammarFindings: PracticeWritingGrammarFinding[]
+}
+
+export interface PracticeEntryPayload {
+  reviewSummary: ReviewSummaryPayload
+  grammarSummary: GrammarSummaryPayload
+  historyPreview: GrammarFindingRecord[]
+  appSettings: AppSettingsRecord
 }

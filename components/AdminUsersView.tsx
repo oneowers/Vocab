@@ -2,12 +2,22 @@
 
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
+import { ChevronDown, Download, Plus, Trash2 } from "lucide-react"
 
+import { AppleCard } from "@/components/AppleDashboardComponents"
+import {
+  AdminControlGroup,
+  AdminEmptyState,
+  AdminPagination,
+  AdminPillButton,
+  AdminSearchInput,
+  AdminToolbar
+} from "@/components/admin/AdminAppleUI"
 import { AdminTable } from "@/components/AdminTable"
+import { AdminTableSkeleton } from "@/components/admin/AdminLoadingSkeletons"
 import { ConfirmModal } from "@/components/ConfirmModal"
 import { useToast } from "@/components/Toast"
 import { useClientResource } from "@/hooks/useClientResource"
-import { formatTimestamp } from "@/lib/date"
 import type { AdminUserRow, AdminUsersPayload, Role } from "@/lib/types"
 
 interface CreateUserModalProps {
@@ -280,10 +290,14 @@ export function AdminUsersView() {
     <>
       <AdminTable
         title="Users"
-        subtitle="Manage access, roles, and activity."
+        hideHeaderText
+        surfaceClassName="overflow-visible bg-transparent shadow-none"
+        headerClassName="top-[68px] rounded-[30px] bg-transparent px-4 pt-4 pb-4 md:top-0 md:px-0 md:pb-4"
+        contentClassName="px-0 pb-0 pt-2 md:px-0"
         actions={
-          <div className="flex flex-col gap-3 md:flex-row">
-            <input
+          <AdminToolbar className="gap-4">
+            <AdminSearchInput
+              className="w-full"
               value={search}
               onChange={(event) => {
                 setSearch(event.target.value)
@@ -293,166 +307,75 @@ export function AdminUsersView() {
               autoCorrect="off"
               autoComplete="off"
               placeholder="Search name or email"
-              className="input-field"
             />
-            <button
-              type="button"
-              onClick={() => setIsCreateModalOpen(true)}
-              className="button-primary"
-            >
-              + Create User
-            </button>
-            <button
-              type="button"
-              onClick={() => void handleExportCsv()}
-              className="button-secondary"
-            >
-              Export CSV
-            </button>
-          </div>
+            <AdminControlGroup className="grid w-full grid-cols-2 gap-3 md:flex md:w-auto md:justify-end">
+              <AdminPillButton
+                type="button"
+                tone="primary"
+                onClick={() => setIsCreateModalOpen(true)}
+                className="w-full justify-center md:w-auto"
+              >
+                <Plus size={16} />
+                Create User
+              </AdminPillButton>
+              <AdminPillButton type="button" onClick={() => void handleExportCsv()} className="w-full justify-center md:w-auto">
+                <Download size={16} />
+                Export CSV
+              </AdminPillButton>
+            </AdminControlGroup>
+          </AdminToolbar>
         }
       >
-        {loading || !payload ? null : (
+        {loading || !payload ? <AdminTableSkeleton /> : payload.items.length === 0 ? (
+          <AdminEmptyState
+            title="No users found"
+            description="Try a different search or create a new teammate account from this screen."
+          />
+        ) : (
           <div className={`transition-opacity ${refreshing ? "opacity-70" : "opacity-100"}`}>
-            <div className="space-y-3 md:hidden">
-              {payload.items.map((user) => (
-                <article key={user.id} className="rounded-card border border-separator bg-bg-primary p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-[17px] font-semibold text-text-primary">{user.name || "—"}</p>
-                      <p className="mt-1 text-[15px] text-text-secondary">{user.email}</p>
+            <AppleCard className="overflow-hidden rounded-none border-0 bg-transparent shadow-none p-0">
+              {payload.items.map((user, index) => (
+                <div key={user.id} className="relative px-4 py-3.5 md:px-0">
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[15px] font-semibold text-white">{user.email}</p>
                     </div>
-                    <span className="rounded-full bg-bg-secondary px-3 py-1 text-xs font-semibold text-text-primary">
-                      {user.role}
-                    </span>
-                  </div>
-                  <div className="mt-4 grid grid-cols-2 gap-3 text-[13px] text-text-tertiary">
-                    <div>Cards: {user.cardCount}</div>
-                    <div>Reviews: {user.reviewCount}</div>
-                    <div>Streak: {user.streak}</div>
-                    <div>Last active: {user.lastActiveAt ? formatTimestamp(user.lastActiveAt) : "—"}</div>
-                  </div>
-                  <div className="mt-4 flex flex-col gap-2">
-                    <select
-                      value={user.role}
-                      disabled={submitting}
-                      onChange={(event) =>
-                        void handleRoleChange(user, event.target.value as Role)
-                      }
-                      className="input-field"
-                    >
-                      <option value="USER">USER</option>
-                      <option value="PRO">PRO</option>
-                      <option value="ADMIN">ADMIN</option>
-                    </select>
+                    <div className="relative shrink-0">
+                      <select
+                        value={user.role}
+                        disabled={submitting}
+                        onChange={(event) => void handleRoleChange(user, event.target.value as Role)}
+                        aria-label={`Change role for ${user.email}`}
+                        className="input-field !w-auto h-10 min-w-[108px] appearance-none rounded-full border-white/[0.06] bg-black px-4 pr-9 text-xs font-semibold tracking-[0.08em] md:min-w-[116px]"
+                      >
+                        <option value="USER">USER</option>
+                        <option value="PRO">PRO</option>
+                        <option value="ADMIN">ADMIN</option>
+                      </select>
+                      <ChevronDown size={15} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/62" />
+                    </div>
                     <button
                       type="button"
                       onClick={() => setSelectedUser(user)}
-                      className="button-secondary border-separator text-dangerText"
+                      aria-label={`Delete ${user.email}`}
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/[0.05] text-white/58 transition active:scale-[0.96] disabled:opacity-50"
                     >
-                      Delete
+                      <Trash2 size={16} />
                     </button>
                   </div>
-                </article>
+                  {index !== payload.items.length - 1 ? (
+                    <div className="absolute bottom-0 left-4 right-4 h-px bg-white/[0.06] md:left-0 md:right-0" />
+                  ) : null}
+                </div>
               ))}
-            </div>
+            </AppleCard>
 
-            <table className="hidden min-w-full text-left text-sm md:table">
-              <thead className="text-quiet">
-                <tr>
-                  {[
-                    "Avatar",
-                    "Name",
-                    "Email",
-                    "Role",
-                    "Cards",
-                    "Reviews",
-                    "Streak",
-                    "Last active",
-                    "Actions"
-                  ].map((heading) => (
-                    <th key={heading} className="px-3 py-3 font-medium">
-                      {heading}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {payload.items.map((user) => (
-                  <tr key={user.id} className="border-t border-line">
-                    <td className="px-3 py-4">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-bg-secondary text-sm font-semibold text-text-primary">
-                        {(user.name || user.email).slice(0, 1).toUpperCase()}
-                      </div>
-                    </td>
-                    <td className="px-3 py-4 font-medium text-ink">{user.name || "—"}</td>
-                    <td className="px-3 py-4 text-muted">{user.email}</td>
-                    <td className="px-3 py-4">
-                      <span className="rounded-full bg-bg-secondary px-3 py-1 text-xs font-semibold text-text-primary">
-                        {user.role}
-                      </span>
-                    </td>
-                    <td className="px-3 py-4 text-muted">{user.cardCount}</td>
-                    <td className="px-3 py-4 text-muted">{user.reviewCount}</td>
-                    <td className="px-3 py-4 text-muted">{user.streak}</td>
-                    <td className="px-3 py-4 text-muted">
-                      {user.lastActiveAt ? formatTimestamp(user.lastActiveAt) : "—"}
-                    </td>
-                    <td className="px-3 py-4">
-                      <div className="flex flex-wrap gap-2">
-                        <select
-                          value={user.role}
-                          disabled={submitting}
-                          onChange={(event) =>
-                            void handleRoleChange(user, event.target.value as Role)
-                          }
-                          className="input-field w-auto min-w-[112px] px-3 text-xs font-medium"
-                        >
-                          <option value="USER">USER</option>
-                          <option value="PRO">PRO</option>
-                          <option value="ADMIN">ADMIN</option>
-                        </select>
-                        <button
-                          type="button"
-                          onClick={() => setSelectedUser(user)}
-                          className="button-secondary border-separator px-3 py-2 text-xs font-medium text-dangerText"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <p className="text-sm text-muted">
-                Page {payload.page} of {payload.totalPages}
-              </p>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPage((current) => Math.max(current - 1, 1))}
-                  disabled={page === 1}
-                  className="button-secondary"
-                >
-                  Previous
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setPage((current) =>
-                      Math.min(current + 1, payload.totalPages)
-                    )
-                  }
-                  disabled={page >= payload.totalPages}
-                  className="button-secondary"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
+            <AdminPagination
+              page={payload.page}
+              totalPages={payload.totalPages}
+              onPrevious={() => setPage((current) => Math.max(current - 1, 1))}
+              onNext={() => setPage((current) => Math.min(current + 1, payload.totalPages))}
+            />
           </div>
         )}
       </AdminTable>

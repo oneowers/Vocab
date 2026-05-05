@@ -1,10 +1,8 @@
 import { requireSignedInAppUser } from "@/lib/auth"
-import { getUserGrammarSkillsData } from "@/lib/grammar"
-import { GrammarView } from "@/components/grammar/GrammarView"
+import { GrammarClientView } from "@/components/grammar/GrammarClientView"
 
 export default async function GrammarPage() {
-  const user = await requireSignedInAppUser()
-  const payload = await getUserGrammarSkillsData(user.id, "all")
+  await requireSignedInAppUser()
 
-  return <GrammarView payload={payload} />
+  return <GrammarClientView />
 }
