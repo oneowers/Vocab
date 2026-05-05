@@ -37,7 +37,7 @@ export function GrammarLibraryView({ grammarData, onBack, onSelectTopic }: Gramm
               <AppleSkillListItem
                 key={topic.key}
                 title={topic.titleEn}
-                subtitle={topic.descriptionEn}
+                subtitle={topic.descriptionEn || topic.descriptionRu}
                 level={topic.cefrLevel}
                 status={score < -20 ? "Weak" : score > 40 ? "Strong" : "Learning"}
                 points={score}
