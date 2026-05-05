@@ -166,17 +166,18 @@ interface AppleHeaderProps {
   title: string
   onBack?: () => void
   rightElement?: React.ReactNode
+  sticky?: boolean
 }
 
 /**
  * A reusable iOS-style header with a gradient background and centered title.
  */
-export function AppleHeader({ title, onBack, rightElement }: AppleHeaderProps) {
+export function AppleHeader({ title, onBack, rightElement, sticky = true }: AppleHeaderProps) {
   const router = useRouter()
   const handleBack = onBack || (() => router.back())
 
   return (
-    <div className="fixed inset-x-0 top-0 z-[60] flex flex-col justify-end pb-3 bg-gradient-to-b from-black via-black/90 to-transparent h-20">
+    <div className={`${sticky ? "fixed" : "relative"} inset-x-0 top-0 z-[60] flex flex-col justify-end pb-3 bg-gradient-to-b from-black via-black/90 to-transparent h-20`}>
       <div className="flex items-center justify-between px-6 pt-[env(safe-area-inset-top,20px)]">
         <div className="flex items-center w-12">
           <button 
