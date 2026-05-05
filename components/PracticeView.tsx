@@ -31,13 +31,13 @@ export function PracticeView({ initialData, initialMode }: PracticeViewProps) {
 
   if (mode === "TRANSLATION") {
     return (
-      <div className="min-h-screen bg-bg-primary">
+      <div className="min-h-screen bg-black">
         <div className="max-w-2xl mx-auto pt-8 px-4 flex items-center justify-between">
           <button 
             onClick={() => setMode("SELECT")}
-            className="text-quiet hover:text-ink font-bold flex items-center gap-2 transition-colors"
+            className="text-[15px] font-semibold text-[#0A84FF] active:opacity-60 transition-opacity"
           >
-            ← Exit
+            Done
           </button>
         </div>
         <TranslationChallengeView onBack={() => setMode("SELECT")} />

@@ -133,69 +133,14 @@ export function GrammarView({ payload }: GrammarViewProps) {
   if (showIntro === null) return null
 
   return (
-    <div className="mx-auto max-w-5xl pb-32 relative">
+    <div className="mx-auto max-w-5xl pb-32 pt-24 relative">
       {/* Ambient Background Glow */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/10 rounded-full blur-[120px]" />
         <div className="absolute bottom-[10%] right-[-10%] w-[30%] h-[30%] bg-purple-500/5 rounded-full blur-[100px]" />
       </div>
 
-      <div className="relative z-10">
-      <AnimatePresence mode="wait">
-        {showIntro ? (
-          <motion.header
-            key="intro"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="relative px-4 pb-6 pt-0 md:px-0 md:pt-2"
-          >
-            <button 
-              onClick={handleDismissIntro}
-              className="absolute right-4 top-6 flex h-8 w-8 items-center justify-center rounded-full bg-white/5 text-white/20 transition hover:bg-white/10 hover:text-white/40 md:hidden"
-            >
-              <X size={16} />
-            </button>
-            <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-              <div className="space-y-1">
-                <h1 className="text-[32px] font-black tracking-tight text-white md:text-[44px]">
-                  Grammar
-                </h1>
-                <p className="max-w-xs text-[14px] font-medium text-white/40 md:max-w-xl md:text-[16px] md:text-white/50">
-                  Study theory and explore English structures.
-                </p>
-              </div>
-              <Link href="/practice?mode=grammar" className="button-primary h-12 px-8">
-                <Sparkles size={18} />
-                Go to Practice
-              </Link>
-            </div>
-          </motion.header>
-        ) : (
-          <motion.header
-            key="compact"
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="px-4 pb-4 pt-0 md:px-0 md:pt-2"
-          >
-            <div className="flex items-center justify-between gap-4">
-              <div className="space-y-0.5">
-                <h1 className="text-[20px] font-black tracking-tight text-white md:text-[32px]">
-                  Grammar Hub
-                </h1>
-                <GrammarStatsRow payload={payload} />
-              </div>
-              <Link 
-                href="/practice?mode=grammar" 
-                className="flex h-10 items-center gap-2 rounded-xl bg-white/5 px-4 text-[13px] font-black text-white border border-white/5 active:scale-[0.98] transition-transform md:h-12 md:px-6"
-              >
-                <Sparkles size={14} className="text-white/40 md:w-4 md:h-4" />
-                <span>Practice</span>
-              </Link>
-            </div>
-          </motion.header>
-        )}
-      </AnimatePresence>
+      <div className="relative z-10 px-4 md:px-0">
 
       <div className="mt-4 space-y-8 md:mt-12 md:space-y-16">
         {/* Trend Chart */}

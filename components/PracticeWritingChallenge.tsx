@@ -81,7 +81,7 @@ export function PracticeWritingChallenge({
       <motion.div 
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="relative overflow-hidden border border-line bg-bg-secondary p-8 shadow-modal rounded-[2rem] md:rounded-[2.5rem]"
+        className="relative overflow-hidden border border-white/[0.05] bg-[#1C1C1E] p-8 shadow-2xl rounded-[32px]"
       >
         <div 
           className={styles.heroCardGlow} 
@@ -102,30 +102,30 @@ export function PracticeWritingChallenge({
         </div>
 
         <div className="relative z-10 mt-5 space-y-6">
-          <div className="rounded-3xl bg-bg-tertiary p-6 border border-line shadow-inner">
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-muted mb-2">Feedback</p>
-            <p className="text-[15px] leading-relaxed text-ink/80 font-medium">{result.levelFeedback}</p>
+          <div className="rounded-[24px] bg-white/[0.03] p-6 border border-white/[0.05]">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-2">Feedback</p>
+            <p className="text-[15px] leading-relaxed text-white/90 font-medium">{result.levelFeedback}</p>
           </div>
 
           <div>
             <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-muted mb-3">Target words</p>
-            <div className="space-y-2">
+            <div className="space-y-3">
               {result.usedWords.map((item) => (
                 <div
                   key={item.word}
-                  className="rounded-2xl border border-line bg-bg-tertiary px-5 py-4"
+                  className="rounded-[20px] border border-white/[0.05] bg-white/[0.02] px-5 py-4"
                 >
                   <div className="flex items-center justify-between gap-3 mb-2">
-                    <span className="text-[16px] font-bold text-ink">{item.word}</span>
+                    <span className="text-[16px] font-bold text-white">{item.word}</span>
                     <span className={`text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${
                       item.used 
-                        ? item.correct ? "bg-emerald-500/10 text-emerald-500" : "bg-amber-500/10 text-amber-500" 
-                        : "bg-bg-secondary text-muted"
+                        ? item.correct ? "bg-emerald-500/10 text-emerald-400" : "bg-amber-500/10 text-amber-400" 
+                        : "bg-white/5 text-white/40"
                     }`}>
                       {item.used ? (item.correct ? "Used well" : "Has issues") : "Not used"}
                     </span>
                   </div>
-                  <p className="text-[14px] leading-relaxed text-muted">{item.feedback}</p>
+                  <p className="text-[14px] leading-relaxed text-white/60">{item.feedback}</p>
                 </div>
               ))}
             </div>
@@ -223,7 +223,7 @@ export function PracticeWritingChallenge({
       <motion.div 
         initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="relative overflow-hidden border border-line bg-bg-secondary p-8 shadow-modal rounded-[2rem] md:rounded-[2.5rem]"
+        className="relative overflow-hidden border border-white/[0.05] bg-[#1C1C1E] p-8 shadow-2xl rounded-[32px]"
       >
       <div className={styles.heroCardGlow} style={{ opacity: 0.05 }} />
 
@@ -247,7 +247,7 @@ export function PracticeWritingChallenge({
         {targetCards.map((card) => (
           <span
             key={card.id}
-            className="rounded-full border border-line bg-bg-tertiary px-4 py-2 text-[13px] font-bold text-ink shadow-inner"
+            className="rounded-full border border-white/[0.05] bg-white/[0.03] px-4 py-2 text-[13px] font-bold text-white shadow-sm"
           >
             {card.original}
           </span>
@@ -259,7 +259,7 @@ export function PracticeWritingChallenge({
           value={userText}
           onChange={(event) => setUserText(event.target.value)}
           placeholder="Write 3–6 sentences using today's words..."
-          className="min-h-[200px] w-full resize-y rounded-3xl border border-line bg-bg-tertiary px-6 py-5 text-[16px] leading-relaxed text-ink placeholder:text-muted focus:border-ink/30 focus:bg-bg-secondary focus:outline-none transition-all duration-300 shadow-inner"
+          className="min-h-[200px] w-full resize-y rounded-[24px] border border-white/[0.05] bg-black/20 px-6 py-5 text-[16px] leading-relaxed text-white placeholder:text-white/20 focus:border-[#0A84FF]/50 focus:bg-black/30 focus:outline-none transition-all duration-300 shadow-inner"
         />
       </div>
 

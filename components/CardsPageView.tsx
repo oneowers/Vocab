@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion"
 
 import { CardList } from "@/components/CardList"
 import { ConfirmModal } from "@/components/ConfirmModal"
+import { StickySwitcherHeader } from "@/components/StickySwitcherHeader"
 import { useToast } from "@/components/Toast"
 import { useClientResource } from "@/hooks/useClientResource"
 import { getGuestCards, isGuestSessionActive } from "@/lib/guest"
@@ -218,59 +219,14 @@ export function CardsPageView({ initialData = null, user = null }: CardsPageView
       />
 
       <div className="px-4 md:px-0 pt-1">
-        {/* Top Switcher styled like Translate page */}
-        <div className="relative flex items-center justify-between mb-6">
-          {/* Spacer for centering */}
-          <div className="w-10 md:hidden" />
-          
-          <div className="relative flex rounded-full border border-white/[0.08] bg-white/[0.04] p-1 shadow-2xl backdrop-blur-xl">
-            <div className="relative grid grid-cols-2 items-center">
-              <motion.div
-                aria-hidden="true"
-                className="pointer-events-none absolute bottom-1 top-1 z-0 w-[calc(50%-0.25rem)] rounded-full bg-[#0A84FF] shadow-[0_4px_12px_rgba(10,132,255,0.3)]"
-                initial={false}
-                animate={{
-                  x: selectedStatus === "Waiting" ? "0%" : "100%"
-                }}
-                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                style={{ left: "0.25rem" }}
-              />
-              <button
-                type="button"
-                onClick={() => setSelectedStatus("Waiting")}
-                className={`relative z-10 flex min-w-[90px] items-center justify-center rounded-full px-4 py-2 text-[13px] font-bold transition-all duration-300 md:min-w-[140px] md:text-[14px] ${selectedStatus === "Waiting"
-                  ? "text-white"
-                  : "text-white/30 hover:text-white/60"
-                  }`}
-              >
-                Due
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedStatus("Learned")}
-                className={`relative z-10 flex min-w-[90px] items-center justify-center rounded-full px-4 py-2 text-[13px] font-bold transition-all duration-300 md:min-w-[140px] md:text-[14px] ${selectedStatus === "Learned"
-                  ? "text-white"
-                  : "text-white/30 hover:text-white/60"
-                  }`}
-              >
-                Learned
-              </button>
-            </div>
-          </div>
-
-          <Link
-            href="/profile"
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/[0.08] text-white active:scale-90 transition-transform overflow-hidden border border-white/[0.1] md:hidden"
-          >
-            {user?.avatarUrl ? (
-              <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
-            ) : (
-              <span className="text-[13px] font-black">
-                {(user?.name || user?.email || 'G').slice(0, 1).toUpperCase()}
-              </span>
-            )}
-          </Link>
-        </div>
+        <StickySwitcherHeader
+          leftOption={{ label: "Due", value: "Waiting" }}
+          rightOption={{ label: "Learned", value: "Learned" }}
+          selectedValue={selectedStatus}
+          onValueChange={(val) => setSelectedStatus(val as CardStatusFilter)}
+          user={user}
+          sticky={false}
+        />
 
         <header className="flex flex-col gap-3 mb-6">
           <h1 className="text-[34px] font-bold tracking-tight text-white leading-tight">
@@ -283,7 +239,7 @@ export function CardsPageView({ initialData = null, user = null }: CardsPageView
             <div className="absolute -right-6 -top-6 opacity-10 blur-3xl">
               <Flame size={140} className="text-[#FF9F0A]" />
             </div>
-            
+
             <div className="relative z-10">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-[#FF9F0A]/20 text-[#FF9F0A]">

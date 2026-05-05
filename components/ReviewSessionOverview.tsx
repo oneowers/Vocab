@@ -151,7 +151,7 @@ export function ReviewSessionOverview({
               initial="initial"
               animate="animate"
               exit="exit"
-              className={`${styles.heroCard} !p-5 md:!p-10`}
+              className="relative overflow-hidden rounded-[32px] border border-white/[0.05] bg-[#1C1C1E] p-6 md:p-10 shadow-2xl"
             >
               <div className={styles.heroCardGlow} />
               
@@ -162,9 +162,9 @@ export function ReviewSessionOverview({
                     <Sparkles className="text-blue-400" size={20} />
                   </div>
                   <div className="flex flex-col">
-                    <h2 className="text-[20px] font-black tracking-tight text-white leading-tight">Daily Quest</h2>
-                    <p className="text-[13px] font-medium text-white/40">
-                      3 steps · {cardsDue} words ready · about 5 min
+                    <h2 className="text-[22px] font-black tracking-tight text-white leading-tight">Daily Quest</h2>
+                    <p className="text-[13px] font-semibold text-white/30">
+                      3 steps · {cardsDue} words ready
                     </p>
                   </div>
                 </div>
@@ -268,7 +268,7 @@ export function ReviewSessionOverview({
               initial="initial"
               animate="animate"
               exit="exit"
-              className={`${styles.heroCard} !p-5 md:!p-10`}
+              className="relative overflow-hidden rounded-[32px] border border-white/[0.05] bg-[#1C1C1E] p-6 md:p-10 shadow-2xl"
             >
               <div className={styles.heroCardGlow} style={{ background: "radial-gradient(circle at 70% 30%, rgba(139, 92, 246, 0.15), transparent 60%)" }} />
               

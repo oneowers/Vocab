@@ -7,6 +7,7 @@ import { ArrowLeft } from "lucide-react"
 
 import { BrandLogo } from "@/components/BrandLogo"
 import { BottomTabBar } from "@/components/BottomTabBar"
+import { MobileHeader } from "@/components/MobileHeader"
 import { PageTransition } from "@/components/PageTransition"
 import { adminNavItems } from "@/lib/navigation"
 import type { AppUserRecord } from "@/lib/types"
@@ -93,14 +94,9 @@ export function AdminShell({ user, children }: AdminShellProps) {
 
         <div className="flex min-h-screen min-w-0 flex-1 flex-col">
           <div className="page-with-tabbar flex-1">
-            <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 md:gap-6">
-              {/* Mobile Back Button */}
-              <div className="md:hidden">
-                <Link href="/" prefetch className="inline-flex items-center gap-2 text-sm font-semibold text-muted transition hover:text-ink">
-                  <ArrowLeft size={16} />
-                  Back to app
-                </Link>
-              </div>
+            <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 pt-20 md:pt-0 md:gap-6">
+              {/* Mobile Header */}
+              <MobileHeader user={user} />
 
               <main className="min-w-0 flex-1">
                 <PageTransition>{children}</PageTransition>

@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff, User as UserIcon, X } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
 
 import { BrandLogo } from "@/components/BrandLogo"
 import { useToast } from "@/components/Toast"
+import { AppleAlert } from "@/components/AppleDashboardComponents"
 import { hasSupabaseEnv, isLocalDevelopment } from "@/lib/config"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
 
@@ -32,13 +34,14 @@ export function LoginCard({ initialMode = "login" }: { initialMode?: Mode }) {
   const supabaseEnabled = hasSupabaseEnv()
 
   const [mode, setMode] = useState<Mode>(initialMode)
+  const [showSheet, setShowSheet] = useState(false)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState<"google" | "email" | null>(null)
   const [errors, setErrors] = useState<{ email?: string; password?: string; confirm?: string; form?: string }>({})
+  const [errorAlert, setErrorAlert] = useState<{ title: string, message: string } | null>(null)
 
   useEffect(() => {
     router.prefetch("/")
@@ -73,7 +76,7 @@ export function LoginCard({ initialMode = "login" }: { initialMode?: Mode }) {
       const data = await res.json()
 
       if (!res.ok) {
-        setErrors({ form: data.message || "Something went wrong" })
+        setErrorAlert({ title: "Auth Failed", message: data.message || "Invalid credentials." })
         return
       }
 
@@ -82,12 +85,10 @@ export function LoginCard({ initialMode = "login" }: { initialMode?: Mode }) {
       }
 
       if (data.useSupabase) {
-        // Supabase session created server-side, just navigate
         window.location.href = data.redirectTo ?? "/"
         return
       }
 
-      // For email/password fallback login, call Supabase client-side if available
       const supabase = createSupabaseBrowserClient()
       if (supabase && mode === "login") {
         const { error } = await supabase.auth.signInWithPassword({
@@ -100,12 +101,9 @@ export function LoginCard({ initialMode = "login" }: { initialMode?: Mode }) {
         }
       }
 
-      // Supabase not available or failed — cookie session was set server-side
       window.location.href = data.redirectTo ?? "/"
-
     } catch (err) {
-      console.error("[LoginCard]", err)
-      setErrors({ form: "Network error or server unavailable. Please try again." })
+      setErrorAlert({ title: "System Error", message: "Network error or server unavailable." })
     } finally {
       setLoading(null)
     }
@@ -114,7 +112,10 @@ export function LoginCard({ initialMode = "login" }: { initialMode?: Mode }) {
   async function handleGoogleSignIn() {
     const supabase = createSupabaseBrowserClient()
     if (!supabase) {
-      showToast("Google login is not configured yet.", "error")
+      setErrorAlert({ 
+        title: "Configuration Error", 
+        message: "Google login is not configured yet." 
+      })
       return
     }
     setLoading("google")
@@ -124,217 +125,175 @@ export function LoginCard({ initialMode = "login" }: { initialMode?: Mode }) {
     })
     if (error) {
       setLoading(null)
-      showToast(error.message, "error")
+      setErrorAlert({ title: "Sign-In Error", message: error.message })
     }
   }
 
-  function switchMode(next: Mode) {
-    setMode(next)
+  const openAuth = (m: Mode) => {
+    setMode(m)
     setErrors({})
     setEmail("")
     setPassword("")
     setConfirmPassword("")
+    setShowSheet(true)
   }
 
   return (
-    <div className="mx-auto w-full max-w-md px-4">
-      {/* Header */}
-      <div className="mb-10 flex flex-col items-center text-center">
-        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-[18px] bg-white text-black shadow-xl">
+    <div className="flex flex-col items-center justify-center w-full min-h-[80vh] px-6">
+      {/* Landing State */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col items-center text-center space-y-12 max-w-sm"
+      >
+        <div className="h-24 w-24 rounded-[22%] bg-white p-5 shadow-2xl flex items-center justify-center transition-transform hover:scale-105 active:scale-95">
           <BrandLogo />
         </div>
-        <h1 className="text-[32px] font-bold tracking-tight text-white leading-tight">
-          {mode === "login" ? "Sign In" : "Sign Up"}
-        </h1>
-        <p className="mt-2 text-[15px] font-medium text-white/40 leading-relaxed max-w-[280px]">
-          {mode === "login"
-            ? "Sign in to LexiFlow to continue your vocabulary journey."
-            : "Create your account and start mastering new words today."}
-        </p>
-      </div>
+        
+        <div className="space-y-3">
+          <h1 className="text-[42px] font-black tracking-tight text-white leading-none">LexiFlow</h1>
+          <p className="text-[17px] text-white/40 font-medium leading-snug">
+            Master your vocabulary with premium iOS-native tools.
+          </p>
+        </div>
 
-      {/* Form */}
-      <div className="panel relative overflow-hidden p-6">
-        {loading && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-bg-primary/40 backdrop-blur-[2px] transition-opacity">
-            <div className="flex flex-col items-center gap-3">
-              <div className="h-10 w-10 animate-spin rounded-full border-4 border-accent/20 border-t-accent" />
-              <p className="text-[12px] font-bold uppercase tracking-widest text-ink/60">
-                {loading === "google" ? "Connecting Google..." : mode === "login" ? "Signing in..." : "Creating account..."}
-              </p>
-            </div>
-          </div>
-        )}
-        <form onSubmit={handleEmailSubmit} noValidate className="space-y-4">
-          {/* Email */}
-          <div className="space-y-1.5">
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => { setEmail(e.target.value); setErrors((p) => ({ ...p, email: undefined, form: undefined })) }}
-              placeholder="Email"
-              className={`w-full rounded-[12px] border bg-white/[0.05] px-4 py-3.5 text-[17px] font-medium text-white outline-none transition-all placeholder:text-white/20 focus:bg-white/[0.08] ${errors.email ? "border-red-500/50" : "border-white/[0.05]"}`}
+        <div className="w-full space-y-3 pt-8">
+          <button
+            onClick={() => openAuth("login")}
+            className="w-full h-14 rounded-2xl bg-[#0A84FF] text-white text-[17px] font-bold active:scale-[0.98] transition-all shadow-lg"
+          >
+            Sign In
+          </button>
+          <button
+            onClick={() => openAuth("register")}
+            className="w-full h-14 rounded-2xl bg-white/[0.08] text-white text-[17px] font-bold active:scale-[0.98] transition-all"
+          >
+            Create Account
+          </button>
+        </div>
+
+        <button
+          onClick={handleGoogleSignIn}
+          className="flex items-center gap-3 text-[14px] text-white/30 font-bold hover:text-white transition-colors pt-4"
+        >
+          <GoogleIcon />
+          Continue with Google
+        </button>
+      </motion.div>
+
+      {/* Auth Bottom Sheet */}
+      <AnimatePresence>
+        {showSheet && (
+          <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowSheet(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm"
             />
-            {errors.email && (
-              <p className="px-1 text-[13px] font-medium text-red-400">{errors.email}</p>
-            )}
-          </div>
-
-          {/* Password */}
-          <div className="space-y-1.5">
-            <div className="relative">
-              <input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                autoComplete={mode === "login" ? "current-password" : "new-password"}
-                value={password}
-                onChange={(e) => { setPassword(e.target.value); setErrors((p) => ({ ...p, password: undefined, form: undefined })) }}
-                placeholder="Password"
-                className={`w-full rounded-[12px] border bg-white/[0.05] px-4 py-3.5 pr-12 text-[17px] font-medium text-white outline-none transition-all placeholder:text-white/20 focus:bg-white/[0.08] ${errors.password ? "border-red-500/50" : "border-white/[0.05]"}`}
-              />
-              <button
-                type="button"
-                tabIndex={-1}
-                onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition"
-              >
-                {showPassword ? <EyeOff size={20} strokeWidth={2} /> : <Eye size={20} strokeWidth={2} />}
-              </button>
-            </div>
-            {errors.password && (
-              <p className="px-1 text-[13px] font-medium text-red-400">{errors.password}</p>
-            )}
-          </div>
-
-          {/* Confirm Password (register only) */}
-          {mode === "register" && (
-            <div>
-              <label htmlFor="confirm-password" className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider text-muted">
-                Confirm password
-              </label>
-              <div className="relative">
-                <input
-                  id="confirm-password"
-                  type={showConfirmPassword ? "text" : "password"}
-                  autoComplete="new-password"
-                  value={confirmPassword}
-                  onChange={(e) => { setConfirmPassword(e.target.value); setErrors((p) => ({ ...p, confirm: undefined })) }}
-                  placeholder="••••••••"
-                  className={`w-full rounded-[14px] border bg-bg-secondary px-4 py-3 pr-11 text-[15px] font-medium text-ink outline-none transition placeholder:text-muted/40 focus:border-accent/60 focus:bg-bg-tertiary ${errors.confirm ? "border-rose-500/60" : "border-line"}`}
-                />
-                <button
-                  type="button"
-                  tabIndex={-1}
-                  onClick={() => setShowConfirmPassword((v) => !v)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted/50 hover:text-muted transition"
+            <motion.div 
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 32, stiffness: 350 }}
+              className="relative w-full max-w-[420px] bg-[#1C1C1E] rounded-t-[36px] sm:rounded-[36px] flex flex-col max-h-[90vh] shadow-[0_-10px_40px_rgba(0,0,0,0.5)] border-t border-white/[0.05]"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between p-6">
+                <div className="w-8" />
+                <div className="h-14 w-14 rounded-full border-[3px] border-[#0A84FF] flex items-center justify-center">
+                  <UserIcon size={24} className="text-[#0A84FF]" fill="currentColor" fillOpacity={0.1} />
+                </div>
+                <button 
+                  onClick={() => setShowSheet(false)}
+                  className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-white active:scale-90 transition-transform"
                 >
-                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  <X size={18} />
                 </button>
               </div>
-              {errors.confirm && (
-                <p className="mt-1.5 text-[12px] font-medium text-rose-400">{errors.confirm}</p>
-              )}
-            </div>
-          )}
 
-          {/* Form-level error */}
-          {errors.form && (
-            <div className="rounded-[12px] border border-rose-500/20 bg-rose-500/5 px-4 py-3 text-[13px] font-medium text-rose-400">
-              {errors.form}
-            </div>
-          )}
+              <div className="px-8 pb-12 overflow-y-auto">
+                <div className="text-center space-y-2 mb-10">
+                  <h2 className="text-[28px] font-bold text-white tracking-tight">
+                    {mode === "login" ? "Welcome Back" : "New Account"}
+                  </h2>
+                  <p className="text-[15px] text-white/40 leading-snug px-6">
+                    {mode === "login" 
+                      ? "Sign in to access your vocabulary and progress." 
+                      : "Start your learning journey with a native experience."}
+                  </p>
+                </div>
 
-          {/* Submit */}
-          <button
-            type="submit"
-            id={mode === "login" ? "login-submit" : "register-submit"}
-            disabled={loading !== null}
-            className="flex h-12 w-full items-center justify-center rounded-[12px] bg-[#0A84FF] text-[17px] font-bold text-white transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-45 shadow-lg"
-          >
-            {loading === "email" ? (
-              <span className="flex items-center gap-2">
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-                {mode === "login" ? "Signing in…" : "Creating account…"}
-              </span>
-            ) : (
-              mode === "login" ? "Sign In" : "Sign Up"
-            )}
-          </button>
-        </form>
+                <form onSubmit={handleEmailSubmit} className="space-y-6">
+                  <div className="bg-white/5 rounded-[22px] overflow-hidden border border-white/[0.05]">
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Email Address"
+                      className="w-full h-14 bg-transparent px-5 text-white placeholder:text-white/20 outline-none text-[17px]"
+                    />
+                    <div className="h-[0.5px] bg-white/[0.08] ml-5" />
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Password"
+                      className="w-full h-14 bg-transparent px-5 text-white placeholder:text-white/20 outline-none text-[17px]"
+                    />
+                    {mode === "register" && (
+                      <>
+                        <div className="h-[0.5px] bg-white/[0.08] ml-5" />
+                        <input
+                          type="password"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          placeholder="Confirm Password"
+                          className="w-full h-14 bg-transparent px-5 text-white placeholder:text-white/20 outline-none text-[17px]"
+                        />
+                      </>
+                    )}
+                  </div>
 
-        {/* Divider + Google */}
-        <>
-          <div className="my-5 flex items-center gap-3">
-            <div className="h-px flex-1 bg-line" />
-            <span className="text-[12px] font-bold uppercase tracking-wider text-muted/50">or</span>
-            <div className="h-px flex-1 bg-line" />
+                  <button
+                    type="submit"
+                    disabled={loading !== null}
+                    className="w-full h-14 rounded-2xl bg-[#0A84FF] text-white text-[17px] font-bold active:scale-[0.98] transition-all shadow-lg disabled:opacity-50"
+                  >
+                    {loading === "email" ? "Processing..." : "Continue"}
+                  </button>
+                  
+                  {mode === "login" ? (
+                    <button 
+                      type="button"
+                      onClick={() => setMode("register")}
+                      className="w-full text-[14px] font-bold text-white/30 hover:text-white transition-colors"
+                    >
+                      Need an account? Sign Up
+                    </button>
+                  ) : (
+                    <button 
+                      type="button"
+                      onClick={() => setMode("login")}
+                      className="w-full text-[14px] font-bold text-white/30 hover:text-white transition-colors"
+                    >
+                      Already have an account? Sign In
+                    </button>
+                  )}
+                </form>
+              </div>
+            </motion.div>
           </div>
-
-          <button
-            type="button"
-            id="google-login-btn"
-            onClick={handleGoogleSignIn}
-            disabled={loading !== null}
-            className="flex h-12 w-full items-center justify-center gap-3 rounded-[14px] border border-line bg-bg-secondary text-[15px] font-bold text-ink transition hover:bg-bg-tertiary disabled:opacity-45"
-          >
-            {loading === "google" ? (
-              <span className="flex items-center gap-2">
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-muted/20 border-t-muted" />
-                Redirecting…
-              </span>
-            ) : (
-              <>
-                <GoogleIcon />
-                Continue with Google
-              </>
-            )}
-          </button>
-        </>
-
-        {/* Local dev */}
-        {isLocalDevelopment() && (
-          <button
-            type="button"
-            onClick={() => {
-              window.location.href = "/api/auth/dev-login"
-            }}
-            className="mt-3 flex h-11 w-full items-center justify-center rounded-[14px] border border-line/50 bg-bg-secondary/50 text-[13px] font-bold text-muted transition hover:bg-bg-tertiary"
-          >
-            Login as Admin (Local)
-          </button>
         )}
-      </div>
+      </AnimatePresence>
 
-      {/* Switch mode */}
-      <p className="mt-5 text-center text-[14px] text-muted">
-        {mode === "login" ? (
-          <>
-            Don&apos;t have an account?{" "}
-            <button
-              type="button"
-              id="switch-to-register"
-              onClick={() => switchMode("register")}
-              className="font-bold text-ink hover:underline"
-            >
-              Create account
-            </button>
-          </>
-        ) : (
-          <>
-            Already have an account?{" "}
-            <button
-              type="button"
-              id="switch-to-login"
-              onClick={() => switchMode("login")}
-              className="font-bold text-ink hover:underline"
-            >
-              Log in
-            </button>
-          </>
-        )}
-      </p>
+      <AppleAlert 
+        isOpen={Boolean(errorAlert)}
+        onClose={() => setErrorAlert(null)}
+        title={errorAlert?.title || "Error"}
+        message={errorAlert?.message || ""}
+      />
     </div>
   )
 }

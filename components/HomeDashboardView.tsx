@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { motion, AnimatePresence, Variants } from "framer-motion"
 import { CheckCircle2, Flame, Rocket, Sparkles, Zap, ArrowRight, ChevronRight, Target, Trophy, Clock, Star, TrendingUp, Menu, X } from "lucide-react"
 import Link from "next/link"
+import { AppleProgressCard, AppleTile, AppleListItem } from "./AppleDashboardComponents"
 import type { AppUserRecord, CardsResponse } from "@/lib/types"
 
 interface Task {
@@ -99,7 +100,7 @@ export function HomeDashboardView({ user, initialCardsData }: HomeDashboardViewP
   }
 
   return (
-    <div className="mx-auto max-w-xl min-h-screen px-4 pb-32 pt-20 overflow-x-hidden bg-black">
+    <div className="mx-auto max-w-xl min-h-screen px-4 pb-32 pt-24 overflow-x-hidden bg-black">
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -108,23 +109,12 @@ export function HomeDashboardView({ user, initialCardsData }: HomeDashboardViewP
       >
         {/* Progress Card (Storage style) */}
         <motion.section variants={itemVariants} className="px-1">
-          <Link href="/stats" className="bg-[#1C1C1E] rounded-[20px] p-4 flex flex-col gap-3 active:scale-[0.98] transition-transform border border-white/[0.03]">
-            <div className="flex items-center justify-between">
-              <span className="text-[15px] font-semibold tracking-tight text-white">Daily Progress</span>
-              <div className="flex items-center text-white/30">
-                <span className="text-[13px] font-medium mr-1">{completedTasks} of {tasks.length} tasks</span>
-                <ChevronRight size={16} />
-              </div>
-            </div>
-            <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${totalProgress}%` }}
-                transition={{ duration: 1, ease: "easeOut" }}
-                className="h-full bg-[#34C759] rounded-full"
-              />
-            </div>
-          </Link>
+          <AppleProgressCard
+            title="Daily Progress"
+            current={completedTasks}
+            total={tasks.length}
+            href="/stats"
+          />
         </motion.section>
 
         {/* Promo Banner (Get Apple Invites style) - Only show if not Pro/Admin */}
@@ -166,62 +156,45 @@ export function HomeDashboardView({ user, initialCardsData }: HomeDashboardViewP
 
           <div className="grid grid-cols-2 gap-2.5 px-1">
             {tasks.map((task) => (
-              <Link
+              <AppleTile
                 key={task.id}
+                title={task.title.split(' ')[0]}
+                subtitle={`${task.time} Completed`}
+                icon={task.icon}
+                color={task.color}
                 href="/practice"
-                className="bg-[#1C1C1E] rounded-[20px] p-3.5 flex flex-col gap-2.5 active:scale-[0.97] transition-all border border-white/[0.03]"
-              >
-                <div className={`h-9 w-9 flex items-center justify-center rounded-lg ${task.color} text-white shadow-inner shadow-white/10`}>
-                  {task.icon}
-                </div>
-                <div className="space-y-0">
-                  <p className="text-[15px] font-bold tracking-tight text-white truncate">{task.title.split(' ')[0]}</p>
-                  <p className="text-[12px] font-medium text-white/30">{task.time} Completed</p>
-                </div>
-              </Link>
+              />
             ))}
-            <Link
+            <AppleTile
+              title="Grammar"
+              subtitle="12 Rules"
+              icon={<Sparkles size={16} />}
+              color="bg-[#5E5CE6]"
               href="/grammar"
-              className="bg-[#1C1C1E] rounded-[20px] p-3.5 flex flex-col gap-2.5 active:scale-[0.97] transition-all border border-white/[0.03]"
-            >
-              <div className="h-9 w-9 flex items-center justify-center rounded-lg bg-[#5E5CE6] text-white shadow-inner shadow-white/10">
-                <Sparkles size={16} />
-              </div>
-              <div className="space-y-0">
-                <p className="text-[15px] font-bold tracking-tight text-white">Grammar</p>
-                <p className="text-[12px] font-medium text-white/30">12 Rules</p>
-              </div>
-            </Link>
+            />
           </div>
         </section>
 
         {/* Bottom List Items (Backup style) */}
         <motion.section variants={itemVariants} className="px-1">
-          <div className="bg-[#1C1C1E] rounded-[20px] overflow-hidden divide-y divide-white/[0.05] border border-white/[0.03]">
-            <Link href="/stats" className="flex items-center justify-between p-3.5 px-4 active:bg-white/5 transition-colors">
-              <div className="flex items-center gap-3">
-                <div className="h-7 w-7 rounded-md bg-[#0A84FF] flex items-center justify-center text-white">
-                  <Target size={14} />
-                </div>
-                <span className="text-[15px] font-semibold text-white">Learning Goal</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[13px] text-white/20 font-medium">Daily</span>
-                <ChevronRight size={16} className="text-white/10" />
-              </div>
-            </Link>
-            <Link href="/stats" className="flex items-center justify-between p-3.5 px-4 active:bg-white/5 transition-colors">
-              <div className="flex items-center gap-3">
-                <div className="h-7 w-7 rounded-md bg-[#34C759] flex items-center justify-center text-white">
-                  <Flame size={14} />
-                </div>
-                <span className="text-[15px] font-semibold text-white">Keep Streak</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[13px] text-white/20 font-medium">1d</span>
-                <ChevronRight size={16} className="text-white/10" />
-              </div>
-            </Link>
+          <div className="bg-[#1C1C1E] rounded-[20px] overflow-hidden border border-white/[0.03]">
+            <AppleListItem
+              title="Learning Goal"
+              subtitle="Learn 10 words today"
+              icon={<Target size={18} />}
+              iconColor="bg-[#0A84FF]"
+              href="/stats"
+              rightLabel="Daily"
+              showDivider={true}
+            />
+            <AppleListItem
+              title="Keep Streak"
+              subtitle="Consistency is key"
+              icon={<Flame size={18} />}
+              iconColor="bg-[#34C759]"
+              href="/stats"
+              rightLabel="1d"
+            />
           </div>
         </motion.section>
       </motion.div>

@@ -7,6 +7,7 @@ import { UserRound, Volume2 } from "lucide-react"
 
 import { useToast } from "@/components/Toast"
 import { StreakCard } from "@/components/StreakCard"
+import { StickySwitcherHeader } from "@/components/StickySwitcherHeader"
 import { updateClientResourceData } from "@/hooks/useClientResource"
 import { getTooltipMessage } from "@/lib/config"
 import { speakText, useCanSpeak } from "@/lib/tts"
@@ -338,64 +339,14 @@ export function TranslatorPanel({
 
   return (
     <section className="space-y-4">
-      <div className="sticky top-0 z-40 -mx-4 bg-black/60 pt-2 pb-3 backdrop-blur-2xl md:static md:mx-0 md:bg-transparent md:pt-0 md:backdrop-blur-none">
-        <div className="flex items-center justify-between px-6">
-          {/* Spacer to help center the switcher on mobile */}
-          <div className="w-10 md:hidden" />
-
-          <div className="relative flex rounded-full border border-white/[0.08] bg-white/[0.04] p-1 shadow-2xl backdrop-blur-xl">
-            <div className="relative grid grid-cols-2 items-center">
-              <motion.div
-                aria-hidden="true"
-                className="pointer-events-none absolute bottom-1 top-1 z-0 w-[calc(50%-0.25rem)] rounded-full bg-[#0A84FF] shadow-[0_4px_12px_rgba(10,132,255,0.3)]"
-                initial={false}
-                animate={{
-                  x: direction === "en-ru" ? "0%" : "100%"
-                }}
-                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                style={{ left: "0.25rem" }}
-              />
-              <button
-                type="button"
-                onClick={() => handleDirectionChange("en-ru")}
-                className={`relative z-10 flex min-w-[90px] items-center justify-center rounded-full px-4 py-2 text-[13px] font-bold transition-all duration-300 md:min-w-[140px] md:text-[14px] ${direction === "en-ru"
-                  ? "text-white"
-                  : "text-white/30 hover:text-white/60"
-                  }`}
-              >
-                English
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDirectionChange("ru-en")}
-                className={`relative z-10 flex min-w-[90px] items-center justify-center rounded-full px-4 py-2 text-[13px] font-bold transition-all duration-300 md:min-w-[140px] md:text-[14px] ${direction === "ru-en"
-                  ? "text-white"
-                  : "text-white/30 hover:text-white/60"
-                  }`}
-              >
-                Russian
-              </button>
-            </div>
-          </div>
-
-          <Link
-            href="/profile"
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/[0.08] text-white active:scale-90 transition-transform overflow-hidden border border-white/[0.1] md:hidden"
-          >
-            {user.avatarUrl ? (
-              <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
-            ) : (
-              <span className="text-[13px] font-black">
-                {(user.name || user.email || 'G').slice(0, 1).toUpperCase()}
-              </span>
-            )}
-          </Link>
-          
-          {/* Hidden spacer for desktop to maintain center alignment if needed, 
-              though md:static layout might not need it */}
-          <div className="hidden md:block w-10 invisible" />
-        </div>
-      </div>
+      <StickySwitcherHeader
+        leftOption={{ label: "English", value: "en-ru" }}
+        rightOption={{ label: "Russian", value: "ru-en" }}
+        selectedValue={direction}
+        onValueChange={(val) => handleDirectionChange(val as Direction)}
+        user={user}
+        sticky={true}
+      />
 
       <div className="translate-card-grid grid gap-3 lg:grid-cols-2">
         <motion.div

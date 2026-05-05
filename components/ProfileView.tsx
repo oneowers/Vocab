@@ -1,15 +1,15 @@
 "use client"
 
-import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowRight, ChevronDown, Eye, EyeOff, KeyRound, LogOut, Moon, Shield, Sun, User as UserIcon } from "lucide-react"
+import { Eye, EyeOff, Shield, Sun, Moon, User as UserIcon, ShieldCheck, CreditCard, RefreshCcw, Cloud, MapPin, Music, Sparkles, X, ChevronLeft, Key } from "lucide-react"
+import { AppleListItem, AppleHeader, AppleAlert } from "./AppleDashboardComponents"
+import { motion, AnimatePresence } from "framer-motion"
 import { useTheme } from "@/lib/theme-context"
 
-import { CEFR_LEVELS } from "@/lib/catalog"
 import { useToast } from "@/components/Toast"
 import { useClientResource } from "@/hooks/useClientResource"
-import { DEFAULT_GUEST_REVIEW_LIVES, clearGuestSession, isGuestSessionActive } from "@/lib/guest"
+import { isGuestSessionActive, clearGuestSession } from "@/lib/guest"
 import { getRoleLabel } from "@/lib/roles"
 import { buildEmptyProfileActivity } from "@/lib/profile-data"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
@@ -26,24 +26,6 @@ const emptyGrammarSkills: GrammarSkillsPayload = {
   trend: []
 }
 
-function formatDetectedDate(value: string | null) {
-  if (!value) {
-    return null
-  }
-
-  return new Date(value).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric"
-  })
-}
-
-function getScoreBandLabel(score: number) {
-  if (score <= -71) return "Critical"
-  if (score <= -41) return "Serious"
-  if (score <= -16) return "Weak"
-  return "Minor"
-}
-
 export function ProfileView({ user, initialActivity = null }: ProfileViewProps) {
   const router = useRouter()
   const { showToast } = useToast()
@@ -51,60 +33,43 @@ export function ProfileView({ user, initialActivity = null }: ProfileViewProps) 
   const [profileUser, setProfileUser] = useState(user)
   const [cefrLevel, setCefrLevel] = useState<CefrLevel>(user?.cefrLevel ?? "A1")
   const [savingLevel, setSavingLevel] = useState(false)
+  const [showLevelPicker, setShowLevelPicker] = useState(false)
   const [showPasswordSection, setShowPasswordSection] = useState(false)
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmNewPassword, setConfirmNewPassword] = useState("")
   const [showNewPw, setShowNewPw] = useState(false)
   const [savingPassword, setSavingPassword] = useState(false)
-  const [passwordError, setPasswordError] = useState<string | null>(null)
+  const [errorAlert, setErrorAlert] = useState<{ title: string, message: string } | null>(null)
   const fallbackActivity = useMemo(() => buildEmptyProfileActivity(), [])
+  
   const {
     data: activity,
-    loading: activityLoading,
-    refreshing: activityRefreshing
   } = useClientResource<ProfileActivityPayload>({
     key: guestActive || !profileUser ? "profile-activity:guest" : `profile-activity:${profileUser.id}`,
     enabled: !guestActive && Boolean(profileUser),
     initialData: guestActive || !profileUser ? fallbackActivity : initialActivity,
     revalidateOnMount: initialActivity === null,
     loader: async () => {
-      const response = await fetch("/api/profile/activity", {
-        cache: "no-store"
-      })
-
-      if (!response.ok) {
-        throw new Error("Could not load activity.")
-      }
-
+      const response = await fetch("/api/profile/activity", { cache: "no-store" })
+      if (!response.ok) throw new Error("Could not load activity.")
       return (await response.json()) as ProfileActivityPayload
     },
-    onError: () => {
-      showToast("Could not load profile activity.", "error")
-    }
+    onError: () => showToast("Could not load profile activity.", "error")
   })
+
   const {
     data: grammarSkills,
-    loading: grammarLoading,
-    refreshing: grammarRefreshing
   } = useClientResource<GrammarSkillsPayload>({
     key: guestActive || !profileUser ? "profile-grammar:guest" : `profile-grammar:${profileUser.id}:weak`,
     enabled: !guestActive && Boolean(profileUser),
     initialData: guestActive || !profileUser ? emptyGrammarSkills : null,
     loader: async () => {
-      const response = await fetch("/api/profile/grammar-skills?scope=weak", {
-        cache: "no-store"
-      })
-
-      if (!response.ok) {
-        throw new Error("Could not load grammar skills.")
-      }
-
+      const response = await fetch("/api/profile/grammar-skills?scope=weak", { cache: "no-store" })
+      if (!response.ok) throw new Error("Could not load grammar skills.")
       return (await response.json()) as GrammarSkillsPayload
     },
-    onError: () => {
-      showToast("Could not load grammar weak points.", "error")
-    }
+    onError: () => showToast("Could not load grammar weak points.", "error")
   })
 
   useEffect(() => {
@@ -136,86 +101,35 @@ export function ProfileView({ user, initialActivity = null }: ProfileViewProps) 
     }
 
     const supabase = createSupabaseBrowserClient()
-
     if (supabase) {
       await supabase.auth.signOut()
     }
-
-    // Always call our logout API to clear server-side cookies (email-session)
     await fetch("/api/auth/logout", { method: "POST" })
-
     router.push("/login")
     router.refresh()
   }
 
   const resolvedActivity = activity ?? initialActivity ?? fallbackActivity
-  const resolvedGrammarSkills = grammarSkills ?? emptyGrammarSkills
-  const hasActivityData = Boolean(activity || initialActivity || guestActive || !profileUser)
   const name = guestActive ? "Guest explorer" : profileUser?.name || profileUser?.email || "LexiFlow user"
-  const subtitle = guestActive
-    ? "Guest mode"
-    : getRoleLabel(profileUser?.role ?? null)
-  const canManageCefrLevel = profileUser?.role === "ADMIN"
-  const heatmapDays = useMemo(() => resolvedActivity.days, [resolvedActivity.days])
-  const heatmapCellSize = 10
-  const heatmapGap = 3
-  const heatmapWeekCount = Math.max(
-    1,
-    ...resolvedActivity.months.map((month) => month.weekIndex + 1),
-    Math.ceil(heatmapDays.length / 7)
-  )
-  const heatmapWidth =
-    heatmapWeekCount * heatmapCellSize + Math.max(heatmapWeekCount - 1, 0) * heatmapGap
-  const visibleMonths = useMemo(() => {
-    const minLabelSpacing = 24
-    let lastLeft = -Infinity
-
-    return resolvedActivity.months.filter((month) => {
-      const left = month.weekIndex * (heatmapCellSize + heatmapGap)
-
-      if (left - lastLeft < minLabelSpacing) {
-        return false
-      }
-
-      lastLeft = left
-      return true
-    })
-  }, [resolvedActivity.months, heatmapCellSize, heatmapGap])
-
+  
   async function handleCefrLevelChange(nextLevel: CefrLevel) {
     if (guestActive || !profileUser || savingLevel || nextLevel === cefrLevel) {
       return
     }
-
     setSavingLevel(true)
-
     try {
       const response = await fetch("/api/profile", {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          cefrLevel: nextLevel
-        })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cefrLevel: nextLevel })
       })
-
-      if (!response.ok) {
-        throw new Error("Could not update CEFR level.")
-      }
-
-      const payload = (await response.json()) as {
-        user: AppUserRecord
-      }
-
+      if (!response.ok) throw new Error("Could not update CEFR level.")
+      const payload = await response.json()
       setProfileUser(payload.user)
       setCefrLevel(payload.user.cefrLevel)
       showToast("CEFR level updated.", "success")
     } catch (error) {
-      showToast(
-        error instanceof Error ? error.message : "Could not update CEFR level.",
-        "error"
-      )
+      showToast(error instanceof Error ? error.message : "Could not update level.", "error")
     } finally {
       setSavingLevel(false)
     }
@@ -224,379 +138,309 @@ export function ProfileView({ user, initialActivity = null }: ProfileViewProps) 
   const { theme, toggleTheme } = useTheme()
 
   return (
-    <div className="space-y-4">
-      <section className="panel overflow-hidden border-none bg-gradient-to-br from-bg-secondary to-bg-primary p-4 shadow-xl">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent-soft backdrop-blur-md">
-              <UserIcon size={24} className="text-muted" />
-            </div>
-          </div>
-          <div className="flex-1">
-            <h1 className="text-[20px] font-black tracking-tight text-ink">
-              {name}
-            </h1>
-            <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5">
-              <span className="text-[12px] font-semibold text-muted">{subtitle}</span>
-              {profileUser?.createdAt && (
-                <span className="text-[12px] font-medium text-quiet">
-                  Joined {new Date(profileUser.createdAt).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
+    <div className="min-h-screen bg-black pb-20 overflow-x-hidden">
+      <AppleHeader title="LexiFlow Account" />
 
-        <div className="mt-4 grid grid-cols-3 gap-2">
-          <div className="rounded-[16px] bg-bg-tertiary p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-quiet">Streak</p>
-            <p className="text-[18px] font-black text-ink">
-              {guestActive ? 0 : profileUser?.streak ?? 0}
-              <span className="ml-1 text-[11px] font-medium text-quiet">d</span>
-            </p>
-          </div>
-          <div className="rounded-[16px] bg-bg-tertiary p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-quiet">Active</p>
-            {activityLoading && !hasActivityData ? (
-              <div className="mt-1 skeleton skeleton-soft h-6 w-12" />
-            ) : (
-              <p className="text-[18px] font-black text-ink">
-                {resolvedActivity.activeDaysLastYear}
-                <span className="ml-1 text-[11px] font-medium text-quiet">d</span>
-              </p>
-            )}
-          </div>
-          <div className="rounded-[16px] bg-bg-tertiary p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-quiet">Status</p>
-            <p className="truncate text-[15px] font-black text-ink">
-              {guestActive ? "Guest" : "Pro"}
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section className="panel p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="section-label">Activity</p>
-            {activityLoading && !hasActivityData ? (
-              <div className="mt-2 skeleton skeleton-soft h-6 w-20" />
-            ) : (
-              <h2 className="mt-1 text-[17px] font-bold text-ink">
-                {resolvedActivity.activeDaysLastYear} days
-              </h2>
-            )}
-          </div>
-          <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted">
-            <div className="flex gap-0.5">
-              {[0, 1, 2, 3, 4].map((level) => (
-                <div key={level} className="h-2 w-2 rounded-[1px]" style={{ backgroundColor: `var(--activity-level-${level})` }} aria-hidden="true" />
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {activityLoading ? (
-          <div className="mt-4 skeleton h-[100px] rounded-[16px]" />
-        ) : (
-          <div className={`mt-4 overflow-x-auto pb-1 hide-scrollbar native-scroll ${activityRefreshing ? "opacity-70" : ""}`}>
-            <div className="min-w-fit">
-              <div className="relative ml-6 h-4 text-[9px] font-bold uppercase tracking-widest text-muted" style={{ width: `${heatmapWidth}px` }}>
-                {visibleMonths.map((month) => (
-                  <span key={`${month.label}-${month.weekIndex}`} className="absolute top-0" style={{ left: `${month.weekIndex * (heatmapCellSize + heatmapGap)}px` }}>{month.label}</span>
-                ))}
-              </div>
-              <div className="mt-1 flex gap-2">
-                <div className="grid grid-rows-7 gap-[3px] text-[8px] font-bold text-muted">
-                  {["", "M", "", "W", "", "F", ""].map((label, index) => (
-                    <span key={`${label}-${index}`} className="flex h-[10px] items-center">{label}</span>
-                  ))}
-                </div>
-                <div className="grid grid-flow-col grid-rows-7 gap-[3px]" style={{ width: `${heatmapWidth}px` }}>
-                  {heatmapDays.map((day) => (
-                    <div key={day.date} className="h-[10px] w-[10px] rounded-[1px]" style={{ backgroundColor: `var(--activity-level-${day.level})` }} title={`${day.count} reviews on ${day.date}`} />
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <Link
-          href="/stats"
-          prefetch
-          className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-muted transition hover:text-ink"
-        >
-          <span>View detailed stats</span>
-          <ArrowRight size={14} className="text-quiet" />
-        </Link>
-      </section>
-
-      <section className="panel p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="section-label">Grammar Progress</p>
-            <div className="mt-2 flex items-center gap-4">
-              <div className="flex flex-col">
-                <span className="text-[18px] font-black text-ink">
-                  {grammarLoading && !grammarSkills ? "..." : resolvedGrammarSkills.weakCount}
-                </span>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-rose-500/80">Weak</span>
-              </div>
-              <div className="h-8 w-[1px] bg-line" />
-              <div className="flex flex-col">
-                <span className="text-[18px] font-black text-ink">
-                  {grammarLoading && !grammarSkills ? "..." : resolvedGrammarSkills.items.filter(i => i.score >= -30 && i.score < 30 && i.evidenceCount > 0).length}
-                </span>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-amber-500/80">Learning</span>
-              </div>
-            </div>
-          </div>
-          <Link
-            href="/grammar"
-            prefetch
-            className="flex h-11 items-center gap-2 rounded-2xl bg-bg-tertiary px-4 text-[13px] font-bold text-ink transition hover:bg-bg-tertiary/80 active:scale-[0.98] border border-line"
-          >
-            <span>Open Grammar</span>
-            <ArrowRight size={14} className="text-quiet" />
-          </Link>
-        </div>
-      </section>
-
-      <section className="panel overflow-hidden p-2">
-        <div className="space-y-0.5">
-          {canManageCefrLevel ? (
-            <div className="rounded-[16px] border border-line bg-bg-secondary px-3 py-3">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted">Target level</p>
-                  <p className="mt-1 text-[12px] leading-relaxed text-quiet">
-                    Admin-only override for recommendation difficulty.
-                  </p>
-                </div>
-                {savingLevel ? (
-                  <span className="text-[11px] font-bold text-quiet">Saving...</span>
-                ) : null}
-              </div>
-
-              <div className="relative mt-3">
-                <select
-                  value={guestActive ? "A1" : cefrLevel}
-                  disabled={guestActive || savingLevel}
-                  onChange={(event) => void handleCefrLevelChange(event.target.value as CefrLevel)}
-                  className="h-11 w-full appearance-none rounded-[14px] border border-line bg-bg-secondary px-4 pr-10 text-[14px] font-bold text-ink outline-none transition hover:bg-bg-tertiary disabled:cursor-not-allowed disabled:opacity-45"
-                >
-                  {CEFR_LEVELS.map((value) => (
-                    <option key={value} value={value} className="bg-bg-secondary text-ink">
-                      {value}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  size={16}
-                  className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-quiet"
+      <div className="pt-28 px-4 space-y-8 max-w-xl mx-auto">
+        <div className="flex flex-col items-center text-center space-y-3.5">
+          <div className="relative group">
+            <div className="h-28 w-28 rounded-full overflow-hidden shadow-2xl border-4 border-white/5 bg-[#1C1C1E] flex items-center justify-center transition-transform active:scale-95 cursor-pointer">
+              {profileUser?.avatarUrl ? (
+                <img 
+                  src={profileUser.avatarUrl} 
+                  alt={name} 
+                  className="h-full w-full object-cover"
                 />
-              </div>
-            </div>
-          ) : (
-            <div className="rounded-[16px] border border-line bg-bg-secondary px-3 py-3">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-muted">Vocabulary level</p>
-              <p className="mt-1 text-[12px] leading-relaxed text-quiet">
-                This will be guided by onboarding and the upcoming level test instead of manual selection.
-              </p>
-            </div>
-          )}
-
-          <div className="flex min-h-[40px] items-center justify-between rounded-[12px] px-3 transition hover:bg-bg-tertiary">
-            <span className="text-[13px] font-semibold text-ink">Email</span>
-            <span className="text-[12px] text-muted">{profileUser?.email || "Guest"}</span>
-          </div>
-
-          {/* Password section — visible for real (non-guest) users */}
-          {profileUser && !guestActive && (
-            <div className="mt-1">
-              <button
-                type="button"
-                onClick={() => { setShowPasswordSection((v) => !v); setPasswordError(null) }}
-                className="flex min-h-[40px] w-full items-center justify-between rounded-[12px] px-3 transition hover:bg-bg-tertiary"
-              >
-                <span className="inline-flex items-center gap-3 text-[13px] font-semibold text-ink">
-                  <KeyRound size={14} className="text-muted" />
-                  {profileUser.hasPassword ? "Change password" : "Set password"}
-                </span>
-                <span className={`text-[11px] font-bold transition ${showPasswordSection ? "text-ink" : "text-muted"}`}>
-                  {showPasswordSection ? "Cancel" : profileUser.hasPassword ? "Change" : "Add"}
-                </span>
-              </button>
-
-              {showPasswordSection && (
-                <form
-                  className="mt-2 space-y-3 rounded-[14px] border border-line bg-bg-secondary p-4"
-                  onSubmit={async (e) => {
-                    e.preventDefault()
-                    setPasswordError(null)
-                    if (newPassword.length < 8) {
-                      setPasswordError("Password must be at least 8 characters")
-                      return
-                    }
-                    if (newPassword !== confirmNewPassword) {
-                      setPasswordError("Passwords do not match")
-                      return
-                    }
-                    setSavingPassword(true)
-                    try {
-                      const res = await fetch("/api/profile/password", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ password: newPassword, currentPassword: currentPassword || undefined })
-                      })
-                      const data = await res.json()
-                      if (!res.ok) {
-                        setPasswordError(data.message || "Something went wrong")
-                        return
-                      }
-                      showToast(data.message || "Password saved!", "success")
-                      setShowPasswordSection(false)
-                      setCurrentPassword("")
-                      setNewPassword("")
-                      setConfirmNewPassword("")
-                      router.refresh()
-                    } catch {
-                      setPasswordError("Network error. Please try again.")
-                    } finally {
-                      setSavingPassword(false)
-                    }
-                  }}
-                >
-                  {!profileUser.hasPassword && (
-                    <p className="text-[12px] text-quiet">
-                      You signed in with Google. Add a password to also log in with email.
-                    </p>
-                  )}
-
-                  {profileUser.hasPassword && (
-                    <div>
-                      <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-muted">Current password</label>
-                      <input
-                        type="password"
-                        value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full rounded-[12px] border border-line bg-bg-primary px-3 py-2.5 text-[14px] font-medium text-ink outline-none focus:border-accent/60"
-                      />
-                    </div>
-                  )}
-
-                  <div>
-                    <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-muted">
-                      {profileUser.hasPassword ? "New password" : "Password"}
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showNewPw ? "text" : "password"}
-                        value={newPassword}
-                        onChange={(e) => { setNewPassword(e.target.value); setPasswordError(null) }}
-                        placeholder="At least 8 characters"
-                        className="w-full rounded-[12px] border border-line bg-bg-primary px-3 py-2.5 pr-10 text-[14px] font-medium text-ink outline-none focus:border-accent/60"
-                      />
-                      <button type="button" tabIndex={-1} onClick={() => setShowNewPw((v) => !v)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted/50 hover:text-muted">
-                        {showNewPw ? <EyeOff size={16} /> : <Eye size={16} />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-muted">Confirm password</label>
-                    <input
-                      type="password"
-                      value={confirmNewPassword}
-                      onChange={(e) => { setConfirmNewPassword(e.target.value); setPasswordError(null) }}
-                      placeholder="••••••••"
-                      className="w-full rounded-[12px] border border-line bg-bg-primary px-3 py-2.5 text-[14px] font-medium text-ink outline-none focus:border-accent/60"
-                    />
-                  </div>
-
-                  {passwordError && (
-                    <p className="text-[12px] font-medium text-rose-400">{passwordError}</p>
-                  )}
-
-                  <button
-                    type="submit"
-                    disabled={savingPassword}
-                    className="flex h-10 w-full items-center justify-center rounded-[12px] bg-ink text-[13px] font-black text-bg-primary transition hover:opacity-90 disabled:opacity-45"
-                  >
-                    {savingPassword ? "Saving…" : profileUser.hasPassword ? "Change password" : "Set password"}
-                  </button>
-                </form>
+              ) : (
+                <div className="h-full w-full bg-gradient-to-b from-[#3A3A3C] to-[#1C1C1E] flex items-center justify-center">
+                  <span className="text-4xl font-bold text-white/90 tracking-tighter">
+                    {name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
               )}
             </div>
-          )}
-
-          {profileUser && (profileUser.role === "ADMIN" || profileUser.email === "admin@localhost") && (
-            <div className="mt-4 rounded-[16px] border border-amber-500/20 bg-amber-500/5 p-3">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-amber-500/60">Developer Settings</p>
-              <div className="mt-2 flex items-center justify-between">
-                <div>
-                  <p className="text-[13px] font-bold text-ink">Toggle Dev Role</p>
-                  <p className="text-[11px] text-quiet">Switch between Admin and User view</p>
-                </div>
-                <button
-                  onClick={async () => {
-                    const res = await fetch("/api/dev/toggle-role", { method: "POST" })
-                    if (res.ok) {
-                      showToast("Role toggled. Refreshing...", "success")
-                      router.refresh()
-                    }
-                  }}
-                  className="rounded-full bg-amber-500/10 px-3 py-1 text-[11px] font-bold text-amber-400 border border-amber-500/20 hover:bg-amber-500/20 transition"
-                >
-                  Switch to {profileUser.role === "ADMIN" ? "User" : "Admin"}
-                </button>
+            {profileUser?.role === "PRO" && (
+              <div className="absolute -bottom-1 -right-1 h-9 w-9 rounded-full bg-[#0A84FF] border-4 border-black flex items-center justify-center shadow-lg">
+                <Shield size={16} className="text-white" fill="currentColor" />
               </div>
-            </div>
-          )}
-
-          {/* Appearance Section */}
-          <div className="mt-4 rounded-[16px] border border-line bg-bg-secondary p-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-quiet">Appearance</p>
-            <div className="mt-2 flex items-center justify-between">
-              <div>
-                <p className="text-[13px] font-bold text-ink">Theme</p>
-                <p className="text-[11px] text-quiet">{theme === 'dark' ? 'Dark' : 'Light'} mode active</p>
-              </div>
-              <button
-                onClick={toggleTheme}
-                className="flex h-10 w-20 items-center rounded-full bg-bg-secondary p-1 transition-all border border-line shadow-inner"
-              >
-                <div className={`flex h-8 w-8 items-center justify-center rounded-full shadow-lg transition-transform duration-300 ${theme === 'dark' ? 'translate-x-10 bg-indigo-950' : 'translate-x-0 bg-white'}`}>
-                  {theme === 'dark' ? <Moon size={14} className="text-indigo-200" /> : <Sun size={14} className="text-amber-500" />}
-                </div>
-              </button>
-            </div>
+            )}
           </div>
+          <div className="space-y-0.5">
+            <h2 className="text-[30px] font-bold tracking-tight text-white leading-tight">{name}</h2>
+            <p className="text-[15px] text-white/35 font-medium tracking-tight">
+              {profileUser?.email || "guest@lexiflow.app"}
+            </p>
+          </div>
+        </div>
 
-          {profileUser?.role === "ADMIN" ? (
-            <Link href="/admin" prefetch className="flex min-h-[40px] items-center justify-between rounded-[12px] px-3 transition hover:bg-bg-tertiary">
-              <span className="inline-flex items-center gap-3 text-[13px] font-semibold text-ink">
-                <Shield size={14} className="text-emerald-400" />
-                Admin Dashboard
-              </span>
-              <ArrowRight size={14} className="text-muted" />
-            </Link>
-          ) : null}
+        {/* Group 1: Core Account */}
+        <div className="bg-[#1C1C1E] rounded-[24px] overflow-hidden border border-white/[0.03]">
+          <AppleListItem 
+            title="Personal Information" 
+            icon={<UserIcon size={18} />} 
+            iconColor="bg-[#8E8E93]" 
+            showDivider={true}
+          />
+          <AppleListItem 
+            title="Sign-In & Security" 
+            icon={<ShieldCheck size={18} />} 
+            iconColor="bg-[#8E8E93]" 
+            showDivider={true}
+            onClick={() => setShowPasswordSection(true)}
+            rightLabel={profileUser?.hasPassword ? "Secure" : "Set Up"}
+          />
+          <AppleListItem 
+            title="Payment & Shipping" 
+            icon={<CreditCard size={18} />} 
+            iconColor="bg-[#8E8E93]" 
+            showDivider={true}
+            rightLabel="Visa"
+          />
+          <AppleListItem 
+            title="Subscriptions" 
+            icon={<RefreshCcw size={18} />} 
+            iconColor="bg-[#8E8E93]" 
+          />
+        </div>
+
+        {/* Group 2: Services */}
+        <div className="bg-[#1C1C1E] rounded-[24px] overflow-hidden border border-white/[0.03]">
+          <AppleListItem 
+            title="LexiCloud" 
+            subtitle="Activity & Stats"
+            icon={<Cloud size={18} />} 
+            iconColor="bg-gradient-to-br from-[#0A84FF] to-[#5E5CE6]" 
+            showDivider={true}
+            href="/stats"
+            rightLabel={`${resolvedActivity.activeDaysLastYear}d`}
+          />
+          <AppleListItem 
+            title="Grammar Path" 
+            subtitle="Skill development"
+            icon={<Sparkles size={18} />} 
+            iconColor="bg-gradient-to-br from-[#BF5AF2] to-[#AF52DE]" 
+            showDivider={true}
+            onClick={() => setShowLevelPicker(true)}
+            rightLabel={grammarSkills?.weakCount ? `${grammarSkills.weakCount} weak · ${cefrLevel}` : cefrLevel}
+          />
+          {profileUser?.role === "ADMIN" && (
+            <AppleListItem 
+              title="Admin Dashboard" 
+              icon={<Shield size={18} />} 
+              iconColor="bg-[#30D158]" 
+              showDivider={true}
+              href="/admin"
+            />
+          )}
+          <AppleListItem 
+            title="Find My Progress" 
+            icon={<MapPin size={18} />} 
+            iconColor="bg-[#30D158]" 
+            showDivider={true}
+          />
+          <AppleListItem 
+            title="Media & Purchases" 
+            icon={<Music size={18} />} 
+            iconColor="bg-[#007AFF]" 
+            showDivider={true}
+          />
+          <AppleListItem 
+            title="Appearance" 
+            subtitle={theme === 'dark' ? 'Dark mode' : 'Light mode'}
+            icon={theme === 'dark' ? <Moon size={18} /> : <Sun size={18} />} 
+            iconColor="bg-[#5E5CE6]" 
+            onClick={toggleTheme}
+          />
+        </div>
+
+        {/* Sign Out Action */}
+        <div className="px-1 pt-4 pb-12">
           <button
             type="button"
             onClick={handleExit}
-            className="flex min-h-[40px] w-full items-center justify-between rounded-[12px] px-3 text-[13px] font-bold text-dangerText transition hover:bg-bg-tertiary active:scale-[0.98]"
+            className="w-full h-14 rounded-[20px] bg-[#1C1C1E] text-[#FF453A] font-semibold active:bg-white/5 transition-colors border border-white/[0.03] text-[17px]"
           >
-            <span className="inline-flex items-center gap-3">
-              <LogOut size={14} />
-              {guestActive ? "Exit guest mode" : "Sign out"}
-            </span>
+            {guestActive ? "Exit guest mode" : "Sign Out"}
           </button>
+          <p className="mt-8 text-center text-[12px] text-white/10 font-medium tracking-wide uppercase">
+            LexiFlow Account · Version 1.2.0
+          </p>
         </div>
-      </section>
+      </div>
+
+      {/* CEFR Level Picker Modal */}
+      <AnimatePresence>
+        {showLevelPicker && (
+          <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowLevelPicker(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              className="relative w-full max-w-lg bg-[#1C1C1E] rounded-t-[32px] sm:rounded-[32px] overflow-hidden shadow-2xl border border-white/[0.05] p-6"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-[20px] font-bold text-white">English Level</h2>
+                <button onClick={() => setShowLevelPicker(false)} className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center"><X size={18} /></button>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                {["A1", "A2", "B1", "B2", "C1", "C2"].map((level) => (
+                  <button
+                    key={level}
+                    onClick={() => {
+                      void handleCefrLevelChange(level as CefrLevel)
+                      setShowLevelPicker(false)
+                    }}
+                    className={`h-14 rounded-2xl font-bold transition-all ${
+                      cefrLevel === level 
+                        ? "bg-[#0A84FF] text-white" 
+                        : "bg-white/5 text-white/40 hover:bg-white/10"
+                    }`}
+                  >
+                    {level}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Premium Password Change Modal (iOS Style) */}
+      <AnimatePresence>
+        {showPasswordSection && (
+          <motion.div 
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", damping: 30, stiffness: 300 }}
+            className="fixed inset-0 z-[200] bg-black flex flex-col"
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 pt-14 pb-4">
+              <button 
+                onClick={() => setShowPasswordSection(false)}
+                className="h-9 w-9 flex items-center justify-center rounded-full bg-white/5 text-white active:scale-90 transition-transform"
+              >
+                <ChevronLeft size={22} />
+              </button>
+              <button 
+                onClick={() => setShowPasswordSection(false)}
+                className="h-9 w-9 flex items-center justify-center rounded-full bg-white/5 text-white active:scale-90 transition-transform"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="flex-1 px-8 pt-10 overflow-y-auto">
+              <div className="flex flex-col items-center text-center space-y-6">
+                {/* Icon */}
+                <div className="h-20 w-20 rounded-full border-[3px] border-[#0A84FF] flex items-center justify-center shadow-[0_0_20px_rgba(10,132,255,0.3)]">
+                  <Key size={36} className="text-[#0A84FF]" fill="currentColor" fillOpacity={0.1} />
+                </div>
+
+                <div className="space-y-2">
+                  <h2 className="text-[32px] font-bold text-white tracking-tight">New Password</h2>
+                  <p className="text-[17px] text-white/40 leading-snug max-w-[280px] mx-auto">
+                    Choose a secure password you can remember.
+                  </p>
+                </div>
+
+                {/* Input Group */}
+                <div className="w-full mt-10">
+                  <div className="bg-[#1C1C1E] rounded-[22px] overflow-hidden border border-white/[0.05]">
+                    {profileUser?.hasPassword && (
+                      <>
+                        <input
+                          type="password"
+                          value={currentPassword}
+                          onChange={(e) => setCurrentPassword(e.target.value)}
+                          placeholder="Current Password"
+                          className="w-full h-14 bg-transparent px-5 text-white placeholder:text-white/20 outline-none text-[17px]"
+                        />
+                        <div className="h-[0.5px] bg-white/[0.08] ml-5" />
+                      </>
+                    )}
+                    <input
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="New Password"
+                      className="w-full h-14 bg-transparent px-5 text-white placeholder:text-white/20 outline-none text-[17px]"
+                    />
+                    <div className="h-[0.5px] bg-white/[0.08] ml-5" />
+                    <input
+                      type="password"
+                      value={confirmNewPassword}
+                      onChange={(e) => setConfirmNewPassword(e.target.value)}
+                      placeholder="Confirm Password"
+                      className="w-full h-14 bg-transparent px-5 text-white placeholder:text-white/20 outline-none text-[17px]"
+                    />
+                  </div>
+                  
+                  <p className="mt-4 px-4 text-[13px] text-white/25 leading-relaxed text-left">
+                    Your password must be at least 8 characters, include a number, an uppercase letter, and a lowercase letter.
+                  </p>
+                </div>
+
+
+              </div>
+            </div>
+
+            {/* Sticky Action Button */}
+            <div className="p-8 pb-12">
+              <button
+                onClick={async (e) => {
+                  if (newPassword.length < 8) { 
+                    setErrorAlert({ title: "Weak Password", message: "Your new password must be at least 8 characters long." })
+                    return 
+                  }
+                  if (newPassword !== confirmNewPassword) { 
+                    setErrorAlert({ title: "Mismatch", message: "The new password and confirmation do not match." })
+                    return 
+                  }
+                  setSavingPassword(true)
+                  try {
+                    const res = await fetch("/api/profile/password", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ password: newPassword, currentPassword: currentPassword || undefined })
+                    })
+                    const data = await res.json()
+                    if (!res.ok) { 
+                      setErrorAlert({ title: "Update Failed", message: data.message || "We couldn't update your password. Please try again." })
+                      return 
+                    }
+                    showToast("Password saved!", "success")
+                    setShowPasswordSection(false)
+                    setCurrentPassword("")
+                    setNewPassword("")
+                    setConfirmNewPassword("")
+                  } catch { 
+                    setErrorAlert({ title: "Connection Error", message: "Check your internet connection and try again." })
+                  } finally { setSavingPassword(false) }
+                }}
+                disabled={savingPassword}
+                className="w-full h-16 rounded-[20px] bg-[#0A84FF] text-white text-[18px] font-bold active:scale-[0.98] transition-all disabled:opacity-50 shadow-[0_8px_24px_rgba(10,132,255,0.3)]"
+              >
+                {savingPassword ? "Updating..." : "Update Password"}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AppleAlert 
+        isOpen={Boolean(errorAlert)}
+        onClose={() => setErrorAlert(null)}
+        title={errorAlert?.title || "Error"}
+        message={errorAlert?.message || ""}
+      />
     </div>
   )
 }
