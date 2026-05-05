@@ -582,9 +582,7 @@ export function AdminCatalogView() {
           </div>
         }
       >
-        {loading || !payload ? (
-          <div className="skeleton h-80 rounded-[1.75rem]" />
-        ) : (
+        {loading || !payload ? null : (
           <div className={`space-y-4 transition-opacity ${refreshing ? "opacity-70" : "opacity-100"}`}>
             <div className="space-y-2 md:hidden">
               {payload.items.map((item) => (
@@ -660,11 +658,7 @@ export function AdminCatalogView() {
                   <tr key={item.id} className="border-t border-line">
                     <td className="px-3 py-4 font-medium text-ink">{item.word}</td>
                     <td className="px-3 py-4 text-muted">
-                      {autofilling === item.id ? (
-                        <div className="skeleton h-4 w-16 mx-auto rounded" />
-                      ) : (
-                        item.translation || "—"
-                      )}
+                      {item.translation || "—"}
                     </td>
                     <td className="px-3 py-4">
                       <span className={`px-2 py-1 rounded-full text-[11px] font-bold whitespace-nowrap ${getStylesForCEFRLevel(item.cefrLevel)}`}>

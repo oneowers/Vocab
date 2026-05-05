@@ -28,22 +28,24 @@ export function GrammarTopicList({ items, onSelect }: { items: GrammarSkillRecor
   })).filter(g => g.items.length > 0)
 
   return (
-    <div className="space-y-6 px-4 pb-20 md:px-0">
+    <div className="space-y-8 pb-20">
       {grouped.map((group) => (
-        <div key={group.level} className="space-y-2.5">
-          <div className="flex items-center gap-3">
-            <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">
+        <div key={group.level} className="space-y-3">
+          <div className="flex items-center gap-3 px-1">
+            <span className="text-[11px] font-black text-white/20 uppercase tracking-[0.2em]">
               {group.level}
             </span>
             <div className="h-[1px] flex-1 bg-white/5" />
           </div>
-          <div className="grid gap-2 md:grid-cols-2 md:gap-4">
+          
+          <div className="bg-[#1C1C1E] rounded-[32px] border border-white/[0.15] overflow-hidden">
             {group.items.map((item, i) => (
               <GrammarTopicRow 
                 key={item.topic.id} 
                 item={item} 
                 index={i} 
-                onClick={() => onSelect?.(item)} 
+                onClick={() => onSelect?.(item)}
+                isLast={i === group.items.length - 1}
               />
             ))}
           </div>

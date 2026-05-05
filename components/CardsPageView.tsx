@@ -261,41 +261,7 @@ export function CardsPageView({ initialData = null, user = null }: CardsPageView
         )}
 
         <div className="space-y-4">
-          {loading ? (
-            <div className="space-y-3">
-              <div className="skeleton dashboard-skeleton-card rounded-[26px] p-3 md:p-4" style={{ ["--skeleton-delay" as string]: "120ms" }}>
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                  <div className="skeleton skeleton-soft h-11 w-full max-w-sm rounded-[18px]" />
-                  <div className="flex flex-col gap-2">
-                    <div className="flex flex-wrap gap-1.5">
-                      {[1, 2, 3].map((i) => (
-                        <div key={i} className="skeleton skeleton-soft h-7 w-20" />
-                      ))}
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {["All", "A1", "A2", "B1", "B2"].map((label, index) => (
-                        <div
-                          key={label}
-                          className="skeleton skeleton-soft h-7 w-12"
-                          style={{ ["--skeleton-delay" as string]: `${160 + index * 30}ms` }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <div
-                    key={i}
-                    className="skeleton dashboard-skeleton-card h-[148px] rounded-[26px]"
-                    style={{ ["--skeleton-delay" as string]: `${180 + i * 45}ms` }}
-                  />
-                ))}
-              </div>
-            </div>
-          ) : (
+          {loading ? null : (
             <CardList
               cards={visibleCards}
               refreshing={refreshing}

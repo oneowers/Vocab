@@ -1,6 +1,5 @@
 import { Suspense } from "react"
 import { DashboardView } from "@/components/DashboardView"
-import { TranslateSkeleton } from "@/components/TranslateSkeleton"
 
 import { requireSignedInAppUser } from "@/lib/auth"
 import { getOrCreateAppSettings } from "@/lib/catalog"
@@ -10,7 +9,7 @@ import { serializeAppSettings, serializeUser } from "@/lib/serializers"
 
 export default function TranslatePage() {
   return (
-    <Suspense fallback={<TranslateSkeleton />}>
+    <Suspense fallback={null}>
       <TranslateDataLoader />
     </Suspense>
   )
@@ -31,4 +30,3 @@ async function TranslateDataLoader() {
     />
   )
 }
-

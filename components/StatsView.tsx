@@ -117,7 +117,7 @@ export function StatsView({ initialData = null }: StatsViewProps) {
   })
 
   if (loading || !stats) {
-    return <div className="skeleton h-[40rem] rounded-[2rem]" />
+    return null
   }
 
   return (

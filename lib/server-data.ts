@@ -67,7 +67,7 @@ function getActivityLevel(count: number): ProfileActivityDay["level"] {
   return 0
 }
 
-function buildActivitySkeleton(endDateKey = getTodayDateKey()) {
+function buildActivityGrid(endDateKey = getTodayDateKey()) {
   const today = parseDateKey(endDateKey)
   const yearStart = new Date(Date.UTC(today.getUTCFullYear(), 0, 1))
   const gridStart = startOfWeekSunday(yearStart)
@@ -510,7 +510,7 @@ export function getDetailedUserStatsData(userId: string, daysCount = 7): Promise
 export async function buildProfileActivity(userId: string): Promise<ProfileActivityPayload> {
   const prisma = getPrisma()
   const today = getTodayDateKey()
-  const skeleton = buildActivitySkeleton(today)
+  const activityGrid = buildActivityGrid(today)
   const startDate = new Date(Date.UTC(parseDateKey(today).getUTCFullYear(), 0, 1))
   const endDate = new Date(`${today}T23:59:59.999Z`)
   const reviewDateCounts = await prisma.$queryRaw<Array<{ date: string; value: bigint }>>(Prisma.sql`
@@ -526,7 +526,7 @@ export async function buildProfileActivity(userId: string): Promise<ProfileActiv
 
   const countsByDate = toCountMap(reviewDateCounts)
 
-  const days = skeleton.days.map((day) => {
+  const days = activityGrid.days.map((day) => {
     const count = countsByDate[day.date] ?? 0
 
     return {
@@ -540,7 +540,7 @@ export async function buildProfileActivity(userId: string): Promise<ProfileActiv
     activeDaysLastYear: Object.values(countsByDate).filter((count) => count > 0).length,
     totalReviewsLastYear: reviewDateCounts.reduce((total, row) => total + Number(row.value), 0),
     days,
-    months: skeleton.months
+    months: activityGrid.months
   }
 }
 

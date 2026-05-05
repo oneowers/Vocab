@@ -324,10 +324,6 @@ export function AdminSettingsView() {
     }
   }
 
-  if (loading && !data) {
-    return <div className="skeleton h-[28rem] rounded-[2rem]" />
-  }
-
   return (
     <div className="space-y-5">
       <section className="panel-admin rounded-[2rem] p-5">

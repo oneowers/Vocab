@@ -19,9 +19,9 @@ import type {
 import { GrammarStatsRow } from "./GrammarStatsRow"
 import { RecommendedTopicCard } from "./RecommendedTopicCard"
 import { GrammarTopicList } from "./GrammarTopicList"
-import { GrammarFilters } from "./GrammarFilters"
 import { GrammarLessonView } from "../GrammarLessonView"
 import { GrammarTrendChart } from "./GrammarTrendChart"
+import { AppleHeader, AppleCard } from "@/components/AppleDashboardComponents"
 
 interface GrammarViewProps {
   payload: GrammarSkillsPayload
@@ -52,23 +52,15 @@ export function GrammarView({ payload }: GrammarViewProps) {
     }
   }, [])
 
-  const handleDismissIntro = () => {
-    localStorage.setItem("grammar_intro_dismissed", "true")
-    setShowIntro(false)
-  }
-
-  // Smart Sorting Priority Logic
   const getPriority = (item: GrammarSkillRecord) => {
     const score = item.score
     const mistakeCount = item.negativeEvidenceCount
-    
     let daysSinceLast = 0
     if (item.lastDetectedAt) {
       const last = new Date(item.lastDetectedAt).getTime()
       const now = Date.now()
       daysSinceLast = (now - last) / (1000 * 60 * 60 * 24)
     }
-
     return Math.max(0, -score) + (mistakeCount * 2) + (daysSinceLast * 0.2)
   }
 
@@ -78,9 +70,7 @@ export function GrammarView({ payload }: GrammarViewProps) {
         const matchesSearch = 
           item.topic.titleEn.toLowerCase().includes(search.toLowerCase()) ||
           item.topic.titleRu.toLowerCase().includes(search.toLowerCase())
-        
         const matchesCefr = cefrFilter === "all" || item.topic.cefrLevel === cefrFilter
-
         const matchesFilter = (() => {
           if (filter === "weak") return item.score < -30
           if (filter === "learning") return item.score >= -30 && item.score < 30
@@ -88,10 +78,7 @@ export function GrammarView({ payload }: GrammarViewProps) {
           if (filter === "no_data") return item.evidenceCount === 0
           return true
         })()
-
-        const hasContent = !!item.topic.formulas
-        
-        return matchesSearch && matchesCefr && matchesFilter && hasContent
+        return matchesSearch && matchesCefr && matchesFilter && !!item.topic.formulas
       })
       .sort((a, b) => {
         if (sort === "priority") return getPriority(b) - getPriority(a)
@@ -133,31 +120,24 @@ export function GrammarView({ payload }: GrammarViewProps) {
   if (showIntro === null) return null
 
   return (
-    <div className="mx-auto max-w-5xl pb-32 pt-24 relative">
-      {/* Ambient Background Glow */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[10%] right-[-10%] w-[30%] h-[30%] bg-purple-500/5 rounded-full blur-[100px]" />
-      </div>
-
-      <div className="relative z-10 px-4 md:px-0">
-
-      <div className="mt-4 space-y-8 md:mt-12 md:space-y-16">
-        {/* Trend Chart */}
+    <div className="min-h-screen bg-black pb-32">
+      <div className="pt-20 px-4 space-y-6">
+        {/* Statistics & Trend */}
         {payload.trend && payload.trend.length > 0 && (
-          <section className="px-4 md:px-0">
-            <GrammarTrendChart data={payload.trend} />
+          <section>
+             <AppleCard>
+                <div className="p-4">
+                   <GrammarTrendChart data={payload.trend} />
+                </div>
+             </AppleCard>
           </section>
         )}
 
-        {/* Recommended Section */}
+        {/* Recommended */}
         {mainRecommended && (
-          <section className="space-y-3 px-4 md:px-0">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Sparkles size={14} className="text-amber-400" />
-                <h2 className="text-[12px] font-bold uppercase tracking-widest text-amber-400/60">Recommendation</h2>
-              </div>
+          <section className="space-y-3">
+            <div className="flex items-center gap-2 px-1">
+               <h2 className="text-[13px] font-black uppercase tracking-widest text-white/30">Recommended</h2>
             </div>
             <RecommendedTopicCard 
               item={mainRecommended} 
@@ -166,37 +146,28 @@ export function GrammarView({ payload }: GrammarViewProps) {
           </section>
         )}
 
-        {/* Topic Library */}
-        <section className="space-y-4">
-          <div className="sticky top-0 z-20 space-y-4 bg-[#0a0c10]/90 pb-3 pt-2 backdrop-blur-md md:static md:bg-transparent md:p-0 md:backdrop-blur-none">
-            <div className="flex items-center justify-between px-4 md:px-0">
-              <h2 className="text-[18px] font-black text-white md:text-[24px]">Topic Library</h2>
-              <span className="text-[12px] font-bold text-white/30">{payload.items.length} topics</span>
+        {/* Library */}
+        <section className="space-y-6">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between px-1">
+               <h2 className="text-[13px] font-black uppercase tracking-widest text-white/30">Topic Library</h2>
+               <span className="text-[12px] font-bold text-white/20">{payload.items.length} items</span>
             </div>
-
-            <GrammarFilters 
-              search={search}
-              onSearchChange={setSearch}
-              filter={filter}
-              onFilterChange={setFilter}
-              cefrFilter={cefrFilter}
-              onCefrFilterChange={setCefrFilter}
-              sort={sort}
-              onSortChange={setSort}
-            />
           </div>
 
-          <GrammarTopicList 
-            items={activeItems} 
-            onSelect={(item) => setSelectedTopic(item.topic)}
-          />
+          <div className="overflow-hidden">
+             <GrammarTopicList 
+                items={activeItems} 
+                onSelect={(item) => setSelectedTopic(item.topic)}
+             />
+          </div>
 
-          {/* Collapsible No Info Section */}
+          {/* New Topics */}
           {noInfoItems.length > 0 && (
-            <div className="px-4 md:px-0 pt-4">
+            <div className="pt-4">
               <button
                 onClick={() => setShowNoInfo(!showNoInfo)}
-                className="flex items-center gap-3 w-full py-4 border-t border-white/5 group"
+                className="flex items-center gap-3 w-full py-4 px-1 group"
               >
                 <div className={`transition-transform duration-300 ${showNoInfo ? 'rotate-180' : ''}`}>
                   <ChevronDown size={18} className="text-white/20 group-hover:text-white/40" />
@@ -213,21 +184,18 @@ export function GrammarView({ payload }: GrammarViewProps) {
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="overflow-hidden"
+                    className="overflow-hidden mt-4"
                   >
-                    <div className="pt-4">
-                      <GrammarTopicList 
-                        items={noInfoItems} 
-                        onSelect={(item) => setSelectedTopic(item.topic)}
-                      />
-                    </div>
+                    <GrammarTopicList 
+                      items={noInfoItems} 
+                      onSelect={(item) => setSelectedTopic(item.topic)}
+                    />
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
           )}
         </section>
-      </div>
       </div>
     </div>
   )

@@ -24,7 +24,7 @@ function toDateKey(date: Date) {
   return date.toISOString().slice(0, 10)
 }
 
-function buildActivitySkeleton(endDateKey = getTodayDateKey()) {
+function buildActivityGrid(endDateKey = getTodayDateKey()) {
   const today = parseDateKey(endDateKey)
   const yearStart = new Date(Date.UTC(today.getUTCFullYear(), 0, 1))
   const gridStart = startOfWeekSunday(yearStart)
@@ -69,16 +69,16 @@ function buildActivitySkeleton(endDateKey = getTodayDateKey()) {
 }
 
 export function buildEmptyProfileActivity(endDateKey = getTodayDateKey()): ProfileActivityPayload {
-  const skeleton = buildActivitySkeleton(endDateKey)
+  const activityGrid = buildActivityGrid(endDateKey)
 
   return {
     activeDaysLastYear: 0,
     totalReviewsLastYear: 0,
-    days: skeleton.days.map((day) => ({
+    days: activityGrid.days.map((day) => ({
       date: day.date,
       count: 0,
       level: 0
     })),
-    months: skeleton.months
+    months: activityGrid.months
   }
 }

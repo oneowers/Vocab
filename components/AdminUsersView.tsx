@@ -312,9 +312,7 @@ export function AdminUsersView() {
           </div>
         }
       >
-        {loading || !payload ? (
-          <div className="skeleton h-80 rounded-[1.75rem]" />
-        ) : (
+        {loading || !payload ? null : (
           <div className={`transition-opacity ${refreshing ? "opacity-70" : "opacity-100"}`}>
             <div className="space-y-3 md:hidden">
               {payload.items.map((user) => (

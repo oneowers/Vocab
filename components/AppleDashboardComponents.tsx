@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
-import { ChevronRight, ChevronLeft } from "lucide-react"
+import { ChevronRight, ChevronLeft, Sparkles, Bell, AlertTriangle } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 interface AppleCardProps {
@@ -24,7 +24,7 @@ export function AppleCard({
   activeScale = 0.98 
 }: AppleCardProps) {
   const content = (
-    <div className={`bg-[#1C1C1E] rounded-[20px] p-4 border border-white/[0.03] transition-transform active:scale-[${activeScale}] ${className}`}>
+    <div className={`group relative w-full overflow-hidden rounded-[28px] border border-white/[0.15] bg-[#1C1C1E] transition-all hover:bg-white/[0.08] shadow-lg ${className}`}>
       {children}
     </div>
   )
@@ -277,5 +277,218 @@ export function AppleAlert({
         </div>
       )}
     </AnimatePresence>
+  )
+}
+interface AppleSkillCardProps {
+  title: string
+  subtitle: string
+  level: string
+  status: string
+  points: number
+  progress: number // 0 to 100
+  onClick?: () => void
+  href?: string
+}
+
+/**
+ * A specialized card for skills/lessons with badges, points, and a progress bar.
+ */
+export function AppleSkillCard({
+  title,
+  subtitle,
+  level,
+  status,
+  points,
+  progress,
+  onClick,
+  href
+}: AppleSkillCardProps) {
+  const isNegative = points < 0
+  const pointsColor = isNegative ? "text-[#FF9F0A]" : "text-[#34C759]"
+  const pointsSign = points > 0 ? "+" : ""
+
+  const content = (
+    <div className="relative overflow-hidden rounded-[24px] border border-white/10 bg-[#1C1C1E] p-5 active:scale-[0.98] transition-all group">
+      <div className="flex items-start justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <div className="h-6 px-2 rounded-full border border-white/20 flex items-center justify-center">
+            <span className="text-[10px] font-black text-white/60">{level}</span>
+          </div>
+          <div className="h-6 px-2 rounded-full bg-[#FF9F0A]/10 border border-[#FF9F0A]/20 flex items-center justify-center">
+            <span className="text-[10px] font-black text-[#FF9F0A] uppercase tracking-wider">{status}</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+           <div className="flex items-baseline gap-1">
+              <span className={`text-[24px] font-black tracking-tighter ${pointsColor}`}>
+                {pointsSign}{points}
+              </span>
+              <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">Pts</span>
+           </div>
+           <ChevronRight size={18} className="text-white/10 group-hover:text-white/30 transition-colors" />
+        </div>
+      </div>
+
+      <div className="mb-6">
+        <h3 className="text-[19px] font-bold text-white tracking-tight leading-tight">{title}</h3>
+        <p className="text-[14px] font-medium text-white/40 mt-1">{subtitle}</p>
+      </div>
+
+      <div className="relative h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${progress}%` }}
+          transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+          className="h-full bg-[#FF9F0A] rounded-full"
+        />
+      </div>
+    </div>
+  )
+
+  if (href) {
+    return <Link href={href} className="block no-underline">{content}</Link>
+  }
+
+  return (
+    <button type="button" onClick={onClick} className="w-full text-left outline-none">
+      {content}
+    </button>
+  )
+}
+
+/**
+ * A compact list item version of the skill card.
+ */
+export function AppleSkillListItem({
+  title,
+  subtitle,
+  level: _level,
+  status: _status,
+  points,
+  progress,
+  onClick,
+  href,
+  showDivider = false
+}: AppleSkillCardProps & { showDivider?: boolean }) {
+  // Dynamic color based on score (-100 to 100)
+  // -100 (Progress 0) -> Red (#FF3B30)
+  // 0 (Progress 50) -> Green (#34C759)
+  // 100 (Progress 100) -> Blue (#007AFF)
+  const getProgressColor = () => {
+    if (points < -20) return "bg-[#FF3B30]" // Red
+    if (points < 40) return "bg-[#34C759]"  // Green
+    return "bg-[#007AFF]"                  // Apple Blue
+  }
+
+  const content = (
+    <div className="relative flex flex-col py-4 px-5 active:bg-white/[0.04] transition-colors group">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-[17px] font-semibold text-white tracking-tight leading-tight truncate mr-4">
+          {title}
+        </h3>
+        <div className="flex items-center gap-2 shrink-0">
+           <span className="text-[15px] font-medium text-white/30">
+              {points > 0 ? "+" : ""}{points}
+           </span>
+           <ChevronRight size={16} className="text-white/10 group-hover:text-white/30 transition-colors" />
+        </div>
+      </div>
+
+      <div className="relative h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${progress}%` }}
+          transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+          className={`h-full rounded-full ${getProgressColor()}`}
+        />
+      </div>
+
+      {showDivider && (
+        <div className="absolute bottom-0 right-0 h-[0.5px] bg-white/[0.08]" style={{ left: '20px' }} />
+      )}
+    </div>
+  )
+
+  if (href) {
+    return <Link href={href} className="block no-underline">{content}</Link>
+  }
+
+  return (
+    <button type="button" onClick={onClick} className="w-full text-left outline-none">
+      {content}
+    </button>
+  )
+}
+
+/**
+ * A more prominent version of the skill card for recommendations.
+ */
+export function AppleRecommendedCard({
+  title,
+  subtitle,
+  points,
+  progress,
+  onClick
+}: Pick<AppleSkillCardProps, 'title' | 'subtitle' | 'points' | 'progress' | 'onClick'>) {
+  const getProgressColor = () => {
+    if (points < -20) return "bg-[#FF3B30]" // Red
+    if (points < 40) return "bg-[#34C759]"  // Green
+    return "bg-[#007AFF]"                  // Apple Blue
+  }
+
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="group relative w-full text-left overflow-hidden rounded-[32px] border border-white/[0.15] bg-gradient-to-br from-[#1C1C1E] to-[#161618] p-5 active:scale-[0.98] transition-transform shadow-2xl"
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-2xl bg-white/[0.08] flex items-center justify-center border border-white/[0.12]">
+            <AlertTriangle size={20} className="text-[#FF9F0A]" />
+          </div>
+          <div>
+            <h3 className="text-[19px] font-bold text-white tracking-tight leading-tight">
+              {title}
+            </h3>
+            <p className="text-[14px] font-medium text-white/40 mt-0.5">
+              {subtitle}
+            </p>
+          </div>
+        </div>
+        <div className="text-right">
+           <span className="text-[20px] font-black text-white tracking-tighter">
+              {points > 0 ? "+" : ""}{points}
+           </span>
+        </div>
+      </div>
+
+      <div className="relative h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${progress}%` }}
+          transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+          className={`h-full rounded-full ${getProgressColor()}`}
+        />
+      </div>
+    </motion.button>
+  )
+}
+
+
+/**
+ * A minimalist iOS-style spinner using framer-motion.
+ */
+export function AppleSpinner({ className = "" }: { className?: string }) {
+  return (
+    <div className={`flex items-center justify-center ${className}`}>
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        className="h-6 w-6 border-2 border-white/10 border-t-white/60 rounded-full"
+      />
+    </div>
   )
 }

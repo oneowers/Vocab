@@ -426,9 +426,7 @@ export function AdminGrammarTopicsView() {
           </div>
         }
       >
-        {loading || !payload ? (
-          <div className="skeleton h-80 rounded-[1.75rem]" />
-        ) : (
+        {loading || !payload ? null : (
           <div className={`space-y-4 transition-opacity ${refreshing ? "opacity-70" : "opacity-100"}`}>
             <div className="space-y-2 md:hidden">
               {payload.items.map((item) => (

@@ -86,7 +86,7 @@ export function AdminAnalyticsView() {
   const weeklyDays = data?.days.slice(-7) ?? []
 
   if (loading || !data) {
-    return <div className="skeleton h-[44rem] rounded-[2rem]" />
+    return null
   }
 
   const stats = [

@@ -219,13 +219,8 @@ export function DailyWordsModal({
 
             <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3 md:px-4">
               {loading ? (
-                <div className="space-y-2.5">
-                  {Array.from({ length: 5 }).map((_, index) => (
-                    <div
-                      key={index}
-                      className="skeleton h-20 rounded-[18px] border border-line bg-bg-tertiary"
-                    />
-                  ))}
+                <div className="rounded-[22px] border border-line bg-bg-tertiary p-5 text-center">
+                  <p className="text-[14px] font-semibold text-muted">Loading today's words...</p>
                 </div>
               ) : preview?.limitReached ? (
                 <div className="translate-card rounded-[22px] p-5 text-center bg-bg-tertiary border border-line">
