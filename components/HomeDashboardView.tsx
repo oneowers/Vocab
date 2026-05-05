@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { motion, AnimatePresence, Variants } from "framer-motion"
 import { CheckCircle2, Flame, Rocket, Sparkles, Zap, ArrowRight, ChevronRight, Target, Trophy, Clock, Star, TrendingUp, Menu, X, UserRound } from "lucide-react"
 import Link from "next/link"
-import { AppleHeader, AppleProgressCard, AppleTile, AppleListItem, AppleSpinner } from "./AppleDashboardComponents"
+import { AppleProgressCard, AppleTile, AppleListItem, AppleSpinner } from "./AppleDashboardComponents"
 import { useClientResource } from "@/hooks/useClientResource"
 import type { AppUserRecord, ReviewSummaryPayload } from "@/lib/types"
 
@@ -122,15 +122,7 @@ export function HomeDashboardView({ user, initialCardsData }: HomeDashboardViewP
 
   return (
     <div className="mx-auto max-w-xl min-h-screen px-4 pb-32 bg-black">
-      <AppleHeader 
-        title="Dashboard" 
-        rightElement={
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white border border-white/10">
-            <UserRound size={18} />
-          </div>
-        }
-      />
-      <div className="pt-24" />
+      <div className="pt-16 md:pt-10" />
       <motion.div
         variants={containerVariants}
         initial="hidden"

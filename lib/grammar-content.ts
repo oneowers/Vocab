@@ -1,6 +1,6 @@
 import type { WritingTaskType, CefrLevel } from "./types"
 
-export type ExerciseType = 
+export type ExerciseType =
   | "multiple_choice"
   | "fill_blank"
   | "fix_mistake"
@@ -26,8 +26,8 @@ export interface MultipleChoiceExercise extends GrammarExerciseBase {
 
 export interface FillBlankExercise extends GrammarExerciseBase {
   type: "fill_blank"
-  sentence: string 
-  correctAnswers: string[] 
+  sentence: string
+  correctAnswers: string[]
   feedbackRu: string
 }
 
@@ -40,7 +40,7 @@ export interface FixMistakeExercise extends GrammarExerciseBase {
 
 export interface SentenceBuilderExercise extends GrammarExerciseBase {
   type: "sentence_builder"
-  words: string[] 
+  words: string[]
   correctSentence: string
   explanationRu: string
 }
@@ -51,11 +51,11 @@ export interface WritingExercise extends GrammarExerciseBase {
   minWords: number
 }
 
-export type GrammarExercise = 
-  | MultipleChoiceExercise 
-  | FillBlankExercise 
-  | FixMistakeExercise 
-  | SentenceBuilderExercise 
+export type GrammarExercise =
+  | MultipleChoiceExercise
+  | FillBlankExercise
+  | FixMistakeExercise
+  | SentenceBuilderExercise
   | WritingExercise
 
 export interface GrammarTopicContent {
@@ -65,7 +65,6 @@ export interface GrammarTopicContent {
   cefrLevel: CefrLevel
   category: string
   descriptionRu: string
-  descriptionEn?: string
   formulas: {
     positive: string
     negative: string
@@ -85,7 +84,6 @@ export const GRAMMAR_TOPICS: Record<string, GrammarTopicContent> = {
     cefrLevel: "A1",
     category: "Basics",
     descriptionRu: "Основа английского языка. Обозначает состояние или нахождение.",
-    descriptionEn: "The foundation of the English language. Describes a state or location.",
     formulas: { positive: "am / is / are", negative: "am not / isn't / aren't", question: "Am / Is / Are ...?" },
     usage: ["Имя", "Возраст", "Профессия", "Местоположение"],
     examples: [{ en: "I am happy.", ru: "Я счастлив." }],

@@ -3,7 +3,7 @@
 import { BookOpen, Sparkles, PenTool, Target, ChevronRight, Clock, AlertTriangle, Languages, Activity, Flame, Brain, ListChecks, Zap } from "lucide-react"
 import { motion } from "framer-motion"
 import { useMemo } from "react"
-import { AppleProgressCard, AppleListItem, AppleCard, AppleHeader } from "./AppleDashboardComponents"
+import { AppleProgressCard, AppleListItem, AppleCard } from "./AppleDashboardComponents"
 import type { GrammarFindingRecord } from "@/lib/types"
  
 interface PracticeModeSelectorProps {
@@ -68,15 +68,7 @@ export function PracticeModeSelector({
  
   return (
     <div className="mx-auto w-full max-w-xl px-4 pb-32 min-h-screen bg-black">
-      <AppleHeader 
-        title="Practice" 
-        rightElement={
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white border border-white/10">
-            <Activity size={18} />
-          </div>
-        }
-      />
-      <div className="pt-24" />
+      <div className="pt-16 md:pt-10" />
       {/* Dynamic Summary Chips */}
       <div className="mb-8 flex flex-wrap items-center gap-2 px-1">
         <div className="flex items-center gap-2 rounded-full bg-white/[0.05] border border-white/[0.08] px-4 py-2">
