@@ -33,6 +33,36 @@ interface GrammarViewProps {
 export type GrammarFilterType = "all" | "weak" | "learning" | "strong" | "no_data"
 export type GrammarSortType = "priority" | "weakest" | "recent" | "cefr"
 
+function GrammarLibrarySkeleton() {
+  return (
+    <div className="space-y-8 pb-20">
+      {["A1", "A2", "B1"].map((level) => (
+        <div key={level} className="space-y-3">
+          <div className="flex items-center gap-3 px-1">
+            <SkeletonLine className="h-3 w-8 rounded-full" />
+            <Skeleton className="h-px flex-1 rounded-full" />
+          </div>
+
+          <SkeletonCard className="overflow-hidden rounded-[32px] border-white/[0.15] bg-[#1C1C1E] p-0">
+            {Array.from({ length: 3 }, (_, index) => (
+              <div
+                key={`${level}-${index}`}
+                className="flex items-center justify-between border-b border-white/[0.06] px-4 py-4 last:border-b-0"
+              >
+                <div className="min-w-0 flex-1 space-y-2">
+                  <SkeletonLine className="h-4 w-36 rounded-full" />
+                  <SkeletonLine className="h-3 w-24 rounded-full" />
+                </div>
+                <SkeletonLine className="h-5 w-12 rounded-full" />
+              </div>
+            ))}
+          </SkeletonCard>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export function GrammarView({ payload, summary = null, topicsLoading = false }: GrammarViewProps) {
   const [selectedTopic, setSelectedTopic] = useState<any>(null)
   const [showNoInfo, setShowNoInfo] = useState(false)
