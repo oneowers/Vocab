@@ -362,18 +362,14 @@ export function AppleSkillCard({
 export function AppleSkillListItem({
   title,
   subtitle,
-  level: _level,
-  status: _status,
+  level,
+  status,
   points,
   progress,
   onClick,
   href,
   showDivider = false
 }: AppleSkillCardProps & { showDivider?: boolean }) {
-  // Dynamic color based on score (-100 to 100)
-  // -100 (Progress 0) -> Red (#FF3B30)
-  // 0 (Progress 50) -> Green (#34C759)
-  // 100 (Progress 100) -> Blue (#007AFF)
   const getProgressColor = () => {
     if (points < -20) return "bg-[#FF3B30]" // Red
     if (points < 40) return "bg-[#34C759]"  // Green
@@ -381,20 +377,32 @@ export function AppleSkillListItem({
   }
 
   const content = (
-    <div className="relative flex flex-col py-4 px-5 active:bg-white/[0.04] transition-colors group">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-[17px] font-semibold text-white tracking-tight leading-tight truncate mr-4">
-          {title}
-        </h3>
-        <div className="flex items-center gap-2 shrink-0">
-           <span className="text-[15px] font-medium text-white/30">
+    <div className="relative flex flex-col py-5 px-6 active:bg-white/[0.04] transition-colors group">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">{level}</span>
+            {status === "Weak" && <AlertTriangle size={12} className="text-[#FF9F0A]" />}
+            <span className={`text-[10px] font-black uppercase tracking-wider ${status === 'Weak' ? 'text-[#FF9F0A]' : 'text-white/20'}`}>
+              {status}
+            </span>
+          </div>
+          <h3 className="text-[17px] font-black text-white tracking-tight leading-tight truncate">
+            {title}
+          </h3>
+          {subtitle && (
+            <p className="text-[13px] font-bold text-white/30 truncate mt-0.5">{subtitle}</p>
+          )}
+        </div>
+        <div className="flex items-center gap-3 shrink-0 ml-4">
+           <span className={`text-[18px] font-black tracking-tight ${points < 0 ? 'text-[#FF9F0A]' : 'text-[#34C759]'}`}>
               {points > 0 ? "+" : ""}{points}
            </span>
-           <ChevronRight size={16} className="text-white/10 group-hover:text-white/30 transition-colors" />
+           <ChevronRight size={18} className="text-white/10 group-hover:text-white/30 transition-colors" />
         </div>
       </div>
 
-      <div className="relative h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+      <div className="relative h-1.5 w-full bg-white/5 rounded-full overflow-hidden mt-3">
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${progress}%` }}
@@ -404,7 +412,7 @@ export function AppleSkillListItem({
       </div>
 
       {showDivider && (
-        <div className="absolute bottom-0 right-0 h-[0.5px] bg-white/[0.08]" style={{ left: '20px' }} />
+        <div className="absolute bottom-0 right-0 h-[0.5px] bg-white/[0.08]" style={{ left: '24px' }} />
       )}
     </div>
   )

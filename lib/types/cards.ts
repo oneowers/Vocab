@@ -29,6 +29,8 @@ export interface DashboardSummary {
   mastered: number
   weakCardsCount: number
   isFirstPractice?: boolean
+  writingToday?: number
+  quizToday?: number
 }
 
 export interface DailyCatalogStatus {

@@ -13,7 +13,17 @@ export function MobileHeader({ user }: MobileHeaderProps) {
   const pathname = usePathname()
 
   // Hide header for these paths (handled internally or hidden)
-  if (pathname === "/dashboard" || pathname === "/translate" || pathname === "/profile") {
+  if (
+    pathname === "/dashboard" || 
+    pathname === "/translate" || 
+    pathname === "/profile" || 
+    pathname === "/practice" || 
+    pathname === "/grammar" || 
+    pathname === "/cards" || 
+    pathname === "/ai" || 
+    pathname === "/ui-kit" || 
+    pathname.startsWith("/admin")
+  ) {
     return null
   }
 

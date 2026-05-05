@@ -2,11 +2,10 @@
 
 import { useEffect, useState } from "react"
 import { motion, AnimatePresence, Variants } from "framer-motion"
-import { CheckCircle2, Flame, Rocket, Sparkles, Zap, ArrowRight, ChevronRight, Target, Trophy, Clock, Star, TrendingUp, Menu, X } from "lucide-react"
+import { CheckCircle2, Flame, Rocket, Sparkles, Zap, ArrowRight, ChevronRight, Target, Trophy, Clock, Star, TrendingUp, Menu, X, UserRound } from "lucide-react"
 import Link from "next/link"
-import { AppleProgressCard, AppleTile, AppleListItem } from "./AppleDashboardComponents"
+import { AppleProgressCard, AppleTile, AppleListItem, AppleSpinner } from "./AppleDashboardComponents"
 import { useClientResource } from "@/hooks/useClientResource"
-import { DailyPracticeSkeleton } from "@/components/practice/DailyPracticeSkeleton"
 import type { AppUserRecord, ReviewSummaryPayload } from "@/lib/types"
 
 interface Task {
@@ -61,7 +60,7 @@ export function HomeDashboardView({ user, initialCardsData }: HomeDashboardViewP
       target: 10,
       completed: (resolvedCardsData?.dailyCatalog?.claimedToday ?? 0) >= 10,
       rewardXp: 50,
-      time: "0/10"
+      time: `${resolvedCardsData?.dailyCatalog?.claimedToday ?? 0}/10`
     },
     {
       id: "writing",
@@ -70,11 +69,11 @@ export function HomeDashboardView({ user, initialCardsData }: HomeDashboardViewP
       icon: <Sparkles size={18} />,
       color: "bg-[#BF5AF2]",
       accentColor: "purple",
-      progress: 0,
+      progress: resolvedCardsData?.summary?.writingToday ?? 0,
       target: 1,
-      completed: false,
+      completed: (resolvedCardsData?.summary?.writingToday ?? 0) >= 1,
       rewardXp: 40,
-      time: "0/1"
+      time: `${resolvedCardsData?.summary?.writingToday ?? 0}/1`
     },
     {
       id: "quiz",
@@ -83,16 +82,16 @@ export function HomeDashboardView({ user, initialCardsData }: HomeDashboardViewP
       icon: <Target size={18} />,
       color: "bg-[#FF9F0A]",
       accentColor: "orange",
-      progress: 0,
+      progress: resolvedCardsData?.summary?.quizToday ?? 0,
       target: 1,
-      completed: false,
+      completed: (resolvedCardsData?.summary?.quizToday ?? 0) >= 1,
       rewardXp: 30,
-      time: "0/1"
+      time: `${resolvedCardsData?.summary?.quizToday ?? 0}/1`
     }
   ]
 
-  const completedTasks = tasks.filter(t => t.completed).length
-  const totalProgress = Math.round((completedTasks / tasks.length) * 100)
+  const totalProgressRaw = tasks.reduce((sum, t) => sum + Math.min(1, t.progress / t.target), 0) / tasks.length
+  const totalProgress = Math.round(totalProgressRaw * 100)
   const remainingXp = tasks.reduce((sum, t) => sum + (t.completed ? 0 : t.rewardXp), 0)
 
   // Animation variants for Apple-style spring
@@ -122,7 +121,16 @@ export function HomeDashboardView({ user, initialCardsData }: HomeDashboardViewP
   }
 
   return (
-    <div className="mx-auto max-w-xl min-h-screen px-4 pb-32 pt-24 overflow-x-hidden bg-black">
+    <div className="mx-auto max-w-xl min-h-screen px-4 pb-32 bg-black">
+      <AppleHeader 
+        title="Dashboard" 
+        rightElement={
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white border border-white/10">
+            <UserRound size={18} />
+          </div>
+        }
+      />
+      <div className="pt-24" />
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -153,16 +161,16 @@ export function HomeDashboardView({ user, initialCardsData }: HomeDashboardViewP
         )}
 
         {cardsLoading && !resolvedCardsData ? (
-          <motion.section variants={itemVariants} className="px-1">
-            <DailyPracticeSkeleton />
+          <motion.section variants={itemVariants} className="px-1 py-20">
+            <AppleSpinner className="h-12" />
           </motion.section>
         ) : (
           <>
             <motion.section variants={itemVariants} className="px-1">
               <AppleProgressCard
                 title="Daily Progress"
-                current={completedTasks}
-                total={tasks.length}
+                current={totalProgress}
+                total={100}
                 href="/stats"
               />
             </motion.section>

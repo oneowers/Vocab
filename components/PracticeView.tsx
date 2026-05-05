@@ -64,19 +64,7 @@ export function PracticeView({ initialData, initialMode }: PracticeViewProps) {
   }
 
   if (mode === "TRANSLATION") {
-    return (
-      <div className="min-h-screen bg-black">
-        <div className="max-w-2xl mx-auto pt-8 px-4 flex items-center justify-between">
-          <button 
-            onClick={() => setMode("SELECT")}
-            className="text-[15px] font-semibold text-[#0A84FF] active:opacity-60 transition-opacity"
-          >
-            Done
-          </button>
-        </div>
-        <TranslationChallengeView onBack={() => setMode("SELECT")} />
-      </div>
-    )
+    return <TranslationChallengeView onBack={() => setMode("SELECT")} />
   }
 
   if (mode === "WORDS") {
@@ -120,6 +108,9 @@ export function PracticeView({ initialData, initialMode }: PracticeViewProps) {
       onSelectTranslation={() => setMode("TRANSLATION")}
       onSelectHistory={() => setMode("HISTORY")}
       dueCount={initialData.reviewSummary.summary.dueToday}
+      claimedToday={initialData.reviewSummary.dailyCatalog.claimedToday}
+      writingToday={initialData.reviewSummary.summary.writingToday || 0}
+      quizToday={initialData.reviewSummary.summary.quizToday || 0}
       weakGrammarCount={initialData.grammarSummary.weakCount}
       historyData={initialData.historyPreview}
     />

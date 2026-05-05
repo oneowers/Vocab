@@ -6,8 +6,7 @@ import { useEffect, useRef, useState } from "react"
 import { UserRound, Volume2 } from "lucide-react"
 
 import { useToast } from "@/components/Toast"
-import { StreakCard } from "@/components/StreakCard"
-import { StickySwitcherHeader } from "@/components/StickySwitcherHeader"
+import { AppleHeader, AppleCard, AppleSpinner } from "@/components/AppleDashboardComponents"
 import { updateClientResourceData } from "@/hooks/useClientResource"
 import { getTooltipMessage } from "@/lib/config"
 import { speakText, useCanSpeak } from "@/lib/tts"
@@ -339,115 +338,99 @@ export function TranslatorPanel({
 
   return (
     <section className="space-y-4">
-      <StickySwitcherHeader
-        leftOption={{ label: "English", value: "en-ru" }}
-        rightOption={{ label: "Russian", value: "ru-en" }}
-        selectedValue={direction}
-        onValueChange={(val) => handleDirectionChange(val as Direction)}
-        user={user}
-        sticky={true}
+      <AppleHeader
+        title="Translate"
+        rightElement={
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white">
+            <UserRound size={18} />
+          </div>
+        }
       />
 
-      <div className="translate-card-grid grid gap-3 lg:grid-cols-2">
+      <div className="pt-16" />
+
+      <div className="grid gap-3 lg:grid-cols-2">
         <motion.div
           layout
-          transition={{
-            layout: {
-              duration: 0.52,
-              ease: [0.22, 1, 0.36, 1]
-            }
-          }}
-          className={`liquid-glass rounded-[32px] flex flex-col p-4 md:p-7 apple-spring ${loading ? "translate-card--loading" : ""}`}
+          className={`relative overflow-hidden rounded-[32px] border border-white/[0.12] bg-[#1C1C1E] flex flex-col p-5 md:p-8 shadow-2xl transition-all ${loading ? "opacity-60" : "opacity-100"}`}
         >
           <div className="flex flex-1 flex-col">
             <div className="mb-3 flex items-center justify-between gap-3">
-              <span className="text-[12px] font-bold uppercase tracking-[0.08em] text-muted/60">
+              <span className="text-[12px] font-bold uppercase tracking-[0.08em] text-white/30">
                 {sourceLabel}
               </span>
-            </div>
-
-            <div className="flex items-start justify-between gap-3">
-              <div className="w-full">
-                <textarea
-                  ref={queryTextareaRef}
-                  id="translation-query"
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void handleTranslate() } }}
-                  autoCapitalize="none"
-                  autoCorrect="off"
-                  autoComplete="off"
-                  spellCheck={false}
-                  placeholder={direction === "en-ru" ? "Enter text" : "Введите текст"}
-                  rows={translation ? 1 : 3}
-                  className={`w-full overflow-hidden resize-none border-0 bg-transparent p-0 font-black tracking-tight text-ink outline-none placeholder:text-muted/30 ${translation
-                    ? "min-h-[42px] text-[26px] md:text-[32px]"
-                    : "min-h-[110px] flex-1 text-[26px] md:text-[32px]"
-                    }`}
-                />
-                {shouldShowColoredSourceText && cefrProfile && (
-                  <div className="relative mt-3">
-                    <div className="text-[18px] font-bold leading-relaxed tracking-tight md:text-[22px]">
-                      {cefrProfile.segments.map((segment, index) => (
-                        segment.level ? (
-                          <button
-                            key={`${segment.text}-${index}`}
-                            type="button"
-                            onClick={() =>
-                              setSelectedCefrWord(
-                                selectedCefrWord?.text === segment.text && selectedCefrWord.level === segment.level
-                                  ? null
-                                  : { text: segment.text.trim(), level: segment.level as string }
-                              )
-                            }
-                            className={`inline rounded-sm transition hover:opacity-85 ${CEFR_PROFILE_TEXT_STYLES[segment.level] ?? "text-white/78"}`}
-                          >
-                            {segment.text}
-                          </button>
-                        ) : (
-                          <span
-                            key={`${segment.text}-${index}`}
-                            className="text-white/30"
-                          >
-                            {segment.text}
-                          </span>
-                        )
-                      ))}
-                    </div>
-                    {selectedCefrWord && (
-                      <div className="mt-3 inline-flex items-center gap-2 rounded-2xl border border-line bg-bg-tertiary px-3 py-2 text-[13px] font-medium text-ink shadow-modal">
-                        <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${CEFR_STYLES[selectedCefrWord.level as CefrLevel]?.badge ?? "bg-amber-500/10 text-amber-300"}`}>
-                          {selectedCefrWord.level}
-                        </span>
-                        <span>{selectedCefrWord.text}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
               {direction === "en-ru" && cefrLevel && (
-                <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[13px] font-bold ${CEFR_STYLES[cefrLevel].badge}`}>
+                <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold ${CEFR_STYLES[cefrLevel].badge}`}>
                   <span className={`h-1.5 w-1.5 rounded-full ${CEFR_STYLES[cefrLevel].dot}`} />
                   {cefrLevel}
                 </span>
               )}
             </div>
 
-            {direction === "en-ru" && phonetic && translation ? (
-              <p className="mt-1 text-[14px] font-medium text-quiet">{phonetic}</p>
-            ) : direction === "en-ru" && phonetic ? (
-              <p className="mt-2 text-[15px] font-medium text-quiet">{phonetic}</p>
-            ) : null}
-            <div className="mt-4 flex items-center justify-between gap-3">
-              <div>
-                {speakable && (
+            <div className="flex-1">
+              <textarea
+                ref={queryTextareaRef}
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void handleTranslate() } }}
+                autoCapitalize="none"
+                autoCorrect="off"
+                autoComplete="off"
+                spellCheck={false}
+                placeholder={direction === "en-ru" ? "Enter text" : "Введите текст"}
+                className={`w-full overflow-hidden resize-none border-0 bg-transparent p-0 font-black tracking-tight text-white outline-none placeholder:text-white/10 ${translation
+                  ? "min-h-[42px] text-[26px] md:text-[32px]"
+                  : "min-h-[110px] flex-1 text-[26px] md:text-[32px]"
+                  }`}
+              />
+
+              {shouldShowColoredSourceText && cefrProfile && (
+                <div className="mt-4">
+                  <div className="text-[18px] font-bold leading-relaxed tracking-tight text-white/90 md:text-[22px]">
+                    {cefrProfile.segments.map((segment, index) => (
+                      segment.level ? (
+                        <button
+                          key={`${segment.text}-${index}`}
+                          type="button"
+                          onClick={() =>
+                            setSelectedCefrWord(
+                              selectedCefrWord?.text === segment.text && selectedCefrWord.level === segment.level
+                                ? null
+                                : { text: segment.text.trim(), level: segment.level as string }
+                            )
+                          }
+                          className={`inline rounded-sm transition hover:opacity-80 ${CEFR_PROFILE_TEXT_STYLES[segment.level] ?? "text-white"}`}
+                        >
+                          {segment.text}
+                        </button>
+                      ) : (
+                        <span key={`${segment.text}-${index}`} className="text-white/20">
+                          {segment.text}
+                        </span>
+                      )
+                    ))}
+                  </div>
+                  {selectedCefrWord && (
+                    <div className="mt-4 inline-flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-2 text-[14px] font-bold text-white shadow-xl">
+                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-black ${CEFR_STYLES[selectedCefrWord.level as CefrLevel]?.badge ?? "bg-amber-500/10 text-amber-300"}`}>
+                        {selectedCefrWord.level}
+                      </span>
+                      <span>{selectedCefrWord.text}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-8 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                {speakable && query.trim() && (
                   <button
                     type="button"
                     onClick={() => speakText(query, ttsLanguage)}
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-bg-tertiary text-muted transition hover:bg-bg-tertiary/80 hover:text-ink"
-                    aria-label="Speak source word"
+                    className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/[0.06] text-white/40 border border-white/[0.08] transition-all hover:bg-white/[0.1] hover:text-white"
                   >
-                    <Volume2 size={18} />
+                    <Volume2 size={20} />
                   </button>
                 )}
               </div>
@@ -456,16 +439,9 @@ export function TranslatorPanel({
                 type="button"
                 onClick={() => void handleTranslate()}
                 disabled={loading || !query.trim()}
-                className="min-h-10 rounded-full bg-ink px-5 text-[14px] font-black text-bg-primary transition hover:opacity-90 disabled:opacity-45"
+                className="h-11 px-8 rounded-2xl bg-white text-black text-[15px] font-bold transition-all active:scale-95 disabled:opacity-45 hover:opacity-90"
               >
-                {loading ? (
-                  <span className="inline-flex items-center gap-2">
-                    <span className="translate-loader-dot" />
-                    Translating
-                  </span>
-                ) : (
-                  "Translate"
-                )}
+                {loading ? <AppleSpinner className="h-5" /> : "Translate"}
               </button>
             </div>
           </div>
@@ -473,60 +449,42 @@ export function TranslatorPanel({
 
         <motion.div
           layout
-          transition={{
-            layout: {
-              duration: 0.52,
-              ease: [0.22, 1, 0.36, 1]
-            }
-          }}
-          className={`liquid-glass rounded-[32px] flex min-h-[260px] flex-col p-5 md:min-h-[320px] md:p-7 apple-spring ${(loading && !translation) ? "translate-card--loading" : ""}`}
+          className="relative overflow-hidden rounded-[32px] border border-white/[0.12] bg-[#161618] flex min-h-[280px] flex-col p-5 md:min-h-[340px] md:p-8 shadow-2xl transition-all"
         >
           {loading && !translation ? (
-            <div className="translate-result-loading flex flex-1 flex-col">
-              <div className="h-8 w-2/3 rounded-full bg-white/[0.09]" />
-              <div className="mt-4 h-4 w-1/3 rounded-full bg-white/[0.055]" />
-              <div className="mt-8 grid gap-2">
-                <div className="h-3 w-full rounded-full bg-white/[0.045]" />
-                <div className="h-3 w-5/6 rounded-full bg-white/[0.04]" />
-                <div className="h-3 w-2/3 rounded-full bg-white/[0.035]" />
-              </div>
+            <div className="flex flex-1 flex-col items-center justify-center">
+              <AppleSpinner className="h-10" />
+              <p className="mt-4 text-[14px] font-medium text-white/20">Translating...</p>
             </div>
           ) : translation ? (
-            <div key={`${direction}-${translation}`} className="translate-result-enter flex flex-1 flex-col">
+            <div className="flex flex-1 flex-col">
               <div className="flex-1">
                 <div className="mb-4 flex items-center justify-between gap-3">
-                  <span className="text-[12px] font-bold uppercase tracking-[0.08em] text-muted/60">
+                  <span className="text-[12px] font-bold uppercase tracking-[0.08em] text-white/30">
                     {targetLabel}
                   </span>
                   {translationSourceLabel && (
-                    <span className="rounded-full bg-bg-tertiary px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.08em] text-quiet">
+                    <span className="rounded-full bg-white/[0.05] border border-white/[0.08] px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-white/40">
                       {translationSourceLabel}
                     </span>
                   )}
                 </div>
 
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-[30px] font-black tracking-tight text-ink md:text-[40px]">{translation}</p>
-                  {direction === "ru-en" && cefrLevel && (
-                    <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[13px] font-bold ${CEFR_STYLES[cefrLevel].badge}`}>
-                      <span className={`h-1.5 w-1.5 rounded-full ${CEFR_STYLES[cefrLevel].dot}`} />
-                      {cefrLevel}
-                    </span>
-                  )}
+                <div className="flex items-start justify-between gap-3">
+                  <p className="text-[30px] font-black tracking-tight text-white md:text-[40px] leading-tight">
+                    {translation}
+                  </p>
                 </div>
-                {direction === "ru-en" && phonetic && (
-                  <p className="mt-2 text-[15px] font-medium text-quiet">{phonetic}</p>
-                )}
-                <div className="mt-6 space-y-5">
+
+                <div className="mt-6 space-y-6">
                   {translationAlternatives.length > 0 && (
-                    <div>
-                      <p className="mb-2.5 text-[12px] font-bold uppercase tracking-wider text-white/42">Alternative translations</p>
+                    <div className="space-y-3">
+                      <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/25">Alternatives</p>
                       <div className="flex flex-wrap gap-2">
-                        {translationAlternatives.map((item, index) => (
+                        {translationAlternatives.map((item) => (
                           <span
                             key={item}
-                            className="translate-chip-enter rounded-full bg-bg-tertiary px-2.5 py-1 text-[14px] font-medium text-muted"
-                            style={{ animationDelay: `${90 + index * 38}ms` }}
+                            className="rounded-full bg-white/[0.04] border border-white/[0.08] px-3.5 py-1.5 text-[14px] font-semibold text-white/60"
                           >
                             {item}
                           </span>
@@ -534,25 +492,26 @@ export function TranslatorPanel({
                       </div>
                     </div>
                   )}
-                  {loadingDetails && !example && !phonetic ? (
-                    <p className="text-[13px] text-white/40">Loading details...</p>
-                  ) : null}
                   {example && (
-                    <p className="translate-chip-enter border-l border-white/[0.1] pl-3 text-[14px] leading-relaxed text-white/58">{example}</p>
+                    <div className="space-y-3 pt-2">
+                      <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/25">Example</p>
+                      <p className="border-l-2 border-white/10 pl-4 text-[15px] leading-relaxed text-white/50 italic">
+                        "{example}"
+                      </p>
+                    </div>
                   )}
                 </div>
               </div>
 
-              <div className="mt-6 flex items-center justify-between">
+              <div className="mt-8 flex items-center justify-between">
                 <div>
                   {speakable && (
                     <button
                       type="button"
                       onClick={() => speakText(translation, translatedLanguage)}
-                      className="flex h-10 w-10 items-center justify-center rounded-full bg-bg-tertiary text-muted transition hover:bg-bg-tertiary/80 hover:text-ink"
-                      aria-label="Speak translated text"
+                      className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/[0.06] text-white/40 border border-white/[0.08] transition-all hover:bg-white/[0.1] hover:text-white"
                     >
-                      <Volume2 size={18} />
+                      <Volume2 size={20} />
                     </button>
                   )}
                 </div>
@@ -561,16 +520,17 @@ export function TranslatorPanel({
                   type="button"
                   onClick={() => void handleAddCard()}
                   disabled={guestMode || saving}
-                  title={guestMode ? getTooltipMessage() : undefined}
-                  className="min-h-10 rounded-full bg-bg-tertiary px-5 text-[14px] font-black text-ink transition hover:bg-bg-tertiary/80 disabled:opacity-45 border border-line"
+                  className="h-11 px-8 rounded-2xl bg-white/[0.08] text-white text-[15px] font-bold border border-white/[0.12] transition-all active:scale-95 hover:bg-white/[0.12] disabled:opacity-45 shadow-lg"
                 >
                   {saving ? "Saving..." : "Add to cards"}
                 </button>
               </div>
             </div>
           ) : (
-            <div className="flex flex-1 text-[26px] text-white transition text-opacity-50 font-black tracking-tight md:text-[32px]">
-              Translation
+            <div className="flex flex-1 items-center justify-center">
+              <span className="text-[26px] font-black tracking-tighter text-white/10 md:text-[32px]">
+                Translation
+              </span>
             </div>
           )}
         </motion.div>
@@ -578,3 +538,4 @@ export function TranslatorPanel({
     </section>
   )
 }
+

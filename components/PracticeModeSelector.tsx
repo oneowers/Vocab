@@ -1,11 +1,11 @@
 "use client"
-
-import { BookOpen, Sparkles, PenTool, Target, ChevronRight, Clock, AlertCircle, Languages, Activity, Flame, Brain, ListChecks, Zap } from "lucide-react"
+ 
+import { BookOpen, Sparkles, PenTool, Target, ChevronRight, Clock, AlertTriangle, Languages, Activity, Flame, Brain, ListChecks, Zap } from "lucide-react"
 import { motion } from "framer-motion"
 import { useMemo } from "react"
-import { AppleProgressCard, AppleListItem } from "./AppleDashboardComponents"
+import { AppleProgressCard, AppleListItem, AppleCard, AppleHeader } from "./AppleDashboardComponents"
 import type { GrammarFindingRecord } from "@/lib/types"
-
+ 
 interface PracticeModeSelectorProps {
   onSelectWords: () => void
   onSelectGrammar: () => void
@@ -14,10 +14,13 @@ interface PracticeModeSelectorProps {
   onSelectTranslation: () => void
   onSelectHistory: () => void
   dueCount: number
+  claimedToday: number
+  writingToday: number
+  quizToday: number
   weakGrammarCount: number
   historyData: GrammarFindingRecord[]
 }
-
+ 
 export function PracticeModeSelector({
   onSelectWords,
   onSelectGrammar,
@@ -26,6 +29,9 @@ export function PracticeModeSelector({
   onSelectTranslation,
   onSelectHistory,
   dueCount,
+  claimedToday,
+  writingToday,
+  quizToday,
   weakGrammarCount,
   historyData
 }: PracticeModeSelectorProps) {
@@ -38,7 +44,7 @@ export function PracticeModeSelector({
         groups[key].push(item)
       }
     })
-
+ 
     return Object.values(groups)
       .map(items => ({
         id: items[0].sourceId!,
@@ -52,77 +58,86 @@ export function PracticeModeSelector({
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, 4)
   }, [historyData])
-
-  const mistakesCount = 3
-  const learningCount = 12
-  const estimatedTime = "5m"
-
-  const hasMistakes = mistakesCount > 0
-  const hasDue = dueCount > 0
-
+ 
+  // Calculate total progress percentage for the progress card
+  const vocabularyProgress = Math.min(100, (claimedToday / 10) * 100)
+  const writingProgress = writingToday >= 1 ? 100 : 0
+  const quizProgress = quizToday >= 1 ? 100 : 0
+  
+  const overallProgress = Math.round((vocabularyProgress + writingProgress + quizProgress) / 3)
+ 
   return (
-    <div className="mx-auto max-w-xl px-4 pb-32 pt-24 min-h-screen bg-black">
-
-      {/* Stats Row - High Contrast Chips */}
-      <div className="mb-6 flex flex-wrap items-center gap-2 px-1">
-        <div className="flex items-center gap-2 rounded-full bg-[#1C1C1E] border border-white/[0.05] px-3 py-1.5 shadow-sm">
-          <span className="text-[10px] font-black uppercase tracking-wider text-white/40">Learning</span>
-          <span className="text-[13px] font-black text-white">{learningCount}</span>
+    <div className="mx-auto w-full max-w-xl px-4 pb-32 min-h-screen bg-black">
+      <AppleHeader 
+        title="Practice" 
+        rightElement={
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white border border-white/10">
+            <Activity size={18} />
+          </div>
+        }
+      />
+      <div className="pt-24" />
+      {/* Dynamic Summary Chips */}
+      <div className="mb-8 flex flex-wrap items-center gap-2 px-1">
+        <div className="flex items-center gap-2 rounded-full bg-white/[0.05] border border-white/[0.08] px-4 py-2">
+          <span className="text-[11px] font-black uppercase tracking-widest text-white/40">Vocabulary</span>
+          <span className="text-[14px] font-black text-white">{claimedToday}/10</span>
         </div>
-        {hasMistakes && (
-          <div className="flex items-center gap-2 rounded-full bg-rose-500/10 border border-rose-500/10 px-3 py-1.5">
-            <span className="text-[10px] font-black uppercase tracking-wider text-rose-400/60">Mistakes</span>
-            <span className="text-[13px] font-black text-rose-400">{mistakesCount}</span>
+        {weakGrammarCount > 0 && (
+          <div className="flex items-center gap-2 rounded-full bg-amber-500/10 border border-amber-500/20 px-4 py-2">
+            <AlertTriangle size={14} className="text-amber-400" />
+            <span className="text-[11px] font-black uppercase tracking-widest text-amber-400/80">Weak Areas</span>
+            <span className="text-[14px] font-black text-amber-400">{weakGrammarCount}</span>
           </div>
         )}
-        <div className="flex items-center gap-2 rounded-full bg-[#1C1C1E] border border-white/[0.05] px-3 py-1.5 shadow-sm">
-          <Clock size={12} className="text-white/40" />
-          <span className="text-[13px] font-black text-white/60">{estimatedTime}</span>
+        <div className="flex items-center gap-2 rounded-full bg-white/[0.05] border border-white/[0.08] px-4 py-2">
+          <Clock size={14} className="text-white/40" />
+          <span className="text-[14px] font-black text-white/60">Practice</span>
         </div>
       </div>
-
-      <div className="space-y-6">
-        {/* Primary Action: Continue Vocabulary Review */}
+ 
+      <div className="space-y-8">
+        {/* Main Progress Section */}
         <div className="px-1">
           <AppleProgressCard
-            title="Continue Review"
-            current={14}
-            total={20}
+            title="Daily Practice Progress"
+            current={overallProgress}
+            total={100}
             href="#"
-            progressColor="bg-[#0A84FF]"
+            progressColor="bg-white"
           />
-          <p className="mt-2.5 px-3 text-[12px] font-medium text-white/30">
-            {dueCount} words waiting for your review
+          <p className="mt-3 px-2 text-[13px] font-bold text-white/20">
+            {dueCount} words waiting for review today
           </p>
         </div>
-
-        {/* Secondary Actions List */}
+ 
+        {/* Practice Modes Grid/List */}
         <div className="px-1">
-          <div className="bg-[#1C1C1E] rounded-[24px] overflow-hidden border border-white/[0.03]">
+          <AppleCard className="overflow-hidden">
             <AppleListItem 
               title="Grammar Rules" 
               subtitle="Perfect your sentence structure"
               icon={<Brain size={18} />} 
-              iconColor="bg-blue-500"
-              rightLabel="Ready"
+              iconColor="bg-[#5E5CE6]"
+              rightLabel={weakGrammarCount > 0 ? "Review" : "Learn"}
               onClick={onSelectGrammar}
               showDivider={true}
             />
             <AppleListItem 
               title="Writing Challenge" 
               subtitle="Get AI feedback on your writing"
-              icon={<PenTool size={18} />} 
-              iconColor="bg-orange-500"
-              rightLabel="Daily"
+              icon={<Sparkles size={18} />} 
+              iconColor="bg-[#BF5AF2]"
+              rightLabel={writingToday > 0 ? "Done" : "Daily"}
               onClick={onSelectWriting}
               showDivider={true}
             />
             <AppleListItem 
-              title="Quiz Mode" 
+              title="Knowledge Quiz" 
               subtitle="Test your word recall"
-              icon={<ListChecks size={18} />} 
-              iconColor="bg-green-500"
-              rightLabel="Fast"
+              icon={<Target size={18} />} 
+              iconColor="bg-[#FF9F0A]"
+              rightLabel={quizToday > 0 ? "Done" : "Fast"}
               onClick={onSelectQuiz}
               showDivider={true}
             />
@@ -130,37 +145,37 @@ export function PracticeModeSelector({
               title="Deep Translation" 
               subtitle="Focus on contextual meaning"
               icon={<Languages size={18} />} 
-              iconColor="bg-purple-500"
+              iconColor="bg-[#0A84FF]"
               rightLabel="Advanced"
               onClick={onSelectTranslation}
             />
-          </div>
+          </AppleCard>
         </div>
-
-        {/* Recent Activity Section */}
-        <div className="mt-8 space-y-4 px-1">
-          <div className="flex items-center justify-between px-3">
-            <div className="flex items-center gap-1.5">
-              <div className="w-1 h-1 rounded-full bg-[#BF5AF2]" />
-              <h3 className="text-[11px] font-semibold text-white/40 uppercase tracking-[0.05em]">
-                Recent Activity
+ 
+        {/* Recent Activity Feed */}
+        <div className="space-y-4 px-1">
+          <div className="flex items-center justify-between px-2">
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-white/20" />
+              <h3 className="text-[12px] font-black text-white/30 uppercase tracking-[0.15em]">
+                Activity Feed
               </h3>
             </div>
             <button 
               onClick={onSelectHistory}
-              className="text-[13px] font-semibold text-[#0A84FF] flex items-center active:opacity-60 transition-opacity"
+              className="text-[14px] font-black text-[#0A84FF] active:opacity-60 transition-opacity"
             >
-              See All <ChevronRight size={14} />
+              See All
             </button>
           </div>
-
-          <div className="bg-[#1C1C1E] rounded-[24px] overflow-hidden border border-white/[0.03]">
+ 
+          <AppleCard className="overflow-hidden">
             {groupedHistory.length > 0 ? (
               groupedHistory.map((item, index) => (
                 <AppleListItem
                   key={item.id}
                   title={item.title}
-                  subtitle={`Last used: ${new Date(item.createdAt).toLocaleDateString() === new Date().toLocaleDateString() ? 'Today' : new Date(item.createdAt).toLocaleDateString()}`}
+                  subtitle={new Date(item.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   icon={item.sourceType === 'writing_challenge' ? <Sparkles size={16} /> :
                         item.sourceType === 'translation_challenge' ? <Languages size={16} /> :
                         <BookOpen size={16} />}
@@ -173,14 +188,14 @@ export function PracticeModeSelector({
                 />
               ))
             ) : (
-              <div className="p-10 text-center">
-                <p className="text-[14px] font-medium text-white/20">No recent activity</p>
+              <div className="py-16 text-center">
+                <Activity size={32} className="mx-auto mb-4 text-white/10" />
+                <p className="text-[15px] font-bold text-white/20">No recent activity</p>
               </div>
             )}
-          </div>
+          </AppleCard>
         </div>
       </div>
     </div>
   )
 }
-

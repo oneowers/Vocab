@@ -279,7 +279,7 @@ async function buildReviewSummaryData(userId: string): Promise<ReviewSummaryPayl
   const tomorrowStart = new Date(todayStart)
   tomorrowStart.setUTCDate(tomorrowStart.getUTCDate() + 1)
 
-  const [settings, user, totalCards, masteredCount, rawDueToday, claimedToday, weakCount] =
+  const [settings, user, totalCards, masteredCount, rawDueToday, catalogClaimed, customClaimed, writingToday, weakCount] =
     await Promise.all([
       getOrCreateAppSettings(prisma),
       prisma.user.findUniqueOrThrow({
@@ -320,6 +320,25 @@ async function buildReviewSummaryData(userId: string): Promise<ReviewSummaryPayl
           }
         }
       }),
+      prisma.card.count({
+        where: {
+          userId,
+          dateAdded: {
+            gte: todayStart,
+            lt: tomorrowStart
+          },
+          catalogWordId: null // Only count custom ones here to avoid double counting if catalog claim also creates a card
+        }
+      }),
+      prisma.practiceWritingChallenge.count({
+        where: {
+          userId,
+          createdAt: {
+            gte: todayStart,
+            lt: tomorrowStart
+          }
+        }
+      }),
       prisma.$queryRaw<Array<{ value: bigint }>>(Prisma.sql`
         SELECT COUNT(*)::bigint AS value
         FROM "Card"
@@ -331,6 +350,7 @@ async function buildReviewSummaryData(userId: string): Promise<ReviewSummaryPayl
   const dailyTarget = getDailyTarget(user.dailyWordTarget)
   const dueToday = Math.min(rawDueToday, dailyTarget)
   const weakCardsCount = Number(weakCount[0]?.value ?? 0)
+  const claimedToday = catalogClaimed + customClaimed
 
   return {
     summary: {
@@ -340,7 +360,9 @@ async function buildReviewSummaryData(userId: string): Promise<ReviewSummaryPayl
       dueToday,
       mastered: masteredCount,
       weakCardsCount,
-      isFirstPractice: !user.firstPracticeDate
+      isFirstPractice: !user.firstPracticeDate,
+      writingToday,
+      quizToday: 0 // TODO: Track grammar exercises specifically if needed
     },
     dailyCatalog: {
       dailyTarget,

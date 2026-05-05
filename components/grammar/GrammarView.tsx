@@ -17,7 +17,6 @@ import type {
   GrammarSkillsPayload 
 } from "@/lib/types"
 
-import { GrammarStatsRow } from "./GrammarStatsRow"
 import { RecommendedTopicCard } from "./RecommendedTopicCard"
 import { GrammarTopicList } from "./GrammarTopicList"
 import { GrammarLessonView } from "../GrammarLessonView"
@@ -34,44 +33,10 @@ interface GrammarViewProps {
 export type GrammarFilterType = "all" | "weak" | "learning" | "strong" | "no_data"
 export type GrammarSortType = "priority" | "weakest" | "recent" | "cefr"
 
-function GrammarLibrarySkeleton() {
-  return (
-    <div className="space-y-8 pb-20">
-      {["A1", "A2"].map((level) => (
-        <div key={level} className="space-y-3">
-          <div className="flex items-center gap-3 px-1">
-            <SkeletonLine className="h-3 w-8 rounded-full" />
-            <Skeleton className="h-px flex-1 rounded-full" />
-          </div>
-          <SkeletonCard className="overflow-hidden rounded-[32px] border-white/[0.15] p-0">
-            {Array.from({ length: 3 }).map((_, index) => (
-              <div key={`${level}-${index}`} className="px-5 py-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="space-y-2">
-                    <SkeletonLine className="h-4 w-36 rounded-full" />
-                    <SkeletonLine className="h-3 w-24 rounded-full" />
-                  </div>
-                  <SkeletonLine className="h-5 w-12 rounded-full" />
-                </div>
-                {index < 2 ? <div className="mt-4 h-px bg-white/[0.05]" /> : null}
-              </div>
-            ))}
-          </SkeletonCard>
-        </div>
-      ))}
-    </div>
-  )
-}
-
 export function GrammarView({ payload, summary = null, topicsLoading = false }: GrammarViewProps) {
-  const [search, setSearch] = useState("")
-  const [filter, setFilter] = useState<GrammarFilterType>("all")
-  const [cefrFilter, setCefrFilter] = useState<CefrLevel | "all">("all")
-  const [sort, setSort] = useState<GrammarSortType>("weakest")
-  
-  const [showIntro, setShowIntro] = useState<boolean | null>(null)
   const [selectedTopic, setSelectedTopic] = useState<any>(null)
   const [showNoInfo, setShowNoInfo] = useState(false)
+  const [showIntro, setShowIntro] = useState<boolean | null>(null)
 
   useEffect(() => {
     const visits = parseInt(localStorage.getItem("grammar_visits") || "0")
@@ -101,41 +66,11 @@ export function GrammarView({ payload, summary = null, topicsLoading = false }: 
   const trend = summary?.trend ?? payload?.trend ?? []
 
   const { activeItems, noInfoItems } = useMemo(() => {
-    const sorted = items
-      .filter(item => {
-        const matchesSearch = 
-          item.topic.titleEn.toLowerCase().includes(search.toLowerCase()) ||
-          item.topic.titleRu.toLowerCase().includes(search.toLowerCase())
-        const matchesCefr = cefrFilter === "all" || item.topic.cefrLevel === cefrFilter
-        const matchesFilter = (() => {
-          if (filter === "weak") return item.score < -30
-          if (filter === "learning") return item.score >= -30 && item.score < 30
-          if (filter === "strong") return item.score >= 30
-          if (filter === "no_data") return item.evidenceCount === 0
-          return true
-        })()
-        return matchesSearch && matchesCefr && matchesFilter && !!item.topic.formulas
-      })
-      .sort((a, b) => {
-        if (sort === "priority") return getPriority(b) - getPriority(a)
-        if (sort === "weakest") return a.score - b.score
-        if (sort === "recent") {
-          if (!a.lastDetectedAt) return 1
-          if (!b.lastDetectedAt) return -1
-          return new Date(b.lastDetectedAt).getTime() - new Date(a.lastDetectedAt).getTime()
-        }
-        if (sort === "cefr") {
-          const levels: Record<CefrLevel, number> = { A1: 1, A2: 2, B1: 3, B2: 4, C1: 5, C2: 6 }
-          return levels[a.topic.cefrLevel] - levels[b.topic.cefrLevel]
-        }
-        return 0
-      })
-
     return {
-      activeItems: sorted.filter(i => i.evidenceCount > 0),
-      noInfoItems: sorted.filter(i => i.evidenceCount === 0)
+      activeItems: items.filter(i => i.evidenceCount > 0),
+      noInfoItems: items.filter(i => i.evidenceCount === 0)
     }
-  }, [items, search, filter, cefrFilter, sort])
+  }, [items])
 
   const mainRecommended = useMemo(() => {
     if (summary?.recommendedTopic) {

@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { ArrowLeft, CheckCircle2, XCircle, Zap } from "lucide-react"
+import { AppleHeader, AppleCard } from "@/components/AppleDashboardComponents"
 
 interface GrammarQuizViewProps {
   onBack: () => void
@@ -66,15 +67,24 @@ export function GrammarQuizView({ onBack }: GrammarQuizViewProps) {
 
   if (finished) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400">
-          <CheckCircle2 size={40} />
-        </div>
-        <h2 className="text-3xl font-black text-white">Quiz Complete!</h2>
-        <p className="mt-2 text-white/40">You scored {score} out of {MOCK_QUESTIONS.length}</p>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-black px-6 py-8 text-center relative overflow-hidden">
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="mb-10 flex h-24 w-24 items-center justify-center rounded-[32px] bg-white/[0.05] text-white border border-white/[0.1] shadow-2xl relative z-10"
+        >
+          <CheckCircle2 size={48} strokeWidth={3} className="text-emerald-400" />
+        </motion.div>
+        
+        <h1 className="text-[34px] font-black text-white tracking-tighter relative z-10 leading-tight">Quiz Complete!</h1>
+        
+        <p className="mt-10 text-[17px] text-white/40 leading-relaxed max-w-[280px] font-medium relative z-10">
+          You scored <span className="text-white/80 font-bold">{score} out of {MOCK_QUESTIONS.length}</span>.
+        </p>
+ 
         <button
           onClick={onBack}
-          className="mt-8 h-14 rounded-2xl bg-white px-8 text-[15px] font-black uppercase tracking-wider text-black transition-all hover:scale-105 active:scale-95"
+          className="mt-16 w-full max-w-xs h-14 rounded-3xl bg-white text-black text-[17px] font-black hover:opacity-90 transition-all active:scale-[0.98] shadow-2xl relative z-10"
         >
           Return to Dashboard
         </button>
@@ -83,21 +93,31 @@ export function GrammarQuizView({ onBack }: GrammarQuizViewProps) {
   }
 
   return (
-    <div className="mx-auto max-w-xl">
-      <header className="mb-8 flex items-center justify-between">
-        <button onClick={onBack} className="text-white/40 hover:text-white transition-colors">
-          <ArrowLeft size={24} />
-        </button>
-        <div className="flex items-center gap-2">
-          <span className="text-[13px] font-black text-white/20 uppercase tracking-widest">Question</span>
-          <span className="text-[15px] font-black text-white">{index + 1}/{MOCK_QUESTIONS.length}</span>
+    <div className="flex min-h-screen flex-col bg-black">
+      <AppleHeader 
+        title="Quick Quiz" 
+        onBack={onBack}
+        sticky={true}
+      />
+ 
+      <div className="mx-auto max-w-xl px-4 pt-24 pb-32">
+        <div className="flex items-center justify-between mb-8 px-1">
+          <span className="text-[11px] font-black uppercase tracking-[0.12em] text-white/20">Question {index + 1} of {MOCK_QUESTIONS.length}</span>
+          <div className="h-1.5 w-32 rounded-full bg-white/5 overflow-hidden">
+            <motion.div 
+              className="h-full bg-blue-500"
+              initial={{ width: 0 }}
+              animate={{ width: `${((index + 1) / MOCK_QUESTIONS.length) * 100}%` }}
+            />
+          </div>
         </div>
-      </header>
-
-      <div className="space-y-6">
-        <div className="rounded-[2rem] border border-white/5 bg-white/[0.03] p-8 shadow-xl">
-          <h3 className="text-[22px] font-black leading-tight text-white">{current.question}</h3>
-        </div>
+ 
+        <div className="space-y-6">
+          <AppleCard>
+            <div className="p-8">
+              <h3 className="text-[22px] font-black leading-tight text-white tracking-tight">{current.question}</h3>
+            </div>
+          </AppleCard>
 
         <div className="grid gap-3">
           {current.options.map((option, i) => {
@@ -159,5 +179,6 @@ export function GrammarQuizView({ onBack }: GrammarQuizViewProps) {
         </AnimatePresence>
       </div>
     </div>
+  </div>
   )
 }
