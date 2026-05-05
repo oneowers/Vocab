@@ -1,6 +1,6 @@
 "use client"
  
-import { ArrowLeft, Check, ChevronRight, HelpCircle, BookOpen, Volume2, Sparkles, AlertTriangle, Info } from "lucide-react"
+import { ArrowLeft, Check, ChevronRight, HelpCircle, BookOpen, Volume2, Sparkles, AlertTriangle, Info, X } from "lucide-react"
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import type { GrammarExercise } from "@/lib/grammar-content"

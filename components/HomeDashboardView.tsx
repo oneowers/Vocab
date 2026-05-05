@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { motion, AnimatePresence, Variants } from "framer-motion"
 import { CheckCircle2, Flame, Rocket, Sparkles, Zap, ArrowRight, ChevronRight, Target, Trophy, Clock, Star, TrendingUp, Menu, X, UserRound } from "lucide-react"
 import Link from "next/link"
-import { AppleProgressCard, AppleTile, AppleListItem, AppleSpinner } from "./AppleDashboardComponents"
+import { AppleHeader, AppleProgressCard, AppleTile, AppleListItem, AppleSpinner } from "./AppleDashboardComponents"
 import { useClientResource } from "@/hooks/useClientResource"
 import type { AppUserRecord, ReviewSummaryPayload } from "@/lib/types"
 
